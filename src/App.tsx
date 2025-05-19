@@ -16,6 +16,7 @@ import PaymentSuccess from "./pages/PaymentSuccess";
 import Referrals from "./pages/Referrals";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
+import Policies from "./pages/Policies";
 
 const queryClient = new QueryClient();
 
@@ -29,6 +30,7 @@ const App = () => (
           <Routes>
             {/* Public routes */}
             <Route path="/" element={<Auth />} />
+            <Route path="/policies" element={<Policies />} />
             
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>

@@ -1,10 +1,11 @@
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { Checkbox } from '@/components/ui/checkbox';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -12,6 +13,7 @@ const Auth: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [agreedToTerms, setAgreedToTerms] = useState(false);
   
   const { signIn, signUp } = useAuth();
   const navigate = useNavigate();
@@ -39,6 +41,16 @@ const Auth: React.FC = () => {
           toast({
             title: "Error",
             description: "Please enter your name",
+            variant: "destructive"
+          });
+          setIsLoading(false);
+          return;
+        }
+
+        if (!agreedToTerms) {
+          toast({
+            title: "Error",
+            description: "You must agree to the Terms and Conditions to sign up",
             variant: "destructive"
           });
           setIsLoading(false);
@@ -120,10 +132,29 @@ const Auth: React.FC = () => {
             />
           </div>
           
+          {!isLogin && (
+            <div className="flex items-center space-x-2">
+              <Checkbox 
+                id="terms" 
+                checked={agreedToTerms}
+                onCheckedChange={(checked) => setAgreedToTerms(checked === true)}
+              />
+              <label 
+                htmlFor="terms" 
+                className="text-sm text-gray-700 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+              >
+                I agree to the{' '}
+                <Link to="/policies" className="text-[#00C853] hover:underline">
+                  Terms and Conditions
+                </Link>
+              </label>
+            </div>
+          )}
+          
           <Button 
             type="submit" 
             className="w-full bg-[#00C853] hover:bg-green-600 text-white"
-            disabled={isLoading}
+            disabled={isLoading || (!isLogin && !agreedToTerms)}
           >
             {isLoading ? 'Processing...' : isLogin ? 'Login' : 'Sign Up'}
           </Button>
