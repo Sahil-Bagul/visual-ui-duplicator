@@ -1,11 +1,26 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
+import PolicyLinks from '@/components/PolicyLinks';
 
 const DeliveryPolicy: React.FC = () => {
   const navigate = useNavigate();
+  
+  // Add metadata for web scrapers
+  useEffect(() => {
+    document.title = "Delivery Policy - Learn and Earn";
+    
+    // Add meta description
+    let metaDescription = document.querySelector('meta[name="description"]');
+    if (!metaDescription) {
+      metaDescription = document.createElement('meta');
+      metaDescription.setAttribute('name', 'description');
+      document.head.appendChild(metaDescription);
+    }
+    metaDescription.setAttribute('content', 'Learn and Earn Delivery Policy - How our digital products are delivered to customers');
+  }, []);
   
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -22,7 +37,11 @@ const DeliveryPolicy: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-          <div className="text-sm text-gray-700 space-y-3">
+          <div className="text-sm text-gray-700 space-y-4">
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Shipping and Delivery Policy for Learn and Earn</h2>
+            <p className="mb-2">
+              Last Updated: May 19, 2025
+            </p>
             <p>
               All products sold on Learn and Earn are <strong>digital PDF files</strong>.
             </p>
@@ -30,38 +49,23 @@ const DeliveryPolicy: React.FC = () => {
               Once payment is successful, instant access is granted via email or through the user dashboard.
             </p>
             <p>
-              No physical shipping is involved.
+              No physical shipping is involved as all products are digital downloads.
+            </p>
+            
+            <h3 className="text-lg font-semibold mt-4">Delivery Method</h3>
+            <p>
+              1. Digital courses are delivered instantly through our online platform.
+            </p>
+            <p>
+              2. You will receive access to download your purchased courses directly from your user dashboard.
+            </p>
+            <p>
+              3. An email confirmation with access instructions will also be sent to your registered email address.
             </p>
           </div>
-          <div className="mt-6 space-x-4">
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/privacy-policy')}
-              size="sm"
-            >
-              Privacy Policy
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/terms')}
-              size="sm"
-            >
-              Terms & Conditions
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/refund-policy')}
-              size="sm"
-            >
-              Refund Policy
-            </Button>
-            <Button 
-              variant="outline" 
-              onClick={() => navigate('/contact')}
-              size="sm"
-            >
-              Contact Us
-            </Button>
+          
+          <div className="mt-6">
+            <PolicyLinks />
           </div>
         </div>
       </main>
