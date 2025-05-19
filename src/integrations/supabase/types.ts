@@ -36,6 +36,83 @@ export type Database = {
         }
         Relationships: []
       }
+      payout_methods: {
+        Row: {
+          account_number: string | null
+          added_at: string
+          id: string
+          ifsc_code: string | null
+          is_default: boolean
+          method_type: string
+          upi_id: string | null
+          user_id: string
+        }
+        Insert: {
+          account_number?: string | null
+          added_at?: string
+          id?: string
+          ifsc_code?: string | null
+          is_default?: boolean
+          method_type: string
+          upi_id?: string | null
+          user_id: string
+        }
+        Update: {
+          account_number?: string | null
+          added_at?: string
+          id?: string
+          ifsc_code?: string | null
+          is_default?: boolean
+          method_type?: string
+          upi_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      payouts: {
+        Row: {
+          amount: number
+          created_at: string
+          failure_reason: string | null
+          id: string
+          payout_method_id: string
+          processed_at: string | null
+          razorpay_payout_id: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          payout_method_id: string
+          processed_at?: string | null
+          razorpay_payout_id?: string | null
+          status: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          failure_reason?: string | null
+          id?: string
+          payout_method_id?: string
+          processed_at?: string | null
+          razorpay_payout_id?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_payout_method_id_fkey"
+            columns: ["payout_method_id"]
+            isOneToOne: false
+            referencedRelation: "payout_methods"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           course_id: string
