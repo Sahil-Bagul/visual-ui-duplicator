@@ -20,6 +20,15 @@ const ContactUs: React.FC = () => {
       document.head.appendChild(metaDescription);
     }
     metaDescription.setAttribute('content', 'Contact Learn and Earn - Get in touch with our support team for assistance');
+    
+    // Add canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', window.location.origin + '/contact');
   }, []);
   
   return (
@@ -56,6 +65,13 @@ const ContactUs: React.FC = () => {
             <p>
               We aim to respond to all inquiries within 24-48 business hours.
             </p>
+            
+            <div className="mt-6 pt-4 border-t border-gray-100">
+              <h3 className="text-lg font-semibold">Business Information</h3>
+              <p className="mt-2">Learn and Earn</p>
+              <p>India</p>
+              <p>Email: learnandearn776@gmail.com</p>
+            </div>
           </div>
           
           <div className="mt-6">

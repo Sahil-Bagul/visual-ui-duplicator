@@ -20,6 +20,15 @@ const DeliveryPolicy: React.FC = () => {
       document.head.appendChild(metaDescription);
     }
     metaDescription.setAttribute('content', 'Learn and Earn Delivery Policy - How our digital products are delivered to customers');
+    
+    // Add canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', window.location.origin + '/delivery-policy');
   }, []);
   
   return (
@@ -62,6 +71,10 @@ const DeliveryPolicy: React.FC = () => {
             <p>
               3. An email confirmation with access instructions will also be sent to your registered email address.
             </p>
+            
+            <div className="mt-6 text-base">
+              <p>For any questions about our delivery process, please contact us at: <a href="mailto:learnandearn776@gmail.com" className="text-[#00C853] hover:underline">learnandearn776@gmail.com</a></p>
+            </div>
           </div>
           
           <div className="mt-6">

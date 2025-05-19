@@ -20,6 +20,15 @@ const RefundPolicy: React.FC = () => {
       document.head.appendChild(metaDescription);
     }
     metaDescription.setAttribute('content', 'Learn and Earn Refund Policy - Our policy on cancellations and refunds for digital products');
+    
+    // Add canonical URL
+    let canonicalLink = document.querySelector('link[rel="canonical"]');
+    if (!canonicalLink) {
+      canonicalLink = document.createElement('link');
+      canonicalLink.setAttribute('rel', 'canonical');
+      document.head.appendChild(canonicalLink);
+    }
+    canonicalLink.setAttribute('href', window.location.origin + '/refund-policy');
   }, []);
   
   return (
@@ -59,6 +68,10 @@ const RefundPolicy: React.FC = () => {
             <p>
               3. Before making a purchase, we recommend reviewing all product details carefully.
             </p>
+            
+            <div className="mt-6 text-base">
+              <p>For any questions about our refund policy, please contact us at: <a href="mailto:learnandearn776@gmail.com" className="text-[#00C853] hover:underline">learnandearn776@gmail.com</a></p>
+            </div>
           </div>
           
           <div className="mt-6">
