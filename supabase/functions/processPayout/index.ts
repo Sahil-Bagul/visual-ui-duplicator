@@ -49,10 +49,8 @@ serve(async (req) => {
     // Create a Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
-    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
     
-    if (!supabaseUrl || !supabaseServiceKey || !razorpayKeyId || !razorpayKeySecret) {
+    if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error("Required environment variables are missing");
     }
 
@@ -120,41 +118,9 @@ serve(async (req) => {
       throw new Error(`Failed to create payout record: ${payoutInsertError?.message}`);
     }
     
-    // Create fund account in Razorpay based on the payout method
-    let fundAccountPayload: Record<string, any> = {
-      contact: {
-        name: "User", // Ideally fetch from users table
-        email: "user@example.com", // Ideally fetch from users table
-        contact: "9999999999", // Ideally fetch from users table
-        type: "customer",
-        reference_id: user_id,
-      },
-      account_type: "bank_account",
-    };
+    // Simulate a successful payout since Razorpay KYC is not complete yet
+    console.log("Simulating payout until Razorpay KYC is complete");
     
-    if (payoutMethod.method_type === "UPI") {
-      fundAccountPayload = {
-        ...fundAccountPayload,
-        account_type: "vpa",
-        vpa: {
-          address: payoutMethod.upi_id,
-        },
-      };
-    } else {
-      fundAccountPayload = {
-        ...fundAccountPayload,
-        bank_account: {
-          name: "User", // Ideally fetch from users table
-          ifsc: payoutMethod.ifsc_code,
-          account_number: payoutMethod.account_number,
-        },
-      };
-    }
-    
-    // This would be the actual Razorpay API call
-    // For now, we'll simulate a successful payout since we don't have actual Razorpay credentials
-    
-    // Simulate a successful payout
     const mockRazorpayResponse: RazorpayPayout = {
       id: `payout_${Math.random().toString(36).substr(2, 9)}`,
       entity: "payout",
@@ -178,7 +144,7 @@ serve(async (req) => {
       created_at: Math.floor(Date.now() / 1000),
     };
     
-    // Update payout record with Razorpay payout ID
+    // Update payout record with mock Razorpay payout ID
     await supabase
       .from("payouts")
       .update({
