@@ -1,5 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import TransactionItem from '@/components/wallet/TransactionItem';
@@ -12,7 +13,7 @@ interface Transaction {
   type: string;
   date: string;
   amount: number;
-  status: string;
+  status: "Paid" | "Pending" | "Failed";
 }
 
 const Wallet: React.FC = () => {
@@ -21,6 +22,7 @@ const Wallet: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchWalletData = async () => {
@@ -66,7 +68,7 @@ const Wallet: React.FC = () => {
               day: 'numeric'
             }),
             amount: referral.courses.referral_reward * referral.successful_referrals,
-            status: 'Paid'
+            status: "Paid" // Fixed: Using a literal string that matches the expected type
           }));
           
           setTransactions(referralTransactions);
