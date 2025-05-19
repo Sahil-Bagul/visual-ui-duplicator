@@ -1,18 +1,108 @@
 
-import React from 'react';
-import { useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { CheckCircle } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
+
+interface SuccessState {
+  courseId: string;
+  courseTitle: string;
+}
+
+interface ReferralInfo {
+  referral_code: string;
+  course_id: string;
+}
 
 const PaymentSuccess: React.FC = () => {
+  const [referralInfo, setReferralInfo] = useState<ReferralInfo | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  
   const navigate = useNavigate();
-  const referralCode = "RAH-AI-953";
+  const location = useLocation();
+  const { user } = useAuth();
+  const { toast } = useToast();
+  
+  const successState = location.state as SuccessState;
+  
+  useEffect(() => {
+    // Check if we have course information from navigation state
+    if (!successState?.courseId || !user) {
+      setIsLoading(false);
+      return;
+    }
+    
+    const fetchReferralCode = async () => {
+      try {
+        // Get user's referral code for this course
+        const { data, error } = await supabase
+          .from('referrals')
+          .select('referral_code, course_id')
+          .eq('user_id', user.id)
+          .eq('course_id', successState.courseId)
+          .single();
+          
+        if (error) throw error;
+        setReferralInfo(data);
+      } catch (error) {
+        console.error("Error fetching referral code:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchReferralCode();
+  }, [user, successState]);
   
   const handleCopyReferralCode = () => {
-    navigator.clipboard.writeText(referralCode);
-    // Could add a toast notification here
+    if (!referralInfo?.referral_code) return;
+    
+    navigator.clipboard.writeText(referralInfo.referral_code);
+    toast({
+      title: "Copied!",
+      description: "Referral code copied to clipboard",
+    });
   };
+  
+  const handleShareWithFriends = () => {
+    if (!referralInfo?.referral_code) return;
+    
+    // Create share message
+    const shareText = `Check out this course on Learn & Earn! Use my referral code ${referralInfo.referral_code} for ${successState?.courseTitle}. learnandearn.in/course/${successState?.courseId}?ref=${referralInfo.referral_code}`;
+    
+    if (navigator.share) {
+      // Web Share API - modern browsers and mobile
+      navigator.share({
+        title: 'Learn & Earn Course Referral',
+        text: shareText,
+      }).catch((error) => console.error('Error sharing:', error));
+    } else {
+      // Fallback - copy to clipboard
+      navigator.clipboard.writeText(shareText);
+      toast({
+        title: "Copied!",
+        description: "Share text copied to clipboard",
+      });
+    }
+  };
+
+  if (!successState) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+          <div className="text-center py-8">
+            <p className="text-gray-600">Missing purchase information. Please go back to dashboard.</p>
+            <Button className="mt-4" onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -26,7 +116,7 @@ const PaymentSuccess: React.FC = () => {
           </div>
 
           <h1 className="text-2xl font-bold text-gray-900 mb-2">Payment Successful!</h1>
-          <p className="text-gray-600 mb-8">Thank you for purchasing AI Tools Mastery</p>
+          <p className="text-gray-600 mb-8">Thank you for purchasing {successState.courseTitle}</p>
 
           <div className="border-t border-gray-200 my-6"></div>
 
@@ -40,42 +130,51 @@ const PaymentSuccess: React.FC = () => {
             Download PDF
           </Button>
 
-          <div className="bg-green-50 rounded-lg p-6 mb-8">
-            <div className="flex items-center mb-2">
-              <span className="text-green-700 mr-2">🎉</span>
-              <h3 className="text-lg font-semibold text-green-700">Referral Unlocked!</h3>
+          {isLoading ? (
+            <div className="bg-green-50 rounded-lg p-6 mb-8">
+              <p className="text-green-700">Loading referral information...</p>
             </div>
-            <p className="text-green-700 mb-4 text-sm">
-              You can now earn ₹ 250 for each friend who purchases this course using your referral code.
-            </p>
-            
-            <div className="mb-4">
-              <label className="text-sm text-green-700 font-medium block mb-2">Your Unique Referral Code</label>
-              <div className="flex items-center">
-                <div className="flex-1 bg-white border border-green-200 py-2 px-3 rounded-l-md text-center text-green-800 font-medium">
-                  {referralCode}
-                </div>
-                <button 
-                  className="bg-white border border-green-200 border-l-0 py-2 px-3 rounded-r-md"
-                  onClick={handleCopyReferralCode}
-                >
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 9H11C9.89543 9 9 9.89543 9 11V20C9 21.1046 9.89543 22 11 22H20C21.1046 22 22 21.1046 22 20V11C22 9.89543 21.1046 9 20 9Z" stroke="#047857" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M5 15H4C3.46957 15 2.96086 14.7893 2.58579 14.4142C2.21071 14.0391 2 13.5304 2 13V4C2 3.46957 2.21071 2.96086 2.58579 2.58579C2.96086 2.21071 3.46957 2 4 2H13C13.5304 2 14.0391 2.21071 14.4142 2.58579C14.7893 2.96086 15 3.46957 15 4V5" stroke="#047857" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                </button>
+          ) : referralInfo ? (
+            <div className="bg-green-50 rounded-lg p-6 mb-8">
+              <div className="flex items-center mb-2">
+                <span className="text-green-700 mr-2">🎉</span>
+                <h3 className="text-lg font-semibold text-green-700">Referral Unlocked!</h3>
               </div>
+              <p className="text-green-700 mb-4 text-sm">
+                You can now earn ₹ {successState.courseId === 'AI Tools Mastery' ? 250 : 500} for each friend who purchases this course using your referral code.
+              </p>
+              
+              <div className="mb-4">
+                <label className="text-sm text-green-700 font-medium block mb-2">Your Unique Referral Code</label>
+                <div className="flex items-center">
+                  <div className="flex-1 bg-white border border-green-200 py-2 px-3 rounded-l-md text-center text-green-800 font-medium">
+                    {referralInfo.referral_code}
+                  </div>
+                  <button 
+                    className="bg-white border border-green-200 border-l-0 py-2 px-3 rounded-r-md"
+                    onClick={handleCopyReferralCode}
+                  >
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                      <path d="M20 9H11C9.89543 9 9 9.89543 9 11V20C9 21.1046 9.89543 22 11 22H20C21.1046 22 22 21.1046 22 20V11C22 9.89543 21.1046 9 20 9Z" stroke="#047857" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                      <path d="M5 15H4C3.46957 15 2.96086 14.7893 2.58579 14.4142C2.21071 14.0391 2 13.5304 2 13V4C2 3.46957 2.21071 2.96086 2.58579 2.58579C2.96086 2.21071 3.46957 2 4 2H13C13.5304 2 14.0391 2.21071 14.4142 2.58579C14.7893 2.96086 15 3.46957 15 4V5" stroke="#047857" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    </svg>
+                  </button>
+                </div>
+              </div>
+              
+              <Button 
+                className="w-full bg-green-600 hover:bg-green-700"
+                onClick={handleShareWithFriends}
+              >
+                <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M16 6L12 2L8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <path d="M12 2V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                Share with Friends
+              </Button>
             </div>
-            
-            <Button className="w-full bg-green-600 hover:bg-green-700">
-              <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M4 12V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M16 6L12 2L8 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 2V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              Share with Friends
-            </Button>
-          </div>
+          ) : null}
 
           <div className="flex justify-center space-x-4">
             <Button className="border border-gray-300 bg-white text-gray-700 hover:bg-gray-50" 

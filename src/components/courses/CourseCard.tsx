@@ -1,76 +1,51 @@
 
 import React from 'react';
+import { Button } from '@/components/ui/button';
 
 interface CourseCardProps {
   title: string;
   description: string;
   price: number;
   type: string;
-  onClick?: () => void;
+  onClick: () => void;
+  isPurchased?: boolean;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ title, description, price, type, onClick }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ 
+  title, 
+  description, 
+  price, 
+  type, 
+  onClick,
+  isPurchased = false 
+}) => {
   return (
-    <div className="border border flex-1 shadow-[0_2px_4px_-2px_rgba(0,0,0,0.1),0_4px_6px_-1px_rgba(0,0,0,0.1)] bg-white p-6 rounded-lg border-solid max-sm:p-4">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-[15px] font-bold text-gray-900">{title}</h3>
-        <div className="flex items-center gap-1 text-xs text-blue-600">
-          <svg width="20" height="20" viewBox="0 0 21 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <g clipPath="url(#clip0_1_279)">
-              <path
-                d="M10.6719 5.83337V17.5"
-                stroke="#2563EB"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M3.17171 15C2.9507 15 2.73874 14.9122 2.58246 14.7559C2.42618 14.5996 2.33838 14.3877 2.33838 14.1667V3.33333C2.33838 3.11232 2.42618 2.90036 2.58246 2.74408C2.73874 2.5878 2.9507 2.5 3.17171 2.5H7.33838C8.22243 2.5 9.07028 2.85119 9.6954 3.47631C10.3205 4.10143 10.6717 4.94928 10.6717 5.83333C10.6717 4.94928 11.0229 4.10143 11.648 3.47631C12.2731 2.85119 13.121 2.5 14.005 2.5H18.1717C18.3927 2.5 18.6047 2.5878 18.761 2.74408C18.9172 2.90036 19.005 3.11232 19.005 3.33333V14.1667C19.005 14.3877 18.9172 14.5996 18.761 14.7559C18.6047 14.9122 18.3927 15 18.1717 15H13.1717C12.5087 15 11.8728 15.2634 11.4039 15.7322C10.9351 16.2011 10.6717 16.837 10.6717 17.5C10.6717 16.837 10.4083 16.2011 9.93948 15.7322C9.47064 15.2634 8.83475 15 8.17171 15H3.17171Z"
-                stroke="#2563EB"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </g>
-            <defs>
-              <clipPath id="clip0_1_279">
-                <rect width="20" height="20" fill="white" transform="translate(0.671875)" />
-              </clipPath>
-            </defs>
-          </svg>
-          <span>{type}</span>
-        </div>
-      </div>
-      <p className="text-xs text-gray-600 mb-4">{description}</p>
-      <div className="flex justify-between items-center">
-        <div className="flex flex-col gap-1">
-          <div className="text-[15px] font-bold text-gray-900">₹{price}</div>
-          <div className="flex items-center gap-1 text-[10px] text-gray-400">
-            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path
-                d="M12.6667 7.33337H3.33333C2.59695 7.33337 2 7.93033 2 8.66671V13.3334C2 14.0698 2.59695 14.6667 3.33333 14.6667H12.6667C13.403 14.6667 14 14.0698 14 13.3334V8.66671C14 7.93033 13.403 7.33337 12.6667 7.33337Z"
-                stroke="#9CA3AF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M4.6665 7.33337V4.66671C4.6665 3.78265 5.01769 2.93481 5.64281 2.30968C6.26794 1.68456 7.11578 1.33337 7.99984 1.33337C8.88389 1.33337 9.73174 1.68456 10.3569 2.30968C10.982 2.93481 11.3332 3.78265 11.3332 4.66671V7.33337"
-                stroke="#9CA3AF"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
+    <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex flex-col">
+      <div>
+        <div className="flex items-center justify-between mb-2">
+          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+          <div className="inline-flex items-center text-blue-600">
+            <svg width="16" height="16" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
+              <path d="M10 4.5V16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M3 14C2.73478 14 2.48043 13.8946 2.29289 13.7071C2.10536 13.5196 2 13.2652 2 13V3C2 2.73478 2.10536 2.48043 2.29289 2.29289C2.48043 2.10536 2.73478 2 3 2H7C7.79565 2 8.55871 2.31607 9.12132 2.87868C9.68393 3.44129 10 4.20435 10 5C10 4.20435 10.3161 3.44129 10.8787 2.87868C11.4413 2.31607 12.2044 2 13 2H17C17.2652 2 17.5196 2.10536 17.7071 2.29289C17.8946 2.48043 18 2.73478 18 3V13C18 13.2652 17.8946 13.5196 17.7071 13.7071C17.5196 13.8946 17.2652 14 17 14H13C12.2044 14 11.4413 13.6839 10.8787 13.1213C10.3161 12.5587 10 11.7956 10 11C10 11.7956 9.68393 12.5587 9.12132 13.1213C8.55871 13.6839 7.79565 14 7 14H3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
-            <span>Unlock referrals after purchase</span>
+            <span className="text-xs">{type}</span>
           </div>
         </div>
-        <button 
-          onClick={onClick}
-          className="text-white text-xs cursor-pointer bg-blue-600 px-4 py-[9px] rounded-md border-[none] hover:bg-blue-700 transition-colors"
-        >
-          Buy Now
-        </button>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+          {description}
+        </p>
+      </div>
+      <div className="mt-auto">
+        <div className="flex items-center justify-between">
+          <span className="font-semibold">₹ {price}</span>
+          <Button 
+            onClick={onClick} 
+            className={isPurchased ? "bg-blue-500 hover:bg-blue-600" : "bg-[#00C853] hover:bg-green-600"}
+          >
+            {isPurchased ? 'View Course' : 'Buy Now'}
+          </Button>
+        </div>
       </div>
     </div>
   );

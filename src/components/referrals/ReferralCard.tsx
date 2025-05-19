@@ -1,8 +1,6 @@
 
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Lock, Copy, Share2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ReferralCardProps {
@@ -10,133 +8,134 @@ interface ReferralCardProps {
   isLocked: boolean;
   commissionAmount: number;
   referralCode?: string;
+  successfulReferrals?: number;
+  totalEarned?: number;
+  onGetAccess?: () => void;
 }
 
-const ReferralCard: React.FC<ReferralCardProps> = ({ 
+const ReferralCard: React.FC<ReferralCardProps> = ({
   title,
   isLocked,
   commissionAmount,
-  referralCode = "RAH-AI-953"
+  referralCode,
+  successfulReferrals = 0,
+  totalEarned = 0,
+  onGetAccess
 }) => {
+  const [isCopied, setIsCopied] = useState(false);
   const { toast } = useToast();
-  const [showShareOptions, setShowShareOptions] = useState(false);
-
-  const handleShare = () => {
-    setShowShareOptions(!showShareOptions);
-  };
-
-  const copyToClipboard = (text: string, message: string) => {
-    navigator.clipboard.writeText(text);
+  
+  const handleCopyCode = () => {
+    if (!referralCode) return;
+    
+    navigator.clipboard.writeText(referralCode);
+    setIsCopied(true);
+    
     toast({
       title: "Copied!",
-      description: message,
+      description: "Referral code copied to clipboard",
     });
+    
+    setTimeout(() => setIsCopied(false), 2000);
   };
-
-  const shareViaWhatsApp = () => {
-    const referralLink = `https://learnandearn.in/ref?code=${referralCode}`;
-    const message = `Hey! Check out this amazing course: ${title}. Use my referral code ${referralCode} and get started! ${referralLink}`;
-    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  
+  const handleShareWhatsApp = () => {
+    if (!referralCode) return;
+    
+    const message = `Check out this course on Learn & Earn! Use my referral code ${referralCode} for ${title}. learnandearn.in`;
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
-
-  const shareViaTelegram = () => {
-    const referralLink = `https://learnandearn.in/ref?code=${referralCode}`;
-    const message = `Hey! Check out this amazing course: ${title}. Use my referral code ${referralCode} and get started! ${referralLink}`;
-    window.open(`https://t.me/share/url?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(message)}`, '_blank');
+  
+  const handleShareTelegram = () => {
+    if (!referralCode) return;
+    
+    const message = `Check out this course on Learn & Earn! Use my referral code ${referralCode} for ${title}. learnandearn.in`;
+    const telegramUrl = `https://t.me/share/url?url=learnandearn.in&text=${encodeURIComponent(message)}`;
+    window.open(telegramUrl, '_blank');
   };
 
   return (
-    <div className="flex flex-col p-6 bg-white rounded-lg shadow-sm border border-gray-100">
-      <div className="flex items-start justify-between mb-4">
-        <div className="flex items-start">
-          <div className="mr-4">
-            {isLocked && (
-              <div className="w-8 h-8 flex items-center justify-center text-gray-400">
-                <Lock size={20} />
-              </div>
-            )}
-          </div>
-          <div>
-            <h3 className="text-lg font-medium mb-1">{title}</h3>
-            <div className="flex items-center">
-              {isLocked ? (
-                <p className="text-sm text-gray-500">Locked (Purchase to Unlock)</p>
-              ) : (
-                <p className="text-sm text-gray-700">Your referral code: <span className="font-medium">{referralCode}</span></p>
-              )}
-            </div>
-            <p className="text-sm text-green-600 mt-1">Earn ₹ {commissionAmount} per successful referral</p>
-          </div>
-        </div>
+    <div className={`rounded-lg border ${isLocked ? 'bg-gray-50 border-gray-200' : 'bg-white border-blue-100'} p-6`}>
+      <div className="flex justify-between mb-4">
         <div>
-          {isLocked ? (
-            <Button 
-              asChild
-              className="bg-[#00C853] hover:bg-green-700 text-white"
-            >
-              <Link to={`/course/${title.toLowerCase().replace(/\s+/g, '-')}`}>Buy Now</Link>
-            </Button>
-          ) : (
-            <Button 
-              onClick={handleShare}
-              className="bg-[#2962FF] hover:bg-blue-700"
-            >
-              <Share2 className="mr-2 h-4 w-4" /> Share
-            </Button>
-          )}
+          <h3 className="text-lg font-semibold text-gray-800">{title}</h3>
+          <p className="text-sm text-gray-500">Commission: ₹{commissionAmount} per referral</p>
         </div>
+        {!isLocked && (
+          <div className="bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-sm font-semibold self-start">
+            Active
+          </div>
+        )}
       </div>
 
-      {!isLocked && showShareOptions && (
-        <div className="mt-4 bg-blue-50 p-4 rounded-lg">
-          <p className="text-sm font-medium text-blue-800 mb-3">Share your referral link & earn ₹{commissionAmount}</p>
+      {isLocked ? (
+        <div>
+          <div className="flex items-center mb-4 text-gray-500">
+            <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M19 11H5C3.89543 11 3 11.8954 3 13V20C3 21.1046 3.89543 22 5 22H19C20.1046 22 21 21.1046 21 20V13C21 11.8954 20.1046 11 19 11Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <path d="M7 11V7C7 5.93913 7.42143 4.92172 8.17157 4.17157C8.92172 3.42143 9.93913 3 11 3H13C14.0609 3 15.0783 3.42143 15.8284 4.17157C16.5786 4.92172 17 5.93913 17 7V11" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+            Referral locked
+          </div>
+          <p className="text-sm text-gray-600 mb-4">Purchase this course to unlock referral earnings</p>
+          <Button 
+            className="w-full bg-[#00C853] hover:bg-green-700"
+            onClick={onGetAccess}
+          >
+            Get Access
+          </Button>
+        </div>
+      ) : (
+        <div>
+          <div className="grid grid-cols-2 gap-4 mb-4">
+            <div className="bg-gray-50 p-3 rounded-md">
+              <div className="text-sm text-gray-500">Successful Referrals</div>
+              <div className="font-bold text-xl">{successfulReferrals}</div>
+            </div>
+            <div className="bg-gray-50 p-3 rounded-md">
+              <div className="text-sm text-gray-500">Total Earned</div>
+              <div className="font-bold text-xl">₹ {totalEarned}</div>
+            </div>
+          </div>
           
-          <div className="flex flex-col space-y-2">
-            <div className="flex items-center justify-between p-3 bg-white rounded border border-blue-100">
-              <div className="text-sm font-medium">{referralCode}</div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => copyToClipboard(referralCode, "Referral code copied!")}
-                className="text-blue-600"
-              >
-                <Copy className="h-4 w-4 mr-1" /> Copy Code
-              </Button>
-            </div>
-            
-            <div className="flex items-center justify-between p-3 bg-white rounded border border-blue-100">
-              <div className="text-sm font-medium truncate max-w-[200px]">
-                learnandearn.in/ref?code={referralCode}
+          <div className="mb-4">
+            <label className="text-sm font-medium text-gray-700 block mb-2">Your Referral Code</label>
+            <div className="flex items-center">
+              <div className="flex-1 bg-gray-50 border border-gray-200 py-2 px-3 rounded-l-md text-center font-medium">
+                {referralCode}
               </div>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => copyToClipboard(`https://learnandearn.in/ref?code=${referralCode}`, "Referral link copied!")}
-                className="text-blue-600"
+              <button 
+                className="bg-blue-50 border border-blue-100 border-l-0 py-2 px-3 rounded-r-md hover:bg-blue-100"
+                onClick={handleCopyCode}
               >
-                <Copy className="h-4 w-4 mr-1" /> Copy Link
-              </Button>
+                {isCopied ? (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                ) : (
+                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M16.6667 7.5H8.33333C7.8731 7.5 7.5 7.8731 7.5 8.33333V16.6667C7.5 17.1269 7.8731 17.5 8.33333 17.5H16.6667C17.1269 17.5 17.5 17.1269 17.5 16.6667V8.33333C17.5 7.8731 17.1269 7.5 16.6667 7.5Z" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                    <path d="M4.16663 12.5H3.33329C3.11227 12.5 2.90051 12.4122 2.74423 12.2559C2.58795 12.0996 2.49996 11.8879 2.49996 11.6667V3.33333C2.49996 3.11232 2.58795 2.90056 2.74423 2.74428C2.90051 2.588 3.11227 2.5 3.33329 2.5H11.6666C11.8877 2.5 12.0994 2.588 12.2557 2.74428C12.412 2.90056 12.5 3.11232 12.5 3.33333V4.16667" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                )}
+              </button>
             </div>
-            
-            <div className="grid grid-cols-2 gap-2 mt-2">
-              <Button 
-                onClick={shareViaWhatsApp}
-                variant="outline"
-                className="bg-green-50 border-green-200 text-green-700 hover:bg-green-100"
+          </div>
+          
+          <div>
+            <label className="text-sm font-medium text-gray-700 block mb-2">Share with Friends</label>
+            <div className="flex gap-2">
+              <Button
+                className="flex-1 bg-green-500 hover:bg-green-600"
+                onClick={handleShareWhatsApp}
               >
-                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z" />
-                </svg>
                 WhatsApp
               </Button>
-              <Button 
-                onClick={shareViaTelegram}
-                variant="outline"
-                className="bg-blue-50 border-blue-200 text-blue-700 hover:bg-blue-100"
+              <Button
+                className="flex-1 bg-blue-500 hover:bg-blue-600"
+                onClick={handleShareTelegram}
               >
-                <svg className="h-4 w-4 mr-2" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M11.944 0A12 12 0 0 0 0 12a12 12 0 0 0 12 12 12 12 0 0 0 12-12A12 12 0 0 0 12 0a12 12 0 0 0-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 0 1 .171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
-                </svg>
                 Telegram
               </Button>
             </div>

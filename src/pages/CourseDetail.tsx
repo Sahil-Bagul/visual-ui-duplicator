@@ -1,25 +1,118 @@
 
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { useToast } from '@/hooks/use-toast';
 
-interface CourseDetailProps {
-  title?: string;
-  price?: number;
+interface Course {
+  id: string;
+  title: string;
+  description: string;
+  price: number;
+  referral_reward: number;
+  pdf_url?: string;
 }
 
-const CourseDetail: React.FC<CourseDetailProps> = ({ 
-  title = "AI Tools Mastery",
-  price = 500
-}) => {
+const CourseDetail: React.FC = () => {
+  const [course, setCourse] = useState<Course | null>(null);
   const [referralCode, setReferralCode] = useState('');
+  const [isLoading, setIsLoading] = useState(true);
+  const [isPurchased, setIsPurchased] = useState(false);
+  const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { user } = useAuth();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    const fetchCourseData = async () => {
+      if (!id) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Fetch course details
+        const { data: courseData, error: courseError } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('id', id)
+          .single();
+          
+        if (courseError) throw courseError;
+        setCourse(courseData);
+        
+        // Check if user has purchased this course
+        if (user) {
+          const { data: purchaseData, error: purchaseError } = await supabase
+            .from('purchases')
+            .select('*')
+            .eq('user_id', user.id)
+            .eq('course_id', id)
+            .single();
+            
+          if (purchaseError && purchaseError.code !== 'PGRST116') {
+            throw purchaseError;
+          }
+          
+          setIsPurchased(!!purchaseData);
+        }
+      } catch (error) {
+        console.error("Error fetching course details:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load course details",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchCourseData();
+  }, [id, user, toast]);
 
   const handleProceedToPayment = () => {
-    navigate('/payment');
+    if (!course) return;
+    
+    // Pass course information and referral code to payment page
+    navigate('/payment', { 
+      state: { 
+        courseId: course.id,
+        courseTitle: course.title,
+        coursePrice: course.price,
+        referralCode: referralCode.trim() || null
+      } 
+    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+          <div className="flex justify-center py-8">Loading course details...</div>
+        </main>
+      </div>
+    );
+  }
+
+  if (!course) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
+        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
+            <h1 className="text-xl font-bold text-gray-900 mb-4">Course not found</h1>
+            <p className="text-gray-600 mb-4">The course you're looking for doesn't exist or has been removed.</p>
+            <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -27,7 +120,7 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
           <div className="flex items-center justify-between mb-2">
-            <h1 className="text-2xl font-bold text-gray-900">{title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
             <div className="inline-flex items-center text-blue-600">
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
                 <path d="M10 4.5V16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
@@ -38,36 +131,49 @@ const CourseDetail: React.FC<CourseDetailProps> = ({
           </div>
 
           <div className="mb-6 text-gray-600">
-            <p className="mb-4">Learn how to leverage AI tools to boost your productivity and creativity. This comprehensive guide covers the most popular AI tools and how to use them effectively.</p>
-            <p>This comprehensive PDF guide will help you master the fundamentals and advanced techniques needed to succeed in this field. Perfect for college students looking to enhance their skills.</p>
+            <p className="mb-4">{course.description}</p>
           </div>
 
           <div className="border-t border-gray-200 my-6"></div>
 
-          <div className="flex flex-col mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <span className="text-2xl font-bold">₹ {price}</span>
-              <Button className="bg-[#4F46E5] hover:bg-blue-700" onClick={handleProceedToPayment}>Buy Now</Button>
+          {isPurchased ? (
+            <div className="mb-6">
+              <div className="bg-green-50 p-4 rounded-lg border border-green-100 mb-4">
+                <p className="text-green-700 font-medium">You've already purchased this course</p>
+              </div>
+              <Button className="bg-blue-600 hover:bg-blue-700 mr-2" onClick={() => navigate('/my-courses')}>View in My Courses</Button>
+              <Button variant="outline" onClick={() => navigate('/referrals')}>Manage Referrals</Button>
             </div>
-            <div className="text-sm text-gray-500">Earn ₹ 250 per successful referral after purchase</div>
-          </div>
-
-          <div className="border-t border-gray-200 my-6"></div>
-
-          <div>
-            <label htmlFor="referral-code" className="text-sm font-medium text-gray-700 block mb-2">
-              Have a referral code?
-            </label>
-            <div className="flex gap-2">
-              <Input
-                id="referral-code"
-                placeholder="Enter referral code (optional)"
-                className="max-w-xs"
-                value={referralCode}
-                onChange={(e) => setReferralCode(e.target.value)}
-              />
+          ) : (
+            <div className="flex flex-col mb-6">
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-2xl font-bold">₹ {course.price}</span>
+                <Button className="bg-[#00C853] hover:bg-green-700" onClick={handleProceedToPayment}>Buy Now</Button>
+              </div>
+              <div className="text-sm text-gray-500">Earn ₹ {course.referral_reward} per successful referral after purchase</div>
             </div>
-          </div>
+          )}
+
+          {!isPurchased && (
+            <>
+              <div className="border-t border-gray-200 my-6"></div>
+
+              <div>
+                <label htmlFor="referral-code" className="text-sm font-medium text-gray-700 block mb-2">
+                  Have a referral code?
+                </label>
+                <div className="flex gap-2">
+                  <Input
+                    id="referral-code"
+                    placeholder="Enter referral code (optional)"
+                    className="max-w-xs"
+                    value={referralCode}
+                    onChange={(e) => setReferralCode(e.target.value)}
+                  />
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </main>
     </div>

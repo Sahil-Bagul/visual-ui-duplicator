@@ -9,7 +9,167 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      courses: {
+        Row: {
+          description: string | null
+          id: string
+          pdf_url: string | null
+          price: number
+          referral_reward: number
+          title: string
+        }
+        Insert: {
+          description?: string | null
+          id?: string
+          pdf_url?: string | null
+          price: number
+          referral_reward: number
+          title: string
+        }
+        Update: {
+          description?: string | null
+          id?: string
+          pdf_url?: string | null
+          price?: number
+          referral_reward?: number
+          title?: string
+        }
+        Relationships: []
+      }
+      purchases: {
+        Row: {
+          course_id: string
+          has_used_referral_code: boolean | null
+          id: string
+          purchased_at: string | null
+          used_referral_code: string | null
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          has_used_referral_code?: boolean | null
+          id?: string
+          purchased_at?: string | null
+          used_referral_code?: string | null
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          has_used_referral_code?: boolean | null
+          id?: string
+          purchased_at?: string | null
+          used_referral_code?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      referrals: {
+        Row: {
+          course_id: string
+          id: string
+          referral_code: string
+          successful_referrals: number | null
+          total_earned: number | null
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          id?: string
+          referral_code: string
+          successful_referrals?: number | null
+          total_earned?: number | null
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          id?: string
+          referral_code?: string
+          successful_referrals?: number | null
+          total_earned?: number | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "referrals_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      users: {
+        Row: {
+          email: string | null
+          id: string
+          joined_at: string | null
+          name: string | null
+        }
+        Insert: {
+          email?: string | null
+          id: string
+          joined_at?: string | null
+          name?: string | null
+        }
+        Update: {
+          email?: string | null
+          id?: string
+          joined_at?: string | null
+          name?: string | null
+        }
+        Relationships: []
+      }
+      wallet: {
+        Row: {
+          balance: number | null
+          id: string
+          last_updated: string | null
+          user_id: string
+        }
+        Insert: {
+          balance?: number | null
+          id?: string
+          last_updated?: string | null
+          user_id: string
+        }
+        Update: {
+          balance?: number | null
+          id?: string
+          last_updated?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "wallet_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

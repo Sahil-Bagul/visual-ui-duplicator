@@ -1,32 +1,106 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import ReferralCard from '@/components/referrals/ReferralCard';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
+
+interface Course {
+  id: string;
+  title: string;
+  referral_reward: number;
+}
+
+interface Referral {
+  course_id: string;
+  referral_code: string;
+  successful_referrals: number;
+  total_earned: number;
+}
+
+interface CourseReferral {
+  course: Course;
+  referral: Referral | null;
+}
 
 const Referrals: React.FC = () => {
-  // Mock data for user's purchased courses - in a real app, this would come from backend
-  const [purchasedCourses, setPurchasedCourses] = useState<string[]>([
-    // "AI Tools Mastery" // Uncomment to simulate owning this course
-    // "Stock Market Fundamentals" // Uncomment to simulate owning this course
-  ]);
-
-  const hasAICourse = purchasedCourses.includes("AI Tools Mastery");
-  const hasStockCourse = purchasedCourses.includes("Stock Market Fundamentals");
+  const [courseReferrals, setCourseReferrals] = useState<CourseReferral[]>([]);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
   
-  // Mock total earnings - this would be calculated from actual referrals in a real app
-  const totalEarnings = purchasedCourses.length > 0 
-    ? (hasAICourse ? 250 : 0) + (hasStockCourse ? 500 : 0)
-    : 0;
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
-  // For demo purposes - toggle course purchase status
-  const togglePurchaseStatus = (courseName: string) => {
-    if (purchasedCourses.includes(courseName)) {
-      setPurchasedCourses(purchasedCourses.filter(course => course !== courseName));
-    } else {
-      setPurchasedCourses([...purchasedCourses, courseName]);
-    }
-  };
+  useEffect(() => {
+    const fetchReferralData = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        
+        // Get all courses
+        const { data: coursesData, error: coursesError } = await supabase
+          .from('courses')
+          .select('id, title, referral_reward');
+          
+        if (coursesError) throw coursesError;
+        
+        // Get user's purchases
+        const { data: purchasesData, error: purchasesError } = await supabase
+          .from('purchases')
+          .select('course_id')
+          .eq('user_id', user.id);
+          
+        if (purchasesError) throw purchasesError;
+        
+        const purchasedCourseIds = purchasesData?.map(p => p.course_id) || [];
+        
+        // Get user's referrals
+        const { data: referralsData, error: referralsError } = await supabase
+          .from('referrals')
+          .select('*')
+          .eq('user_id', user.id);
+          
+        if (referralsError) throw referralsError;
+        
+        const referralsMap: Record<string, Referral> = {};
+        let totalEarned = 0;
+        
+        if (referralsData) {
+          referralsData.forEach(referral => {
+            referralsMap[referral.course_id] = referral;
+            totalEarned += referral.total_earned;
+          });
+        }
+        
+        setTotalEarnings(totalEarned);
+        
+        // Combine courses with referral data
+        const combinedData: CourseReferral[] = coursesData?.map(course => ({
+          course,
+          referral: referralsMap[course.id] || null
+        })) || [];
+        
+        setCourseReferrals(combinedData);
+        
+      } catch (error) {
+        console.error("Error fetching referral data:", error);
+        toast({
+          title: "Error",
+          description: "Failed to load referral data",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    fetchReferralData();
+  }, [user, toast]);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -47,42 +121,26 @@ const Referrals: React.FC = () => {
           </div>
         </div>
 
-        <div className="space-y-6">
-          <ReferralCard 
-            title="AI Tools Mastery"
-            isLocked={!hasAICourse}
-            commissionAmount={250}
-            referralCode={hasAICourse ? "RAH-AI-953" : undefined}
-          />
-          
-          <ReferralCard 
-            title="Stock Market Fundamentals"
-            isLocked={!hasStockCourse}
-            commissionAmount={500}
-            referralCode={hasStockCourse ? "RAH-SM-753" : undefined}
-          />
-          
-          {/* This button is just for demo purposes to simulate purchasing courses */}
-          <div className="mt-8 p-4 bg-gray-100 rounded-lg border border-dashed border-gray-300">
-            <p className="text-sm text-gray-500 mb-2">Demo Controls (Remove in Production)</p>
-            <div className="flex flex-wrap gap-2">
-              <Button 
-                variant="outline" 
-                onClick={() => togglePurchaseStatus("AI Tools Mastery")}
-                className="text-xs"
-              >
-                {hasAICourse ? "Simulate Unpurchase AI Course" : "Simulate Purchase AI Course"}
-              </Button>
-              <Button 
-                variant="outline" 
-                onClick={() => togglePurchaseStatus("Stock Market Fundamentals")}
-                className="text-xs"
-              >
-                {hasStockCourse ? "Simulate Unpurchase Stock Course" : "Simulate Purchase Stock Course"}
-              </Button>
-            </div>
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <p className="text-gray-500">Loading referral data...</p>
           </div>
-        </div>
+        ) : (
+          <div className="space-y-6">
+            {courseReferrals.map(({ course, referral }) => (
+              <ReferralCard 
+                key={course.id}
+                title={course.title}
+                isLocked={!referral}
+                commissionAmount={course.referral_reward}
+                referralCode={referral?.referral_code}
+                successfulReferrals={referral?.successful_referrals || 0}
+                totalEarned={referral?.total_earned || 0}
+                onGetAccess={() => navigate(`/course/${course.id}`)}
+              />
+            ))}
+          </div>
+        )}
       </main>
     </div>
   );
