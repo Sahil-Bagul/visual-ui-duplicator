@@ -8,7 +8,7 @@ import PayoutMethodForm from './PayoutMethodForm';
 
 interface PayoutMethod {
   id: string;
-  method_type: 'UPI' | 'BANK';
+  method_type: string;
   upi_id: string | null;
   account_number: string | null;
   ifsc_code: string | null;
@@ -36,7 +36,8 @@ const PayoutMethodsList: React.FC = () => {
         
       if (error) throw error;
       
-      setPayoutMethods(data || []);
+      // Type assertion to ensure the data matches our PayoutMethod interface
+      setPayoutMethods(data as unknown as PayoutMethod[]);
     } catch (error) {
       console.error('Error fetching payout methods:', error);
     } finally {

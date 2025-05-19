@@ -4,17 +4,19 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import TransactionItem from './TransactionItem';
 
+interface PayoutMethodInfo {
+  method_type: string;
+  upi_id: string | null;
+  account_number: string | null;
+}
+
 interface Payout {
   id: string;
   amount: number;
   status: string;
   created_at: string;
   processed_at: string | null;
-  payout_method: {
-    method_type: 'UPI' | 'BANK';
-    upi_id: string | null;
-    account_number: string | null;
-  };
+  payout_method: PayoutMethodInfo;
 }
 
 const PayoutHistory: React.FC = () => {
@@ -47,7 +49,8 @@ const PayoutHistory: React.FC = () => {
           
         if (error) throw error;
         
-        setPayouts(data || []);
+        // Type assertion to ensure the data matches our Payout interface
+        setPayouts(data as unknown as Payout[]);
       } catch (error) {
         console.error('Error fetching payouts:', error);
       } finally {
@@ -83,7 +86,7 @@ const PayoutHistory: React.FC = () => {
               day: 'numeric'
             });
             
-            const statusMap = {
+            const statusMap: Record<string, 'Paid' | 'Pending' | 'Failed'> = {
               'pending': 'Pending',
               'success': 'Paid',
               'failed': 'Failed'
@@ -96,7 +99,7 @@ const PayoutHistory: React.FC = () => {
                 type="Withdrawal"
                 date={date}
                 amount={payout.amount}
-                status={statusMap[payout.status as keyof typeof statusMap] as 'Paid' | 'Pending' | 'Failed'}
+                status={statusMap[payout.status] || 'Pending'}
                 isPositive={false}
               />
             );
