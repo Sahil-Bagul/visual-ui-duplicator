@@ -17,11 +17,6 @@ import Referrals from "./pages/Referrals";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
-import PrivacyPolicy from "./pages/PrivacyPolicy";
-import TermsConditions from "./pages/TermsConditions";
-import RefundPolicy from "./pages/RefundPolicy";
-import DeliveryPolicy from "./pages/DeliveryPolicy";
-import ContactUs from "./pages/ContactUs";
 
 const queryClient = new QueryClient();
 
@@ -36,11 +31,6 @@ const App = () => (
             {/* Public routes */}
             <Route path="/" element={<Auth />} />
             <Route path="/policies" element={<Policies />} />
-            <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-            <Route path="/terms" element={<TermsConditions />} />
-            <Route path="/refund-policy" element={<RefundPolicy />} />
-            <Route path="/delivery-policy" element={<DeliveryPolicy />} />
-            <Route path="/contact" element={<ContactUs />} />
             
             {/* Protected routes */}
             <Route element={<ProtectedRoute />}>

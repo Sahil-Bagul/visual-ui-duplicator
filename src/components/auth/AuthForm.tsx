@@ -1,20 +1,11 @@
-
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Checkbox } from "@/components/ui/checkbox";
-import PolicyLinks from '../PolicyLinks';
 
 const AuthForm: React.FC = () => {
   const [authMethod, setAuthMethod] = useState<'email' | 'phone'>('email');
   const [emailValue, setEmailValue] = useState('');
-  const [agreedToTerms, setAgreedToTerms] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!agreedToTerms) {
-      alert("You must agree to the Terms and Conditions to continue");
-      return;
-    }
     // Handle form submission
     console.log('Form submitted with:', emailValue);
   };
@@ -93,22 +84,9 @@ const AuthForm: React.FC = () => {
             required
           />
         </div>
-        
-        <div className="flex items-center space-x-2">
-          <Checkbox 
-            id="terms" 
-            checked={agreedToTerms} 
-            onCheckedChange={(checked) => setAgreedToTerms(checked === true)} 
-          />
-          <label htmlFor="terms" className="text-xs text-gray-700 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-            I agree to the <Link to="/terms" className="text-blue-600 hover:underline">Terms and Conditions</Link>
-          </label>
-        </div>
-        
         <button
           type="submit"
           className="flex items-center justify-center gap-2 text-white text-xs cursor-pointer bg-blue-600 p-2.5 rounded-md border-[none] hover:bg-blue-700 transition-colors"
-          disabled={!agreedToTerms}
         >
           <span>Continue</span>
           <svg width="16" height="16" viewBox="0 0 17 17" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -129,8 +107,6 @@ const AuthForm: React.FC = () => {
           </svg>
         </button>
       </form>
-      
-      <PolicyLinks />
     </div>
   );
 };

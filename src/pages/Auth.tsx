@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -5,7 +6,6 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { Checkbox } from '@/components/ui/checkbox';
-import PolicyLinks from '@/components/PolicyLinks';
 
 const Auth: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
@@ -144,7 +144,7 @@ const Auth: React.FC = () => {
                 className="text-sm text-gray-700 leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
               >
                 I agree to the{' '}
-                <Link to="/terms" className="text-[#00C853] hover:underline font-medium">
+                <Link to="/policies" className="text-[#00C853] hover:underline">
                   Terms and Conditions
                 </Link>
               </label>
@@ -168,11 +168,6 @@ const Auth: React.FC = () => {
           >
             {isLogin ? "Don't have an account? Sign Up" : "Already have an account? Login"}
           </button>
-        </div>
-        
-        <div className="mt-6 border-t border-gray-200 pt-4">
-          <p className="text-xs text-gray-500 mb-2">Important links:</p>
-          <PolicyLinks />
         </div>
       </div>
     </div>
