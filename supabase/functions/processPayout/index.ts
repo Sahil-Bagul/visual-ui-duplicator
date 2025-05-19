@@ -49,8 +49,8 @@ serve(async (req) => {
     // Create a Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID") || "";
-    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
+    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID") || "rzp_test_uMvpbB0vwPADDJ";
+    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "8duTFh22qI2D8gAL8ewUVVKs";
     
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error("Required environment variables are missing");

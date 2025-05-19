@@ -87,11 +87,11 @@ const Payment: React.FC<PaymentProps> = () => {
         purchased_at: new Date().toISOString(),
       };
       
-      // Store the order_id in a metadata table or use a custom RPC function
-      // This avoids the type error with the direct insert
-      const { error: purchaseError } = await supabase
+      // Store the purchase record in the database
+      const { data, error: purchaseError } = await supabase
         .from("purchases")
-        .insert(purchaseData);
+        .insert(purchaseData)
+        .select();
       
       if (purchaseError) {
         throw purchaseError;
@@ -99,7 +99,7 @@ const Payment: React.FC<PaymentProps> = () => {
       
       // Configure Razorpay options
       const options = {
-        key: 'rzp_test_yourTestKeyHere', // You'd typically get this from your environment
+        key: 'rzp_test_uMvpbB0vwPADDJ', // Using the provided test key
         amount: coursePrice * 100, // Amount in paise
         currency: 'INR',
         name: 'Learn & Earn',
@@ -115,7 +115,7 @@ const Payment: React.FC<PaymentProps> = () => {
           user_id: user.id,
           course_id: courseId,
           used_referral_code: referralCode,
-          purchase_id: purchaseData.id // Store the purchase ID for webhook reference
+          purchase_id: data?.[0]?.id // Store the purchase ID for webhook reference
         },
         theme: {
           color: '#00C853'

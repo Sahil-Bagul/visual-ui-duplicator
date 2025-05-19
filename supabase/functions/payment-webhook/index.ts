@@ -6,8 +6,8 @@ import { createClient } from "https://esm.sh/@supabase/supabase-js@2.38.0";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 const WEBHOOK_SECRET = Deno.env.get("RAZORPAY_WEBHOOK_SECRET") || "test_webhook_secret";
-const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID") || "";
-const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET") || "";
+const RAZORPAY_KEY_ID = Deno.env.get("RAZORPAY_KEY_ID") || "rzp_test_uMvpbB0vwPADDJ";
+const RAZORPAY_KEY_SECRET = Deno.env.get("RAZORPAY_KEY_SECRET") || "8duTFh22qI2D8gAL8ewUVVKs";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
