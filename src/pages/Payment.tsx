@@ -85,11 +85,16 @@ const Payment: React.FC<PaymentProps> = () => {
         has_used_referral_code: !!referralCode,
         used_referral_code: referralCode,
         purchased_at: new Date().toISOString(),
-        payment_status: "pending",
+        // Custom fields that we'll specify in insert options
         order_id: orderId
       };
       
-      const { error: purchaseError } = await supabase.from("purchases").insert(purchaseData);
+      const { error: purchaseError } = await supabase
+        .from("purchases")
+        .insert({
+          ...purchaseData,
+          payment_status: "pending" // Add this through insert options
+        });
       
       if (purchaseError) {
         throw purchaseError;
@@ -166,7 +171,7 @@ const Payment: React.FC<PaymentProps> = () => {
       // In a real scenario, this would be handled by the webhook
       // Here we're simulating the webhook's behavior
       
-      // Update the purchase record in the database
+      // Update the purchase record in the database with a custom update
       const { error } = await supabase
         .from('purchases')
         .update({
@@ -210,19 +215,24 @@ const Payment: React.FC<PaymentProps> = () => {
     setIsProcessing(true);
     try {
       // For development, simulate a successful payment process
-      // Record the purchase in the database
+      // Record the purchase in the database with custom fields
       const purchaseData = {
         user_id: user.id,
         course_id: courseId,
         has_used_referral_code: !!referralCode,
         used_referral_code: referralCode,
         purchased_at: new Date().toISOString(),
-        payment_status: "completed",
-        order_id: `sim_order_${Math.random().toString(36).substring(2, 10)}`,
-        payment_id: `sim_payment_${Math.random().toString(36).substring(2, 10)}`
       };
       
-      const { error } = await supabase.from("purchases").insert(purchaseData);
+      // Use .insert() with additional fields
+      const { error } = await supabase
+        .from("purchases")
+        .insert({
+          ...purchaseData,
+          payment_status: "completed",
+          order_id: `sim_order_${Math.random().toString(36).substring(2, 10)}`,
+          payment_id: `sim_payment_${Math.random().toString(36).substring(2, 10)}`
+        });
       
       if (error) throw error;
       
