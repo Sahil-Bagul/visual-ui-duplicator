@@ -1,4 +1,6 @@
+
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import AuthForm from '@/components/auth/AuthForm';
 import Header from '@/components/layout/Header';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
@@ -6,16 +8,21 @@ import CourseCard from '@/components/courses/CourseCard';
 
 const Index: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const navigate = useNavigate();
 
   // Toggle between login and dashboard views for demo purposes
   const toggleView = () => {
     setIsLoggedIn(!isLoggedIn);
   };
 
+  const handleCourseClick = (courseId: string) => {
+    navigate(`/course/${courseId}`);
+  };
+
   return (
     <>
       <link
-        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
         rel="stylesheet"
       />
       
@@ -52,21 +59,31 @@ const Index: React.FC = () => {
                   description="Learn how to leverage AI tools to boost your productivity and creativity. This comprehensive guide covers the most popular AI tools and how to use them effectively."
                   price={500}
                   type="PDF Course"
+                  onClick={() => handleCourseClick('ai-tools')}
                 />
                 <CourseCard
                   title="Stock Market Fundamentals"
                   description="A beginner's guide to understanding the stock market. Learn about different investment strategies, how to read financial statements, and make informed investment decisions."
                   price={1000}
                   type="PDF Course"
+                  onClick={() => handleCourseClick('stock-market')}
                 />
               </div>
             </section>
-            <button 
-              onClick={toggleView} 
-              className="text-xs text-blue-600 underline mt-8 block"
-            >
-              Demo: Back to Login
-            </button>
+            <div className="mt-8 flex gap-4 justify-center">
+              <button 
+                onClick={toggleView} 
+                className="text-xs text-blue-600 underline"
+              >
+                Demo: Back to Login
+              </button>
+              <button 
+                onClick={() => navigate('/my-courses')} 
+                className="text-xs text-blue-600 underline"
+              >
+                View My Courses
+              </button>
+            </div>
           </main>
         </div>
       )}

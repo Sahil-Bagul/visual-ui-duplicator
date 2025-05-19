@@ -1,19 +1,47 @@
+
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header: React.FC = () => {
+  const location = useLocation();
+
   return (
     <header className="shadow-[0_2px_4px_-2px_rgba(0,0,0,0.1),0_4px_6px_-1px_rgba(0,0,0,0.1)] bg-white">
-      <div className="max-w-[993px] h-16 flex justify-between items-center mx-auto my-0 px-4 py-0">
-        <Link to="/" className="text-[17px] font-bold text-blue-600">
+      <div className="max-w-[993px] h-16 flex justify-between items-center mx-auto my-0 px-6 py-0">
+        <Link to="/" className="text-xl font-bold text-blue-600">
           Learn &amp; Earn
         </Link>
-        <nav className="flex gap-8 max-sm:hidden">
-          <NavItem icon={<HomeIcon />} label="Home" active />
-          <NavItem icon={<CoursesIcon />} label="My Courses" />
-          <NavItem icon={<ReferralsIcon />} label="Referrals" />
-          <NavItem icon={<WalletIcon />} label="Wallet" />
-          <NavItem icon={<ProfileIcon />} label="Profile" />
+        <nav className="flex">
+          <NavItem 
+            icon={<HomeIcon />} 
+            label="Home" 
+            to="/"
+            active={location.pathname === '/'} 
+          />
+          <NavItem 
+            icon={<CoursesIcon />} 
+            label="My Courses" 
+            to="/my-courses"
+            active={location.pathname.includes('/my-courses') || location.pathname.includes('/course')} 
+          />
+          <NavItem 
+            icon={<ReferralsIcon />} 
+            label="Referrals" 
+            to="/referrals"
+            active={location.pathname.includes('/referrals')} 
+          />
+          <NavItem 
+            icon={<WalletIcon />} 
+            label="Wallet" 
+            to="/wallet"
+            active={location.pathname.includes('/wallet')} 
+          />
+          <NavItem 
+            icon={<ProfileIcon />} 
+            label="Profile" 
+            to="/profile"
+            active={location.pathname.includes('/profile')} 
+          />
         </nav>
       </div>
     </header>
@@ -23,19 +51,20 @@ const Header: React.FC = () => {
 interface NavItemProps {
   icon: React.ReactNode;
   label: string;
+  to: string;
   active?: boolean;
 }
 
-const NavItem: React.FC<NavItemProps> = ({ icon, label, active }) => {
+const NavItem: React.FC<NavItemProps> = ({ icon, label, to, active }) => {
   return (
     <Link
-      to="/"
-      className={`flex items-center gap-1 text-xs ${
+      to={to}
+      className={`flex items-center gap-1 text-xs px-4 py-[5px] ${
         active ? 'text-gray-900 border-b-2 border-b-blue-600' : 'text-gray-500 border-b-2 border-b-transparent'
-      } px-1 py-[5px] border-solid hover:text-gray-900 transition-colors`}
+      } hover:text-gray-900 transition-colors max-sm:px-2`}
     >
-      <div>{icon}</div>
-      <span>{label}</span>
+      <div className="max-sm:text-base">{icon}</div>
+      <span className="max-sm:hidden">{label}</span>
     </Link>
   );
 };

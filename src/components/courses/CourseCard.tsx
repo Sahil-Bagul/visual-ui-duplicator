@@ -1,3 +1,4 @@
+
 import React from 'react';
 
 interface CourseCardProps {
@@ -5,9 +6,10 @@ interface CourseCardProps {
   description: string;
   price: number;
   type: string;
+  onClick?: () => void;
 }
 
-const CourseCard: React.FC<CourseCardProps> = ({ title, description, price, type }) => {
+const CourseCard: React.FC<CourseCardProps> = ({ title, description, price, type, onClick }) => {
   return (
     <div className="border border flex-1 shadow-[0_2px_4px_-2px_rgba(0,0,0,0.1),0_4px_6px_-1px_rgba(0,0,0,0.1)] bg-white p-6 rounded-lg border-solid max-sm:p-4">
       <div className="flex justify-between items-center mb-2">
@@ -63,7 +65,10 @@ const CourseCard: React.FC<CourseCardProps> = ({ title, description, price, type
             <span>Unlock referrals after purchase</span>
           </div>
         </div>
-        <button className="text-white text-xs cursor-pointer bg-blue-600 px-4 py-[9px] rounded-md border-[none] hover:bg-blue-700 transition-colors">
+        <button 
+          onClick={onClick}
+          className="text-white text-xs cursor-pointer bg-blue-600 px-4 py-[9px] rounded-md border-[none] hover:bg-blue-700 transition-colors"
+        >
           Buy Now
         </button>
       </div>
