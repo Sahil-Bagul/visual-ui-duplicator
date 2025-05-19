@@ -19,7 +19,7 @@ const PaymentOption: React.FC<PaymentOptionProps> = ({
   return (
     <div 
       className={`flex items-center p-4 border rounded-lg cursor-pointer transition-colors ${
-        isSelected ? 'border-blue-600 bg-blue-50' : 'border-gray-200'
+        isSelected ? 'border-[#00C853] bg-green-50' : 'border-gray-200'
       }`}
       onClick={onClick}
     >
