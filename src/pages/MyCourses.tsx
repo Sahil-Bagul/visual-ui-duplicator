@@ -8,13 +8,14 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, AlertCircle } from 'lucide-react';
 import { CourseWithProgress, Module } from '@/types/course';
-import { initializeAppData } from '@/utils/autoSetupCourses';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -22,13 +23,14 @@ const MyCourses: React.FC = () => {
 
   useEffect(() => {
     const fetchMyCourses = async () => {
-      if (!user) return;
+      if (!user) {
+        setIsLoading(false);
+        return;
+      }
       
       try {
         setIsLoading(true);
-        
-        // Ensure courses are set up
-        await initializeAppData(user.id);
+        setError(null);
         
         // Get user's purchased courses
         const { data: purchasesData, error: purchasesError } = await supabase
@@ -36,10 +38,19 @@ const MyCourses: React.FC = () => {
           .select('course:courses(*)')
           .eq('user_id', user.id);
           
-        if (purchasesError) throw purchasesError;
+        if (purchasesError && purchasesError.code !== 'PGRST116') {
+          throw purchasesError;
+        }
         
         // Extract course data from the join
         const purchasedCourses = purchasesData?.map(item => item.course) || [];
+        
+        if (purchasedCourses.length === 0) {
+          // No courses found - not an error condition
+          setIsLoading(false);
+          setCourses([]);
+          return;
+        }
         
         // For each course, fetch modules and user progress
         const coursesWithProgress = await Promise.all(
@@ -52,7 +63,17 @@ const MyCourses: React.FC = () => {
               .order('module_order', { ascending: true });
               
             if (modulesError) throw modulesError;
-            const modules = modulesData as Module[];
+            const modules = modulesData as Module[] || [];
+            
+            if (modules.length === 0) {
+              return {
+                ...course,
+                modules: [],
+                totalModules: 0,
+                completedModules: 0,
+                progress: 0
+              };
+            }
             
             // Get user progress for this course's modules
             const { data: progressData, error: progressError } = await supabase
@@ -61,7 +82,9 @@ const MyCourses: React.FC = () => {
               .eq('user_id', user.id)
               .in('module_id', modules.map(module => module.id));
               
-            if (progressError) throw progressError;
+            if (progressError && progressError.code !== 'PGRST116') {
+              throw progressError;
+            }
             
             // Calculate progress
             const totalModules = modules.length;
@@ -80,8 +103,9 @@ const MyCourses: React.FC = () => {
         
         setCourses(coursesWithProgress);
         
-      } catch (error) {
+      } catch (error: any) {
         console.error("Error fetching courses:", error);
+        setError("Failed to load your courses. Please refresh the page or try again later.");
         toast({
           title: "Error",
           description: "Failed to load your courses",
@@ -101,9 +125,21 @@ const MyCourses: React.FC = () => {
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">My Courses</h1>
 
+        {/* Error display */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Error</AlertTitle>
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <p className="text-gray-500">Loading your courses...</p>
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
+              <p className="mt-2 text-gray-500">Loading your courses...</p>
+            </div>
           </div>
         ) : courses.length > 0 ? (
           <div className="space-y-6">

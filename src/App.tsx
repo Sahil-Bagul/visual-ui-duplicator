@@ -1,11 +1,10 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "./context/AuthContext";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -21,21 +20,39 @@ import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
 import { initializeAppData } from "./utils/autoSetupCourses";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 const App = () => {
-  // Initialize course data when the app loads
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Initialize course data when the app loads only once
   useEffect(() => {
     const setupCourses = async () => {
       try {
-        await initializeAppData(undefined);
+        await initializeAppData();
+        console.log("App data initialization complete");
       } catch (error) {
         console.error("Error initializing app data:", error);
+      } finally {
+        setIsInitializing(false);
       }
     };
     
     setupCourses();
   }, []);
+
+  if (isInitializing) {
+    // Optional: You could show a simple loading indicator here
+    // But keeping it minimal to avoid another loading state
+    return null;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
