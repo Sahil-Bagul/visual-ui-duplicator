@@ -1,3348 +1,2148 @@
 
-import { supabase } from "../integrations/supabase/client";
-import { Course, Module, Lesson } from "../types/course";
+import { supabase } from "@/integrations/supabase/client";
 
-/**
- * Checks if a course with the given title already exists
- */
+type LessonData = {
+  title: string;
+  content: string;
+  lesson_order: number;
+};
+
+type ModuleData = {
+  title: string;
+  description: string;
+  module_order: number;
+  lessons: LessonData[];
+};
+
+type CourseData = {
+  title: string;
+  price: number;
+  referral_reward: number;
+  description: string;
+  modules: ModuleData[];
+};
+
+// Check if a course with the given title already exists
 const courseExists = async (title: string): Promise<boolean> => {
   const { data, error } = await supabase
     .from("courses")
     .select("id")
     .eq("title", title)
     .single();
-
+  
   if (error && error.code !== "PGRST116") {
     console.error("Error checking if course exists:", error);
+    return false;
   }
-
+  
   return !!data;
 };
 
-/**
- * Creates a course with modules and lessons
- */
-const createCourse = async (
-  course: Course,
-  modules: Module[],
-  lessonsData: Record<string, Lesson[]>
-): Promise<string | null> => {
+// Check if any courses exist in the database
+const anyCourseExists = async (): Promise<boolean> => {
+  const { count, error } = await supabase
+    .from("courses")
+    .select("*", { count: "exact", head: true });
+  
+  if (error) {
+    console.error("Error checking if any courses exist:", error);
+    return false;
+  }
+  
+  return count !== null && count > 0;
+};
+
+// Create a course with modules and lessons
+const createCourse = async (course: CourseData): Promise<string | null> => {
   try {
-    // Step 1: Insert the course
+    // 1. Create the course
     const { data: courseData, error: courseError } = await supabase
       .from("courses")
       .insert({
         title: course.title,
-        description: course.description,
         price: course.price,
-        image_url: course.image_url,
-        level: course.level,
-        duration: course.duration,
+        referral_reward: course.referral_reward,
+        description: course.description
       })
       .select()
       .single();
-
+    
     if (courseError) {
       console.error("Error creating course:", courseError);
       return null;
     }
-
+    
     const courseId = courseData.id;
-
-    // Step 2: Insert modules
-    for (const moduleData of modules) {
-      const { data: moduleRecord, error: moduleError } = await supabase
-        .from("modules")
+    console.log(`Created course: ${course.title} with ID: ${courseId}`);
+    
+    // 2. Create modules for the course
+    for (const module of course.modules) {
+      const { data: moduleData, error: moduleError } = await supabase
+        .from("course_modules")
         .insert({
           course_id: courseId,
-          title: moduleData.title,
-          description: moduleData.description,
-          order_index: moduleData.order_index,
+          title: module.title,
+          description: module.description,
+          module_order: module.module_order,
+          content: module.description // Using description as content as well
         })
         .select()
         .single();
-
+      
       if (moduleError) {
-        console.error("Error creating module:", moduleError);
+        console.error(`Error creating module ${module.title}:`, moduleError);
         continue;
       }
-
-      // Step 3: Insert lessons for this module
-      const moduleId = moduleRecord.id;
-      const lessons = lessonsData[moduleData.title] || [];
       
-      for (const lesson of lessons) {
-        const { error: lessonError } = await supabase.from("lessons").insert({
-          module_id: moduleId,
-          title: lesson.title,
-          content: lesson.content,
-          order_index: lesson.order_index,
-          duration_minutes: lesson.duration_minutes,
-        });
-
+      const moduleId = moduleData.id;
+      console.log(`Created module: ${module.title} with ID: ${moduleId}`);
+      
+      // 3. Create lessons for the module
+      for (const lesson of module.lessons) {
+        const { error: lessonError } = await supabase
+          .from("lessons")
+          .insert({
+            module_id: moduleId,
+            title: lesson.title,
+            content: lesson.content,
+            lesson_order: lesson.lesson_order
+          });
+        
         if (lessonError) {
-          console.error("Error creating lesson:", lessonError);
+          console.error(`Error creating lesson ${lesson.title}:`, lessonError);
+        } else {
+          console.log(`Created lesson: ${lesson.title}`);
         }
       }
     }
-
-    console.log(`Created course: ${course.title} with ID: ${courseId}`);
+    
     return courseId;
-  } catch (error) {
-    console.error("Error in createCourse:", error);
+  } catch (err) {
+    console.error("Error in createCourse:", err);
     return null;
   }
 };
 
-/**
- * Creates the AI Tools Course with all modules and lessons
- */
-const createAIToolsCourse = async (): Promise<void> => {
-  // Check if course already exists
-  const exists = await courseExists("AI Tools for Students");
-  if (exists) {
-    console.log("AI Tools course already exists, skipping creation");
-    return;
-  }
+// Main function to initialize app data
+export const initializeAppData = async (): Promise<void> => {
+  console.log("Starting app data initialization");
+  try {
+    // Check if courses already exist
+    const coursesExist = await anyCourseExists();
+    
+    if (coursesExist) {
+      console.log("Courses already exist, skipping initialization");
+      return;
+    }
+    
+    console.log("No courses found, initializing app data...");
+    
+    // Create AI Tools course
+    const aiToolsCourse: CourseData = {
+      title: "AI Tools for Students",
+      price: 500,
+      referral_reward: 250,
+      description: "Learn how to use AI tools to boost your productivity and creativity as a student.",
+      modules: [
+        {
+          title: "Introduction to AI Tools",
+          description: "Learn the basics of AI tools and why they are important for students.",
+          module_order: 1,
+          lessons: [
+            {
+              title: "What are AI Tools?",
+              content: `# What are AI Tools?
 
-  const course: Course = {
-    id: "", // Will be assigned by the database
-    title: "AI Tools for Students",
-    description: "Learn how to leverage AI tools to improve your productivity and academic performance.",
-    price: 500, // ₹500
-    image_url: "https://images.unsplash.com/photo-1617791160588-241658c0f566?w=500&h=350&fit=crop",
-    level: "Beginner",
-    duration: "4 hours",
-    user_id: null,
-    created_at: new Date().toISOString(),
-  };
+📱 **AI tools** are computer programs that use artificial intelligence to help you complete tasks faster and better.
 
-  const modules: Module[] = [
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "Introduction to AI Tools",
-      description: "Understanding the basics of AI tools and their applications for students.",
-      order_index: 1,
-    },
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "AI for Research & Writing",
-      description: "Using AI tools to enhance your research and writing process.",
-      order_index: 2,
-    },
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "AI for Study & Productivity",
-      description: "Leveraging AI to study more efficiently and boost productivity.",
-      order_index: 3,
-    },
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "AI Ethics & Future Skills",
-      description: "Understanding ethical considerations and preparing for the future.",
-      order_index: 4,
-    },
-  ];
+## How AI Tools Work
 
-  const lessonsData: Record<string, Lesson[]> = {
-    "Introduction to AI Tools": [
-      {
-        id: "", // Will be assigned by the database
-        module_id: "", // Will be assigned later
-        title: "What are AI Tools?",
-        content: `
-# What are AI Tools?
+AI tools work by:
 
-AI tools are software applications that use artificial intelligence algorithms to perform tasks that typically require human intelligence. These tools can process large amounts of information, recognize patterns, generate content, and even learn from data to improve their performance over time.
+1. **Learning patterns** from huge amounts of data
+2. **Making predictions** or decisions based on what they've learned
+3. **Automating tasks** that would take humans much longer to do
 
-## Key Types of AI Tools for Students:
+## Examples of AI Tools for Students
 
-1. **Text Generation AI**: Tools like ChatGPT, Bard, and Claude that can write essays, summaries, and creative content.
+- **ChatGPT**: Helps with writing, answering questions, and explaining concepts
+- **Notion AI**: Makes note-taking and organizing information easier
+- **Grammarly**: Checks your writing for mistakes and suggests improvements
+- **Canva AI**: Helps design presentations and graphics quickly
 
-2. **Research Assistants**: AI tools that can search and summarize academic papers and provide relevant information.
+## Why AI Tools Matter
 
-3. **Study Companions**: Applications that create flashcards, quizzes, and personalized study materials.
+AI tools are like having a personal assistant that can help with your studies 24/7. They can:
 
-4. **Content Enhancement**: Tools that help improve writing quality, grammar, and style.
+- Save you time on repetitive tasks
+- Help you understand difficult concepts
+- Improve the quality of your work
+- Let you focus on the more important parts of learning
 
-5. **Visual & Audio AI**: Tools that generate images, edit photos, transcribe audio, and create videos.
+💡 **Important**: AI tools are helpers, not replacements for your own thinking! They work best when you use your own knowledge and creativity along with them.`,
+              lesson_order: 1
+            },
+            {
+              title: "Why AI is Important for Students",
+              content: `# Why AI is Important for Students
 
-## How AI Works (Simplified)
+🎓 As a student in today's world, understanding and using AI tools gives you a significant advantage.
 
-AI tools work by using mathematical models trained on vast datasets to recognize patterns and make predictions. For example, ChatGPT was trained on billions of text examples from the internet, allowing it to understand and generate human-like responses to prompts.
+## The Changing Educational Landscape
 
-When you use an AI tool, you're essentially accessing these complex models through a user-friendly interface. The tool processes your input, runs it through its algorithms, and produces output based on its training.
-        `,
-        order_index: 1,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Benefits of AI Tools for Students",
-        content: `
-# Benefits of AI Tools for Students
+The way we learn is changing rapidly because of technology:
 
-AI tools offer numerous advantages that can transform how students learn, research, and complete assignments. Here are the key benefits:
+- **Information overload**: There's more content to learn than ever before
+- **Skill requirements**: Jobs now demand both traditional and digital skills
+- **Competitive environment**: Standing out requires more than just good grades
 
-## Time Efficiency
-- **Rapid Research**: Find relevant information in seconds instead of hours
-- **Quick Drafting**: Generate initial drafts of essays or presentations
-- **Automated Summaries**: Condense lengthy materials into key points
+## Benefits of AI for Students
 
-## Enhanced Learning
-- **Personalized Explanations**: Get concepts explained in a way you understand
-- **Interactive Learning**: Engage with AI tutors that adapt to your pace
-- **Knowledge Gaps**: Identify and address areas where you need improvement
+### 1. Personalized Learning
+- AI can adapt to your learning pace and style
+- Get explanations tailored to your level of understanding
+- Practice exactly what you need to improve on
 
-## Improved Output Quality
-- **Writing Enhancement**: Refine grammar, structure, and style
-- **Creative Inspiration**: Overcome writer's block with AI-generated ideas
-- **Professional Polish**: Create more polished, error-free assignments
+### 2. Time Management
+- Automate routine tasks (summarizing, organizing notes)
+- Focus your time on deeper learning and creative thinking
+- Complete assignments more efficiently
 
-## Skill Development
-- **Digital Literacy**: Build crucial skills for the AI-integrated workplace
-- **Critical Thinking**: Learn to craft effective prompts and evaluate AI outputs
-- **Problem-Solving**: Use AI as a tool within your broader solution approach
+### 3. Access to Resources
+- Get instant answers to questions at any time
+- Access explanations even when teachers aren't available
+- Find learning materials suited to your specific needs
 
-Remember: AI tools work best when you use them as assistants rather than replacements for your own thinking. The most successful students use AI to enhance their work, not to avoid doing the work altogether.
-        `,
-        order_index: 2,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Popular AI Tools Overview",
-        content: `
-# Popular AI Tools Overview
+### 4. Future-Proofing Your Career
+- Most future jobs will require AI literacy
+- Early exposure gives you a head start
+- Understanding AI helps you adapt to changing job markets
 
-Let's explore some of the most useful AI tools available to students today:
+## Real-Life Student Success Stories
 
-## Large Language Models (LLMs)
+> "I used ChatGPT to help brainstorm my project ideas and improved my grades from B to A"
+> 
+> "AI tools helped me manage my time better during exams by organizing my study schedule"
+> 
+> "I learned how to prompt AI effectively and now I can get much better results for my research papers"
 
-### ChatGPT
-- **Developer**: OpenAI
-- **Best For**: Writing assistance, explanations, brainstorming, coding help
-- **Cost**: Free basic version, Premium (Plus) version for ~₹1,600/month
-- **Access**: [chat.openai.com](https://chat.openai.com)
+⚠️ **Remember**: AI tools should support your learning, not replace it. Critical thinking remains essential!`,
+              lesson_order: 2
+            }
+          ]
+        },
+        {
+          title: "AI for Productivity",
+          description: "Discover how AI can help you with research, note-taking, and writing.",
+          module_order: 2,
+          lessons: [
+            {
+              title: "Using ChatGPT for Research & Learning",
+              content: `# Using ChatGPT for Research & Learning
 
-### Bard / Gemini
-- **Developer**: Google
-- **Best For**: Up-to-date information, research help, creative content
-- **Cost**: Free with Google account
-- **Access**: [gemini.google.com](https://gemini.google.com)
+🔍 ChatGPT can transform how you research topics and learn new concepts.
 
-### Claude
-- **Developer**: Anthropic
-- **Best For**: Long-form content, document analysis, nuanced responses
-- **Cost**: Free basic version, Claude Pro for ~₹2,000/month
-- **Access**: [claude.ai](https://claude.ai)
+## What is ChatGPT?
 
-## Writing Assistants
+ChatGPT is an AI assistant created by OpenAI that can:
+- Have conversations on almost any topic
+- Explain complex concepts in simple terms
+- Help you brainstorm and develop ideas
+- Create summaries and outlines
 
-### Grammarly
-- **Best For**: Grammar correction, style improvement, plagiarism checking
-- **Cost**: Free basic version, Premium from ₹1,000/month
-- **Access**: [grammarly.com](https://www.grammarly.com)
+## Effective Research Techniques with ChatGPT
 
-### QuillBot
-- **Best For**: Paraphrasing, summarizing, citation generation
-- **Cost**: Free basic version, Premium from ₹500/month
-- **Access**: [quillbot.com](https://quillbot.com)
+### 1. Ask Clear, Specific Questions
+**Less effective**: "Tell me about photosynthesis"
+**More effective**: "Explain the light-dependent reactions of photosynthesis in simple terms"
 
-## Research Tools
+### 2. Use the Socratic Method
+Ask a series of follow-up questions to dig deeper:
+1. Start with a broad question
+2. Ask for clarification on specific points
+3. Request examples or analogies
+4. Challenge the explanation to test understanding
 
-### Elicit
-- **Best For**: Finding relevant academic papers, summarizing research
-- **Cost**: Free
-- **Access**: [elicit.org](https://elicit.org)
+### 3. Request Different Perspectives
+- "Can you explain this topic from another viewpoint?"
+- "What are some criticisms of this theory?"
+- "How would different experts approach this problem?"
 
-### Consensus
-- **Best For**: Getting evidence-based answers from scientific literature
-- **Cost**: Free basic version
-- **Access**: [consensus.app](https://consensus.app)
+## Study Strategies with ChatGPT
 
-## Productivity Tools
-
-### Notion AI
-- **Best For**: Note-taking, summarizing, writing within Notion
-- **Cost**: ~₹800/month (after Notion subscription)
-- **Access**: Within Notion app
-
-### Otter.ai
-- **Best For**: Transcribing lectures, meetings, and interviews
-- **Cost**: Free basic version, paid plans from ₹850/month
-- **Access**: [otter.ai](https://otter.ai)
-
-In the following lessons, we'll explore how to use these tools effectively and ethically.
-        `,
-        order_index: 3,
-        duration_minutes: 20,
-      },
-    ],
-    "AI for Research & Writing": [
-      {
-        id: "",
-        module_id: "",
-        title: "Effective Prompting Techniques",
-        content: `
-# Effective Prompting Techniques
-
-The quality of output you get from AI tools depends significantly on how well you formulate your prompts. Here are strategies to get better results:
-
-## The CRISPE Framework
-
-A powerful approach to structuring your prompts:
-
-1. **C**apacity (Tell the AI what role to play)
-   - "Act as a history professor specializing in ancient India"
-   - "You are an expert economics tutor explaining concepts to a 1st-year student"
-
-2. **R**equest (Clearly state what you want)
-   - "Explain the concept of price elasticity with simple examples"
-   - "Create a study guide for chapter 5 on cellular respiration"
-
-3. **I**nstruction (Provide specific guidance)
-   - "Use simple language appropriate for high school students"
-   - "Include 3-5 practice problems with solutions"
-   - "Format your response with headings, bullet points, and examples"
-
-4. **S**pecificity (Include relevant details)
-   - "This is for my 12th-grade economics assignment that's due tomorrow"
-   - "I'm specifically interested in applications in the healthcare industry"
-
-5. **P**ersonalization (Tailor to your needs)
-   - "I'm a visual learner, so include diagrams if possible"
-   - "I struggle with mathematical concepts, so provide step-by-step explanations"
-
-6. **E**xamples (Provide examples of what you want)
-   - "For instance, I'd like something similar to this: [example]"
-
-## Prompt Examples
-
-### Weak Prompt:
+### 1. Create Custom Study Guides
 \`\`\`
-Explain photosynthesis.
+Create a study guide for [topic] covering:
+- Key concepts
+- Important formulas
+- Common misconceptions
+- Practice questions with solutions
 \`\`\`
 
-### Strong Prompt:
-\`\`\`
-Act as a biology teacher explaining photosynthesis to a 12th-grade student. Provide a comprehensive explanation of the photosynthesis process, including both the light-dependent and light-independent reactions. Include the chemical equations, where the process occurs in the plant cell, and its ecological importance. Use analogies that would help a visual learner understand the concept better. Format your response with clear headings, bullet points for key facts, and include 3 potential exam questions with answers at the end.
-\`\`\`
-
-## Iterative Prompting
-
-Remember that you can refine your results through follow-up prompts:
-
-1. Start with an initial prompt
-2. Review the AI's response
-3. Follow up with: "That's helpful, but could you go deeper on [specific aspect]?"
-4. Or: "Please rewrite this at a simpler reading level"
-5. Or: "Can you format this as a table instead?"
-
-The most effective AI users engage in multi-turn conversations, refining their requests until they get exactly what they need.
-        `,
-        order_index: 1,
-        duration_minutes: 25,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Research Strategies with AI",
-        content: `
-# Research Strategies with AI
-
-AI tools can transform your research process, helping you find, understand, and synthesize information more efficiently.
-
-## Finding Relevant Sources
-
-### Using Specialized Research AI
-- **Elicit**: Input your research question to find relevant academic papers
-- **Consensus**: Ask specific questions to get evidence-based answers from scientific literature
-- **Connected Papers**: Discover related research through visual graphs
-
-### Prompting General AI for Research
-\`\`\`
-I'm researching [topic] for a college assignment. Can you suggest:
-1. 5 key subtopics I should explore
-2. 10 specific search terms/keywords I should use
-3. Names of 5-7 leading experts or authors in this field
-4. Names of 3-4 reputable journals that publish on this topic
-5. 3 important debates or controversies in this area
-\`\`\`
-
-## Understanding Complex Material
-
-When struggling with difficult papers or concepts:
-
-### For Academic Papers
-\`\`\`
-I'm reading this abstract from an academic paper: [paste abstract]
-
-Please:
-1. Explain the main thesis in simpler terms
-2. Define any technical terminology
-3. Summarize what methods they used
-4. Explain what their key findings were
-5. Why this research matters (its implications)
-\`\`\`
-
-### For Data and Statistics
-\`\`\`
-Here is some data from my research: [paste table/data]
-
-Please:
-1. Explain what trends or patterns you notice
-2. What conclusions might be drawn from this data
-3. What limitations might exist in interpreting this data
-4. Suggest how I might present this visually
-\`\`\`
-
-## Synthesizing Information
-
-After gathering information from multiple sources:
-
-\`\`\`
-I've collected these key points from different sources about [topic]:
-
-1. [point from source 1]
-2. [point from source 2]
-3. [point from source 3]
-
-Please help me:
-1. Identify common themes across these sources
-2. Note any contradictions or disagreements
-3. Suggest a framework for organizing these ideas in my paper
-4. Identify any apparent gaps in my research
-\`\`\`
-
-## Important Reminders
-
-1. **Always verify AI information** with trusted academic sources
-2. **Cite original sources**, not the AI tool
-3. **Check your institution's policy** on using AI for research
-4. **Use AI as a starting point**, not the final authority
-5. **Maintain critical thinking** - question and verify AI outputs
-
-AI tools work best when they supplement your research process rather than replace it. They can help you navigate the vast landscape of information, but your critical analysis remains essential.
-        `,
-        order_index: 2,
-        duration_minutes: 20,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Writing Enhancement with AI",
-        content: `
-# Writing Enhancement with AI
-
-AI tools can significantly improve your writing quality, helping you create more polished, clear, and engaging academic papers, essays, and assignments.
-
-## The Writing Process with AI
-
-### 1. Planning and Outlining
-Use AI to brainstorm ideas and create structured outlines:
-
-\`\`\`
-I need to write a 1500-word essay on [topic]. Please help me create:
-1. A compelling thesis statement
-2. An outline with 3-4 main sections
-3. Key points to cover in each section
-4. Suggestions for types of evidence I should include
-\`\`\`
-
-### 2. Drafting with AI Assistance
-AI can help generate initial drafts based on your outline:
-
-\`\`\`
-Based on this outline:
-[paste your outline]
-
-Please write an initial draft of the introduction paragraph that:
-- Hooks the reader with an interesting fact/statistic
-- Provides necessary background context
-- Presents my thesis statement
-- Briefly outlines what the paper will cover
-\`\`\`
-
-You can request similar assistance for body paragraphs and conclusions.
-
-### 3. Revision and Improvement
-AI excels at helping you refine your existing text:
-
-\`\`\`
-Please improve this paragraph:
-[paste your paragraph]
-
-Specifically:
-- Make the language more academic but still clear
-- Strengthen the topic sentence
-- Ensure smooth transitions between ideas
-- Suggest better word choices for any repetitive or vague terms
-\`\`\`
-
-### 4. Editing and Proofreading
-AI can catch errors and suggest improvements:
-
-\`\`\`
-Please proofread this text for:
-[paste your text]
-
-1. Grammar and spelling errors
-2. Punctuation issues
-3. Sentence structure problems
-4. Consistency in tense and voice
-5. Overly complex or unclear sentences
-\`\`\`
-
-## Specialized Writing Assistance
-
-### For Academic Language
-\`\`\`
-Please help me rephrase these informal statements in more academic language suitable for a university assignment:
-1. [informal sentence 1]
-2. [informal sentence 2]
-3. [informal sentence 3]
-\`\`\`
-
-### For Clarity and Conciseness
-\`\`\`
-These sentences are too wordy or unclear. Please help me make them more concise while preserving their meaning:
-1. [wordy sentence 1]
-2. [wordy sentence 2]
-\`\`\`
-
-### For Paraphrasing
-\`\`\`
-I need to incorporate this information from a source, but I want to paraphrase it properly:
-[paste original text]
-
-Please provide 2-3 different ways to paraphrase this while:
-- Maintaining accuracy to the original meaning
-- Using different sentence structures
-- Changing vocabulary where appropriate
-- Ensuring it doesn't look like plagiarism
-\`\`\`
-
-## Ethical Considerations
-
-1. **Always review and edit AI-generated content** - it should reflect your voice and thinking
-2. **Understand your institution's policy** on AI writing assistance
-3. **Develop your own writing skills** alongside using AI
-4. **Cite properly** - if the AI helps you summarize a source, you still need to cite that source
-5. **Use AI as a tool, not a replacement** for your own critical thinking and expression
-
-When used ethically, AI writing tools can help you focus on your ideas and arguments while improving the technical aspects of your writing.
-        `,
-        order_index: 3,
-        duration_minutes: 25,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Citation and Plagiarism Checking",
-        content: `
-# Citation and Plagiarism Checking
-
-Proper citation and avoiding plagiarism are critical in academic work. AI tools can help with both creating citations and checking for unintentional plagiarism.
-
-## Creating Citations with AI
-
-### Using Specialized Citation Tools
-- **Zotero** (with GPT integration): Manages references and can generate citations
-- **Cite This For Me**: Creates citations in various formats
-- **Google Scholar**: Provides ready-made citations for academic papers
-
-### Using LLMs for Citations
-You can ask AI to format citations for you:
-
-\`\`\`
-Please create citations in [APA/MLA/Chicago] format for these sources:
-
-1. Book: "Artificial Intelligence: A Modern Approach" by Stuart Russell and Peter Norvig, published by Pearson in 2021, 4th edition
-
-2. Journal article: "Machine Learning Applications in Education" by Sarah Johnson and Michael Chen, published in Journal of Educational Technology, Volume 45, Issue 3, pages 112-130, published in 2022
-
-3. Website: "The Impact of AI on Future Work" by World Economic Forum, published on their website (weforum.org) on March 15, 2023, accessed on [your access date]
-\`\`\`
-
-### Converting Between Citation Styles
-If you need to change citation formats:
-
-\`\`\`
-Please convert these MLA citations to APA format:
-1. [paste MLA citation 1]
-2. [paste MLA citation 2]
-\`\`\`
-
-## Creating In-Text Citations
-For help with in-text citations:
-
-\`\`\`
-Please show me how to create proper in-text citations in APA style for these scenarios:
-1. Direct quote from page 45 of a book by Smith (2021)
-2. Paraphrasing an idea from an article with two authors, Jones and Brown (2022)
-3. Referencing information from a source with three or more authors
-4. Citing multiple sources that support the same point
-5. Citing a source that was cited in another source (secondary source)
-\`\`\`
-
-## Checking for Plagiarism
-
-### Using Specialized Tools
-- **Turnitin**: The standard in many educational institutions
-- **Grammarly Premium**: Includes plagiarism checking
-- **Quetext**: Offers plagiarism detection
-
-### Using AI to Check for Unintentional Plagiarism
-You can ask an AI to evaluate if your writing might be too close to the original:
-
-\`\`\`
-Original source text: [paste original text]
-
-My version: [paste your version]
-
-Please evaluate if my version is sufficiently paraphrased or if it might be considered plagiarism. Suggest improvements to make it more original while maintaining the key information.
-\`\`\`
-
-### Having AI Help Identify What Needs Citation
-If you're unsure what requires citation:
-
-\`\`\`
-Here is a paragraph from my essay: [paste paragraph]
-
-Please identify any statements, facts, statistics, or ideas that would require citation, and explain why they need to be cited.
-\`\`\`
-
-## Best Practices for Avoiding Plagiarism
-
-1. **Always cite sources** for facts, data, opinions, and direct quotes
-2. **Use quotation marks** for exact wording from sources
-3. **Paraphrase thoroughly** by completely recasting the information in your own words
-4. **Keep detailed records** of all sources consulted
-5. **Consider AI-generated content** - some institutions require disclosure when AI tools were used
-
-## Common Citation Mistakes to Avoid
-
-1. **Incorrect formatting** of citations
-2. **Missing information** (like page numbers for direct quotes)
-3. **Inconsistent citation style** throughout a document
-4. **Failing to cite paraphrased content**
-5. **Over-reliance on direct quotes** instead of synthesizing information
-
-Remember that proper citation isn't just about avoiding plagiarism—it's about participating in academic discourse by acknowledging the sources that have informed your thinking.
-        `,
-        order_index: 4,
-        duration_minutes: 20,
-      },
-    ],
-    "AI for Study & Productivity": [
-      {
-        id: "",
-        module_id: "",
-        title: "Creating Study Materials with AI",
-        content: `
-# Creating Study Materials with AI
-
-AI tools can help you create effective, personalized study materials that match your learning style and the specific content you need to master.
-
-## Generating Comprehensive Notes
-
-Ask AI to help organize and expand your existing notes:
-
-\`\`\`
-Here are my rough notes from today's lecture on [topic]:
-[paste your notes]
-
-Please help me:
-1. Organize these into clear sections with headings
-2. Expand on key concepts that need more explanation
-3. Add definitions for important terms
-4. Create a summary of the most important points
-5. Format everything in a clean, readable way
-\`\`\`
-
-## Creating Flashcards
-
-AI can help you generate effective flashcards for memorization:
-
-\`\`\`
-I need to create flashcards to study [topic]. 
-
-Please generate 15 question-answer pairs that cover:
-1. Key definitions
-2. Important concepts
-3. Relationships between ideas
-4. Applications of the theory
-5. Common exam questions on this topic
-
-Format each as:
-Q: [question]
-A: [concise answer]
-\`\`\`
-
-You can then transfer these to physical flashcards or digital flashcard apps like Anki or Quizlet.
-
-## Generating Practice Questions
-
-Practice testing is one of the most effective study techniques. AI can create custom practice questions:
-
-\`\`\`
-I'm studying [topic] at the undergraduate level. Please create:
-
-1. 5 multiple-choice questions with explanations for each answer option
-2. 3 short-answer questions that test conceptual understanding
-3. 2 essay-style questions that would require integrating multiple concepts
-4. 1 case study scenario where I need to apply what I've learned
-
-Include an answer key with detailed explanations.
-\`\`\`
-
-## Creating Mind Maps and Visual Aids
-
-If you're a visual learner, ask AI to help structure visual study aids:
-
-\`\`\`
-I need to create a mind map about [topic]. Please help me by:
-
-1. Identifying the central concept
-2. Listing 4-6 main branches/categories
-3. For each branch, suggesting 3-5 subtopics or details
-4. Noting important connections between different branches
-5. Suggesting any color-coding or visual organization that might help
-
-I'll use this structure to draw my own mind map.
-\`\`\`
-
-## Personalized Study Guides
-
-Before exams, create comprehensive study guides:
-
-\`\`\`
-I have an exam on [subject/topics] in two weeks. Please create a comprehensive study guide that includes:
-
-1. A list of all key topics and concepts to master
-2. Explanations of the most difficult concepts
-3. Formulas or equations I need to memorize
-4. A suggested study schedule breaking the material into manageable sections
-5. Different types of practice questions
-6. Memory techniques for difficult-to-remember information
-7. Common pitfalls or mistakes to avoid
-\`\`\`
-
-## Summarizing Complex Materials
-
-When dealing with difficult readings or textbooks:
-
-\`\`\`
-I'm struggling to understand this textbook chapter: [paste excerpt or describe content]
-
-Please:
-1. Summarize the main points in simpler language
-2. Explain the key concepts as if teaching a beginner
-3. Provide real-world examples that illustrate these concepts
-4. Create an analogy that would help me understand and remember this
-5. Suggest questions I should be able to answer if I understand this material
-\`\`\`
-
-## Study Tips
-
-1. **Actively engage** with AI-generated materials - don't just passively read them
-2. **Customize the output** to match your learning style and needs
-3. **Use the AI iteratively** - refine requests based on what you get
-4. **Mix AI assistance with traditional methods** for better retention
-5. **Create materials progressively** - start with basic understanding and build up complexity
-
-Remember that creating study materials is itself a valuable learning exercise. Use AI to enhance this process, not to bypass the learning opportunity it represents.
-        `,
-        order_index: 1,
-        duration_minutes: 25,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "AI as a Study Partner",
-        content: `
-# AI as a Study Partner
-
-AI can serve as an always-available study partner that adapts to your needs, helps you work through problems, and keeps you accountable to your learning goals.
-
-## Socratic Teaching
-
-One of the most powerful ways to use AI for learning is to engage in Socratic dialogue:
-
-\`\`\`
-I'm trying to understand [concept]. Rather than just explaining it to me, could you use the Socratic method to help me think through it? Ask me guiding questions, give me hints when I'm stuck, and help me reach my own understanding.
-\`\`\`
-
-Example interaction:
-You: "I'm trying to understand how natural selection works in evolution."
-AI: "Let's explore that together. What do you already know about natural selection?"
-You: [share your current understanding]
-AI: "Good start. Now, what do you think happens in a population when some individuals have traits that help them survive better than others?"
-...and so on
-
-## Problem-Solving Assistance
-
-When stuck on homework or practice problems:
-
-\`\`\`
-I'm working on this problem and I'm stuck:
-[paste problem]
-
-Here's what I've tried so far:
-[describe your attempt]
-
-Here's where I'm getting confused:
-[explain your confusion]
-
-Please don't solve it completely for me, but give me:
-1. A hint about what concept I should apply
-2. A suggestion for a different approach
-3. A similar but simpler example that might help me understand
-\`\`\`
-
-## Exam Preparation
-
-For targeted exam preparation:
-
-\`\`\`
-I have an exam on [subject] in [timeframe]. The format will be [describe format].
-
-The main topics covered will be:
-1. [topic 1]
-2. [topic 2]
-3. [topic 3]
-
-Please act as my study coach and:
-1. Create a realistic study schedule
-2. Ask me challenging questions about each topic
-3. Give me constructive feedback on my answers
-4. Help me identify and address knowledge gaps
-5. Provide memory techniques for the most challenging content
-\`\`\`
-
-## Simulated Discussion Partner
-
-To deepen your understanding through discussion:
-
-\`\`\`
-I want to discuss [topic/theory] to deepen my understanding. Please role-play as a knowledgeable peer student who has a good grasp of this topic.
-
-Ask me thoughtful questions about the topic, challenge my understanding respectfully, and offer alternative perspectives. If I make any factual errors, gently correct me. Try to make our discussion feel like a natural conversation between classmates.
-\`\`\`
-
-## Accountability Coach
-
-To help maintain motivation and track progress:
-
-\`\`\`
-I'm working on [assignment/project/exam prep] with the following goals:
-1. [goal 1 with deadline]
-2. [goal 2 with deadline]
-3. [goal 3 with deadline]
-
-Please act as my accountability coach by:
-1. Checking in on my progress
-2. Helping me break tasks into manageable steps
-3. Providing encouragement when I'm struggling
-4. Suggesting strategies when I face obstacles
-5. Celebrating my successes
-\`\`\`
-
-## Learning Style Adaptation
-
-To get explanations tailored to your learning style:
-
-\`\`\`
-I'm trying to understand [concept] but I'm having trouble. I learn best through [visual examples/practical applications/analogies to everyday life/step-by-step processes/etc.].
-
-Could you explain this concept in a way that matches my learning style?
-\`\`\`
-
-## Concept Mapping
-
-To connect new concepts with what you already know:
-
-\`\`\`
-I'm learning about [new concept]. I already understand these related concepts:
-1. [familiar concept 1]
-2. [familiar concept 2]
-
-Can you help me connect this new concept to what I already know? How is it similar to or different from these familiar concepts? What are the key relationships I should understand?
-\`\`\`
+### 2. Test Your Understanding
+- Ask ChatGPT to quiz you on a topic
+- Request explanations for why your answers are right or wrong
+- Have it create practice problems at different difficulty levels
+
+### 3. Simplify Complex Material
+- Ask for explanations "as if I'm 10 years old"
+- Request metaphors or analogies to understand difficult concepts
+- Break down complicated processes step by step
+
+## Important Limitations
+
+⚠️ **Always verify information** from ChatGPT with reliable sources
+⚠️ ChatGPT may occasionally provide incorrect information
+⚠️ It has limited knowledge of events after its training cutoff date
+
+💡 **Pro Tip**: Keep a log of your best prompts for different types of academic tasks!`,
+              lesson_order: 1
+            },
+            {
+              title: "Using Notion AI for Note-taking & Planning",
+              content: `# Using Notion AI for Note-taking & Planning
+
+📝 Notion AI combines the power of a versatile note-taking app with AI assistance to transform how you organize your studies.
+
+## What is Notion AI?
+
+Notion is a productivity tool that lets you create:
+- Notes and documents
+- Databases and tables
+- To-do lists and task trackers
+- Wikis and knowledge bases
+
+Notion AI adds artificial intelligence capabilities directly into this system.
+
+## Setting Up Your Notion Student System
+
+### 1. Create a Dashboard
+Start with a simple dashboard containing:
+- Current classes/subjects
+- Upcoming assignments
+- Weekly schedule
+- Goals tracker
+
+### 2. Build Subject Databases
+For each subject, create a database with:
+- Lecture notes
+- Reading notes
+- Assignments
+- Resources
+- Practice problems
+
+## Using Notion AI for Better Notes
+
+### 1. Summarizing Content
+After taking detailed notes in class:
+- Highlight the section
+- Use "/AI Summarize" command
+- Review and edit the summary
+- Create bullet-point key takeaways
+
+### 2. Expanding on Ideas
+When you have a basic concept but need more detail:
+- Write down the core idea
+- Use "/AI Help me finish writing this"
+- Specify the tone and depth you want
+
+### 3. Creating Study Materials
+- Transform lecture notes into flashcards
+- Generate practice questions
+- Create concept maps by asking AI to identify connections
+
+## Planning and Task Management
+
+### 1. Smart To-Do Lists
+Use Notion AI to:
+- Break down large assignments into manageable steps
+- Suggest realistic timeframes for tasks
+- Prioritize your work based on deadlines and importance
+
+### 2. Time Blocking Templates
+- Create time block templates for different types of days
+- Ask AI to suggest optimal study schedules
+- Generate daily routines that balance work and breaks
+
+### 3. Progress Tracking
+- Build habit trackers for consistent study
+- Create reflection templates for weekly review
+- Use AI to analyze your productivity patterns
+
+## Tips for Notion AI Success
+
+💡 **Consistency is key**: Update your system regularly
+💡 **Start simple**: Begin with basic templates and expand
+💡 **Personalize**: Adapt examples to your specific needs
+💡 **Regularly review**: Refine your system as you learn what works
+
+⚠️ **Remember**: The best system is one you'll actually use!`,
+              lesson_order: 2
+            },
+            {
+              title: "Grammarly & Quillbot for Writing Help",
+              content: `# Grammarly & Quillbot for Writing Help
+
+✏️ These AI writing assistants can significantly improve your academic writing quality and efficiency.
+
+## Grammarly: Your Writing Coach
+
+### What Grammarly Does
+Grammarly is an AI-powered writing assistant that helps with:
+- Grammar and spelling corrections
+- Punctuation and sentence structure
+- Tone adjustments
+- Clarity and conciseness
+- Plagiarism detection (Premium)
+
+### How to Use Grammarly Effectively
+
+#### 1. Set Up Your Goals
+Before checking a document, configure:
+- Audience (professors, peers, general)
+- Formality level
+- Domain (academic, general)
+- Intent (inform, describe, convince)
+
+#### 2. Beyond Basic Corrections
+Look for:
+- **Clarity suggestions**: Making your writing more understandable
+- **Engagement tips**: Avoiding repetitive or dull language
+- **Delivery adjustments**: Ensuring appropriate tone
+- **Full-sentence rewrites**: Alternative ways to express ideas
+
+#### 3. Grammarly for Different Assignment Types
+- **Essays**: Focus on clarity, coherence, and academic tone
+- **Research papers**: Check for formal language and precise vocabulary
+- **Emails to professors**: Ensure professional but friendly tone
+- **Creative writing**: Balance correctness with stylistic choices
+
+## Quillbot: Paraphrasing and Rewriting
+
+### What Quillbot Does
+Quillbot specializes in:
+- Paraphrasing text while preserving meaning
+- Offering multiple rewriting styles
+- Summarizing long content
+- Simplifying complex text
+- Expanding brief notes into full sentences
+
+### Using Quillbot Wisely
+
+#### 1. Paraphrasing Modes
+Choose the right mode for your needs:
+- **Standard**: Balanced changes while preserving meaning
+- **Fluency**: Focuses on natural-sounding language
+- **Formal**: Academic and professional language
+- **Simple**: Makes complex content easier to understand
+- **Creative**: More extensive rewrites (use cautiously)
+
+#### 2. Smart Research Techniques
+- Paste complex explanations to get simplified versions
+- Rewrite to ensure you truly understand the content
+- Compare original text with paraphrased version to check meaning preservation
+
+#### 3. Avoiding Plagiarism
+- Use Quillbot to understand concepts in your own words
+- Always cite sources when paraphrasing ideas from others
+- Don't rely solely on AI—add your own analysis and thoughts
+
+## Best Practices for Both Tools
+
+### Do:
+✅ Review all AI suggestions before accepting
+✅ Learn from corrections to improve your writing
+✅ Use them as learning tools, not just quick fixes
+✅ Maintain your unique voice and ideas
+
+### Don't:
+❌ Accept all suggestions without thinking
+❌ Use them to write entire assignments for you
+❌ Forget to proofread the final result yourself
+
+💡 **Pro Tip**: Use Grammarly first for corrections, then Quillbot for paraphrasing if needed, then Grammarly again to check the final result.`,
+              lesson_order: 3
+            }
+          ]
+        },
+        {
+          title: "AI for Creativity",
+          description: "Learn how to use AI tools for design, images, video, and music creation.",
+          module_order: 3,
+          lessons: [
+            {
+              title: "Using Canva AI for Design",
+              content: `# Using Canva AI for Design
+
+🎨 Canva AI transforms how students create visual content—making professional-quality design accessible to everyone.
+
+## What is Canva AI?
+
+Canva is a graphic design platform that now includes powerful AI features:
+- Text-to-image generation
+- Magic Design (instant layouts)
+- Magic Write (text generation)
+- Magic Edit (image manipulation)
+- Background remover
+- Style applicator
+
+## Getting Started with Canva AI
+
+### 1. Setting Up Your Account
+- Sign up for a free account (student email may give you premium features)
+- Explore the dashboard and templates
+- Enable the "Magic" features in your account settings
+
+### 2. Understanding the Canvas
+- Templates vs. blank designs
+- Element library
+- Text and font options
+- Upload section for your own images
+
+## Essential Canva AI Features for Students
+
+### 1. Magic Design
+Perfect for creating quick, professional presentations:
+1. Enter your topic
+2. Select the type of design (presentation, poster, social media)
+3. Choose a style that matches your project
+4. Customize colors and imagery to your preference
+
+### 2. Magic Write
+Helps generate text content for your designs:
+- Product descriptions
+- Headlines and titles
+- Brief explanations
+- Bulleted lists
+
+### 3. Text to Image
+Create custom images for your projects:
+- Describe what you want ("A 3D render of quantum computing principles")
+- Specify style ("in a minimalist style with blue and purple colors")
+- Generate multiple options
+- Fine-tune with additional prompts
+
+## Project Examples with Canva AI
+
+### Academic Presentations
+1. Choose a presentation template
+2. Use Magic Write to generate outline points
+3. Use Text to Image for conceptual illustrations
+4. Apply consistent styling with Brand Kit
+
+### Study Materials
+1. Create flashcard templates
+2. Generate concept diagrams with Text to Image
+3. Use Magic Design for visual summaries
+4. Export as PDFs for printing or sharing
+
+### Project Posters
+1. Start with a poster template
+2. Generate a striking main image with Text to Image
+3. Use Magic Write for concise descriptions
+4. Export in high resolution for printing
+
+## Tips for Better Canva AI Results
+
+### For Text Generation:
+- Be specific about tone and purpose
+- Edit generated text to add your personal insights
+- Use as starting points, not final content
+
+### For Image Creation:
+- Use detailed descriptions including style, colors, and mood
+- Try variations of the same prompt
+- Combine AI-generated elements with stock photos for unique results
+
+### For Presentations:
+- Maintain consistent visual language
+- Focus on one key point per slide
+- Use AI to create visual metaphors for complex concepts
+
+💡 **Pro Tip**: Save your best AI-generated designs as templates for future projects!`,
+              lesson_order: 1
+            },
+            {
+              title: "Using Leonardo AI for Images",
+              content: `# Using Leonardo AI for Images
+
+🖼️ Leonardo AI is a powerful tool that lets students create professional-quality images from text descriptions—no artistic skills required.
+
+## What is Leonardo AI?
+
+Leonardo AI is a text-to-image generation platform that:
+- Creates detailed images from written descriptions
+- Offers various artistic styles and models
+- Allows image modifications and variations
+- Provides resolution upscaling
+- Enables inpainting for targeted edits
+
+## Getting Started with Leonardo AI
+
+### 1. Creating an Account
+- Sign up for a free account (gives limited generations)
+- Explore the gallery for inspiration
+- Understand token limitations (free vs. paid)
+
+### 2. Navigate the Interface
+- Generation tab for creating new images
+- Community tab for inspiration
+- Workshop for editing images
+- Canvas for more complex compositions
+
+## Creating Effective Prompts
+
+### 1. Basic Prompt Structure
+A good prompt includes:
+- **Subject**: What you want to see
+- **Medium**: Painting, photo, 3D render, etc.
+- **Style**: Artistic influence or genre
+- **Mood**: Lighting and emotional tone
+- **Details**: Colors, composition, specific elements
+
+### 2. Example Prompts for Academic Use
+
+#### For Biology:
+"A detailed 3D render of a human cell, showing organelles in bright colors, educational style, cutaway view revealing internal structures, scientific accuracy, white background, suitable for textbook illustration"
+
+#### For History:
+"A digital painting of Ancient Roman marketplace, bustling with people in togas, detailed architecture, warm sunset lighting, historically accurate details, cinematic composition"
+
+#### For Physics:
+"A conceptual illustration of quantum entanglement, particles connected with glowing blue energy, dark background with subtle stars, science fiction style, digital art"
+
+## Projects for Students
+
+### 1. Visual Study Notes
+- Generate images that represent complex concepts
+- Create memorable visual analogies
+- Combine with text for better retention
+
+### 2. Project Illustrations
+- Generate unique images for research papers
+- Create custom diagrams for presentations
+- Visualize abstract concepts for better understanding
+
+### 3. Custom Visuals for Presentations
+- Consistent style across all slides
+- Attention-grabbing title images
+- Visual metaphors that enhance your points
+
+## Advanced Techniques
+
+### 1. Image-to-Image Generation
+- Start with a simple sketch
+- Have Leonardo AI transform it into a detailed image
+- Maintain specific layout while enhancing quality
+
+### 2. Working with Negative Prompts
+- Specify what you DON'T want in the image
+- Example: "No text, no watermarks, no blurry elements"
+- Helps avoid common AI generation issues
+
+### 3. Fine-tuning Results
+- Use the variation feature to explore similar options
+- Try different models for different art styles
+- Experiment with prompt weights to emphasize elements
 
 ## Best Practices
 
-1. **Be honest about your understanding** - AI works best when it knows your actual level
-2. **Take breaks from AI** - traditional study methods and human interaction remain valuable
-3. **Use AI to supplement, not replace, your thinking** - the goal is to build your understanding
-4. **Verify important information** with course materials and instructors
-5. **Maintain agency in your learning** - direct the AI rather than just consuming its output
+✅ Always cite AI as a tool if using images in academic work
+✅ Check institutional policies on AI-generated content
+✅ Combine AI-generated images with your own analysis
+✅ Use for concepts that are difficult to photograph or draw manually
 
-When used effectively, AI can be like having a patient, knowledgeable study partner available 24/7 to support your learning journey.
-        `,
-        order_index: 2,
-        duration_minutes: 20,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Productivity Systems with AI",
-        content: `
-# Productivity Systems with AI
+💡 **Pro Tip**: Keep a document of your most successful prompts for future reference!`,
+              lesson_order: 2
+            }
+          ]
+        },
+        {
+          title: "AI Ethics & Best Practices",
+          description: "Understand the ethical considerations and best practices for using AI tools as a student.",
+          module_order: 4,
+          lessons: [
+            {
+              title: "Academic Integrity with AI",
+              content: `# Academic Integrity with AI
 
-AI tools can transform how you manage your academic workload, helping you stay organized, prioritize effectively, and maximize your productive time.
-
-## Creating Personalized Productivity Systems
-
-AI can help you design systems tailored to your needs:
-
-\`\`\`
-I need help creating a productivity system for managing my college workload. Here's my situation:
-
-- I'm taking [list courses]
-- I have [list commitments] outside of class
-- My energy is highest in the [morning/afternoon/evening]
-- I struggle most with [your challenges]
-- My goals this term are [your goals]
-
-Please suggest:
-1. A daily/weekly schedule template
-2. A task management approach that would work for me
-3. Study blocks and break schedules
-4. How to track assignments and deadlines
-5. Strategies for handling my specific challenges
-\`\`\`
-
-## Time Blocking and Scheduling
-
-For help with time management:
-
-\`\`\`
-I need to create a time-blocked schedule for next week. Here are my commitments:
-
-- Classes: [list with times]
-- Work: [list with times]
-- Assignments due: [list with deadlines]
-- Other commitments: [list with times]
-
-Please help me create a daily schedule that includes:
-1. Dedicated study blocks for each subject
-2. Time for assignment work
-3. Breaks and self-care
-4. Buffer time for unexpected issues
-5. Preparation time before classes
-\`\`\`
-
-## Task Prioritization
-
-When overwhelmed with too many tasks:
-
-\`\`\`
-I'm feeling overwhelmed with all these tasks. Please help me prioritize them using the Eisenhower Matrix (urgent/important framework):
-
-[List all your tasks]
-
-For each task, please categorize it as:
-1. Urgent and important (do immediately)
-2. Important but not urgent (schedule time)
-3. Urgent but not important (delegate if possible)
-4. Neither urgent nor important (eliminate or minimize)
-
-Then suggest an action plan for tackling them efficiently.
-\`\`\`
-
-## Project Planning and Breakdown
-
-For large assignments or projects:
-
-\`\`\`
-I have a [type of assignment] on [topic] due on [date]. It's approximately [length/scope].
-
-Please help me:
-1. Break this project into smaller, manageable tasks
-2. Create a timeline working backward from the due date
-3. Suggest milestones to check my progress
-4. Identify resources I'll need at each stage
-5. Flag potential challenges I might face and how to prepare for them
-\`\`\`
-
-## Focus and Distraction Management
-
-For improving concentration:
-
-\`\`\`
-I struggle with [specific distraction issues] when trying to study. Based on current research on focus and productivity, please suggest:
-
-1. Specific techniques to improve my concentration
-2. Environmental adjustments I could make
-3. Digital tools to block distractions
-4. Study methods that work well for people with attention challenges
-5. A progressive plan to build my focus muscle over time
-\`\`\`
-
-## Creating Accountability Systems
-
-For motivation and tracking:
-
-\`\`\`
-I need an accountability system to make sure I'm making progress on my goals. My main academic goals this term are:
-
-[List your goals]
-
-Please help me design:
-1. A tracking system to monitor my progress
-2. Regular check-in questions I should ask myself
-3. Meaningful rewards for hitting milestones
-4. Recovery plans for if I fall behind
-5. How to measure my success beyond just grades
-\`\`\`
-
-## Habit Building for Academic Success
-
-For developing good study habits:
-
-\`\`\`
-I want to build these study habits:
-1. [habit 1]
-2. [habit 2]
-3. [habit 3]
-
-For each habit, please help me:
-1. Break it down into a tiny, easy-to-start version
-2. Identify potential triggers or cues
-3. Design a reward system
-4. Create a plan for tracking
-5. Suggest how to handle inevitable lapses
-\`\`\`
-
-## Productivity Tips for Specific Subjects
-
-For tailored approaches to different subjects:
-
-\`\`\`
-I'm studying [subject] and finding it challenging to be productive with this material. Can you suggest specific productivity techniques or approaches that work particularly well for this type of subject matter?
-\`\`\`
-
-## Best Practices
-
-1. **Start small** and build up - don't try to overhaul your entire system at once
-2. **Experiment and iterate** - be willing to adapt what doesn't work
-3. **Consider your personal working style** - not every productivity trend will work for you
-4. **Build in flexibility** - rigid systems often fail under pressure
-5. **Use technology wisely** - digital tools should reduce friction, not add complexity
-
-Remember that productivity is personal. The best system is one that you'll actually use consistently, so focus on sustainability rather than complexity.
-        `,
-        order_index: 3,
-        duration_minutes: 20,
-      },
-    ],
-    "AI Ethics & Future Skills": [
-      {
-        id: "",
-        module_id: "",
-        title: "Ethical Use of AI in Education",
-        content: `
-# Ethical Use of AI in Education
-
-As AI tools become increasingly integrated into educational settings, it's crucial to use them ethically and responsibly.
+🧠 Using AI tools in academics requires understanding ethical boundaries and maintaining your educational integrity.
 
 ## Understanding Academic Integrity
 
-### What Constitutes Academic Dishonesty with AI?
-- **Submitting AI-generated work as your own** without significant contribution
-- **Using AI to complete assessments** designed to test your knowledge
-- **Having AI solve problems** without understanding the solution
-- **Misrepresenting your use of AI** when required to disclose it
-
-### What Constitutes Ethical AI Use?
-- **Using AI as a learning assistant** to help you understand concepts
-- **Employing AI for brainstorming and ideation**
-- **Having AI provide feedback** on your own work
-- **Using AI to organize or format** information you've researched
-- **Disclosing AI use** when required by your institution
-
-## Institutional Policies
-
-### Common Institutional Approaches
-1. **Prohibition**: Some institutions ban AI use entirely for assignments
-2. **Disclosure**: Some require students to disclose when and how AI was used
-3. **Integration**: Some actively incorporate AI tools into the curriculum
-4. **Case-by-case**: Some leave it to individual instructors' discretion
-
-### Checking Your Institution's Policy
-- Review your course syllabi for AI policies
-- Check your institution's academic integrity guidelines
-- Ask instructors directly about their expectations
-- When in doubt, disclose your use of AI tools
-
-## Ethical Decision-Making Framework
-
-When considering whether to use AI for an academic task, ask yourself:
-
-1. **Purpose Test**: What is the educational purpose of this assignment? Will using AI undermine that purpose?
-
-2. **Learning Test**: Will using AI enhance my learning or bypass it?
-
-3. **Disclosure Test**: Would I be comfortable telling my instructor exactly how I used AI for this task?
-
-4. **Fairness Test**: Does using AI in this way give me an unfair advantage over other students?
-
-5. **Future Test**: Will this approach prepare me for future academic or career success?
-
-## Transparency and Documentation
-
-### Best Practices for Transparent AI Use
-- **Keep records** of your interactions with AI tools
-- **Save original AI outputs** before your revisions
-- **Be prepared to explain** your process including AI assistance
-- **Document your own contributions** clearly
-- **Be honest about limitations** in your understanding
-
-### Sample AI Use Disclosure Statement
-\`\`\`
-In completing this assignment, I used [AI tool] to assist with [specific aspects]. 
-The AI helped me [what it did], but all final decisions, edits, and conclusions are 
-my own. I have verified all information provided by the AI against reliable sources,
-and I understand the material presented in this work.
-\`\`\`
-
-## Balancing AI Assistance with Personal Growth
-
-### Signs You May Be Over-Relying on AI
-- You don't understand the final product you're submitting
-- You couldn't reproduce the work without AI assistance
-- You're using AI to avoid challenging aspects of learning
-- You're not developing the skills the assignment is designed to build
-
-### Healthy Integration Strategies
-- Use AI to enhance understanding, then complete work independently
-- Have AI explain concepts, then apply them yourself
-- Use AI for feedback on work you've already attempted
-- Treat AI as a tutor or study partner, not a substitute for your own efforts
-
-Remember that the goal of education is not just completing assignments, but developing your own knowledge, skills, and abilities. AI should support that growth, not replace it.
-        `,
-        order_index: 1,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Limitations and Risks of AI Tools",
-        content: `
-# Limitations and Risks of AI Tools
-
-While AI tools offer tremendous benefits, they also come with significant limitations and risks that students must understand.
-
-## Technical Limitations
-
-### Hallucinations and Fabrications
-- AI can **generate false information** that sounds convincing
-- It may **invent citations, quotes, and references** that don't exist
-- It can **create plausible-sounding but incorrect explanations**
-
-### Knowledge Cutoffs
-- Most AI models have a **knowledge cutoff date**
-- They may not know about **recent events, research, or discoveries**
-- Information about **niche or specialized topics** may be limited or outdated
-
-### Contextual Understanding
-- AI may **misunderstand the context** of your request
-- It might **miss nuances** in complex topics
-- It can **struggle with highly technical or specialized terminology**
-
-## Verification Strategies
-
-### For Factual Information
-1. **Cross-check key facts** with reliable academic sources
-2. **Verify all statistics and data** mentioned by the AI
-3. **Confirm all references and citations** exist and say what the AI claims
-4. **Be extra cautious about recent developments** (post-knowledge cutoff)
-5. **Check information about specialized fields** with field-specific resources
-
-### For Conceptual Understanding
-1. **Test your understanding** by applying concepts to new examples
-2. **Explain the concept in your own words** to check comprehension
-3. **Compare AI explanations** with course materials and textbooks
-4. **Identify contradictions** between different AI responses
-5. **Ask human experts** (professors, TAs) when in doubt
-
-## Inherent Biases
-
-### Types of AI Bias
-- **Training data bias**: AI reflects biases in its training materials
-- **Historical bias**: AI may perpetuate historical inequities
-- **Representation bias**: Some perspectives may be overrepresented
-- **Algorithmic bias**: The way AI processes information can introduce bias
-
-### Detecting and Mitigating Bias
-1. **Question mainstream perspectives** presented as universal truths
-2. **Ask for multiple perspectives** on controversial topics
-3. **Be alert to Western or Global North centrism** in explanations
-4. **Compare AI outputs** with diverse academic sources
-5. **Explicitly ask about biases** that might be present in responses
-
-## Privacy and Security Concerns
-
-### What You Should Know
-- Information shared with AI tools **may be stored and used for training**
-- There may be **limited privacy protections** depending on the service
-- Some institutions or workplaces **may have policies against** sharing certain information
-
-### Best Practices
-1. **Don't share personal or sensitive information** (yours or others')
-2. **Avoid sharing confidential academic or research data**
-3. **Be aware of the privacy policies** of the AI tools you use
-4. **Consider using institutional AI tools** that may have better privacy protections
-5. **Be especially cautious with proprietary or unpublished work**
-
-## Over-Reliance Risks
-
-### Academic Skill Development
-- **Critical thinking skills** may not develop fully
-- **Writing abilities** might stagnate
-- **Problem-solving approaches** could become formulaic
-- **Research skills** may remain underdeveloped
-
-### Professional Readiness
-- Employers expect graduates to have **independent capabilities**
-- You may face situations where **AI tools aren't available**
-- **Fundamental understanding** is necessary for advanced work
-- **Creative and original thinking** remains distinctly human
-
-## Maintaining Agency
-
-1. **Use AI deliberately**, not habitually
-2. **Practice skills independently** before seeking AI assistance
-3. **Set clear boundaries** for when you'll use AI and when you won't
-4. **Regularly reflect** on how AI is affecting your learning
-5. **Take breaks from AI tools** to assess your own abilities
-
-Remember: AI tools should augment your intelligence, not replace it. The goal is to become a more capable thinker with AI as your assistant—not to become dependent on AI for tasks you should be able to perform.
-        `,
-        order_index: 2,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Future of AI in Education and Work",
-        content: `
-# Future of AI in Education and Work
-
-AI is rapidly transforming both educational environments and the workplace. Understanding these changes helps you prepare for a future where AI integration will be ubiquitous.
-
-## Emerging Trends in AI Education
-
-### Personalized Learning Experiences
-- **Adaptive learning platforms** that adjust to your pace and style
-- **Custom curriculum generation** based on your strengths and gaps
-- **AI tutors** that provide one-on-one support at scale
-- **Continuous assessment** rather than point-in-time testing
-
-### Changing Educational Models
-- **Flipped classrooms** where content delivery happens via AI
-- **Project-based learning** with AI supporting complex challenges
-- **Collaborative AI** that works alongside student teams
-- **Skills verification** through AI-monitored demonstrations
-
-### Evolving Assessment Methods
-- **AI-proof assignments** focusing on uniquely human capabilities
-- **Process-focused evaluation** rather than just final products
-- **Competency demonstrations** instead of traditional exams
-- **Portfolio-based assessment** showing applied learning
-
-## How Work is Changing with AI
-
-### Jobs Most Impacted
-- **Routine cognitive work** being automated or augmented
-- **Data analysis and reporting** increasingly AI-assisted
-- **Content production** partially automated
-- **Customer service** using AI for first-level responses
-- **Administrative tasks** streamlined through AI
-
-### Jobs Least Impacted (For Now)
-- Roles requiring **complex human interaction**
-- Positions needing **high emotional intelligence**
-- Work demanding **creative problem-solving**
-- Jobs that involve **physical dexterity** in unstructured environments
-- Roles requiring **ethical judgment** and wisdom
-
-### New Jobs Emerging
-- **AI prompt engineering** and optimization
-- **AI output evaluation** and quality control
-- **AI ethics** and governance
-- **Human-AI collaboration** specialists
-- **AI training** and implementation experts
-
-## Essential Human Skills in an AI World
-
-### Technical Skills
-- **AI literacy**: Understanding AI capabilities and limitations
-- **Prompt engineering**: Crafting effective instructions for AI systems
-- **AI output evaluation**: Critically assessing AI-generated content
-- **Data literacy**: Understanding how data influences AI systems
-- **Technical adaptability**: Quickly learning new AI tools as they emerge
-
-### Cognitive Skills
-- **Critical thinking**: Evaluating information regardless of source
-- **Complex problem framing**: Defining problems AI can help solve
-- **Systems thinking**: Understanding interconnected components
-- **Creativity**: Generating truly novel ideas beyond recombination
-- **Judgment**: Making decisions with incomplete information
-
-### Human Skills
-- **Emotional intelligence**: Understanding and managing emotions
-- **Interpersonal communication**: Building genuine human connections
-- **Ethical reasoning**: Making value-based judgments AI cannot
-- **Cultural awareness**: Navigating diverse human contexts
-- **Empathy**: Truly understanding others' experiences
-
-## Preparing for an AI-Integrated Future
-
-### Educational Strategies
-1. **Focus on uniquely human capabilities** in your studies
-2. **Develop AI collaboration skills** by practice
-3. **Learn to verify and validate** AI outputs
-4. **Build your own knowledge foundation** independent of AI
-5. **Practice explaining AI concepts** to demonstrate understanding
-
-### Career Preparation
-1. **Identify AI trends** in your intended field
-2. **Develop complementary skills** AI cannot easily replicate
-3. **Learn to articulate your value** beyond what AI provides
-4. **Build portfolios showing AI-human collaboration**
-5. **Stay current with AI developments** in your industry
-
-### Ethical Leadership
-1. **Consider implications** of AI systems before implementation
-2. **Advocate for responsible AI use** in your environments
-3. **Represent human perspectives** in technology discussions
-4. **Balance efficiency** with humanity and compassion
-5. **Ensure diversity and inclusion** in AI development and use
-
-The future belongs not to those who fear or avoid AI, but to those who learn to work with it effectively while maintaining their unique human capabilities and perspective.
-        `,
-        order_index: 3,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Building a Personal AI Toolkit",
-        content: `
-# Building a Personal AI Toolkit
-
-Creating your own customized AI toolkit will help you maximize the benefits of AI while aligning with your specific needs, preferences, and ethical boundaries.
-
-## Assessing Your Needs
-
-### Questions to Consider
-1. What types of academic tasks do you regularly perform?
-2. Where do you currently struggle or spend the most time?
-3. What are your institution's policies on AI use?
-4. What is your budget for paid AI tools?
-5. What specific learning or productivity goals do you have?
-
-### Common Academic Use Cases
-- **Writing assistance** (drafting, editing, feedback)
-- **Research support** (finding sources, summarizing information)
-- **Study aids** (creating materials, practice questions)
-- **Organization and productivity** (planning, scheduling)
-- **Concept explanation** (clarifying difficult topics)
-- **Language support** (translation, grammar help)
-
-## Selecting the Right AI Tools
-
-### General-Purpose LLMs
-Choose at least one based on your needs:
-- **ChatGPT** (Free/Plus): Great all-around capabilities
-- **Google Gemini** (Free/Advanced): Strong for current information
-- **Claude** (Free/Pro): Excellent for longer contexts and nuanced responses
-- **Perplexity** (Free/Pro): Built-in citation capabilities
-
-### Specialized Tools
-Consider adding these based on specific needs:
-- **Grammarly/QuillBot** (Free/Premium): Writing assistance
-- **Elicit/Consensus** (Free tiers): Research support
-- **Otter.ai** (Free/Premium): Transcription for lectures
-- **Notion AI** (Paid): Note-taking with AI integration
-- **Evernote AI** (Subscription): Note organization and enhancement
-
-### Budget Considerations
-If budget is limited:
-1. Use free versions of major LLMs
-2. Prioritize one paid tool that addresses your biggest pain point
-3. Look for student discounts
-4. Consider sharing premium subscriptions with classmates where allowed
-
-## Creating Custom Prompts Library
-
-Develop a personal collection of effective prompts for regular tasks:
-
-### Study Prompts
-\`\`\`
-I'm studying [topic] and need to prepare for an exam. Please create a comprehensive study guide covering the key concepts, formulas, and potential exam questions.
-\`\`\`
-
-### Writing Prompts
-\`\`\`
-Please review this paragraph for clarity, coherence, and academic style. Suggest improvements while maintaining my voice and meaning: [your paragraph]
-\`\`\`
-
-### Research Prompts
-\`\`\`
-I'm researching [topic] for a paper. Please suggest 10 specific search terms, 5 key concepts to explore, and 3 potential thesis angles.
-\`\`\`
-
-### Productivity Prompts
-\`\`\`
-I need to complete these assignments by these deadlines: [list]. Please help me create a realistic schedule that breaks these into manageable tasks.
-\`\`\`
-
-## Establishing Personal AI Guidelines
-
-Create your own rules for ethical and effective AI use:
-
-### Sample Personal Guidelines
-1. I will not use AI to complete assignments testing my knowledge
-2. I will verify all factual information from AI with reliable sources
-3. I will disclose my AI use according to my institution's policies
-4. I will use AI to enhance my learning, not replace my thinking
-5. I will regularly practice skills independently to ensure development
-
-## Integration with Your Workflow
-
-### Effective Integration Strategies
-1. **Designated AI time**: Schedule specific times for AI consultation
-2. **Pre-work enhancement**: Use AI to prepare before starting tasks
-3. **Post-work refinement**: Have AI review and suggest improvements
-4. **Learning reinforcement**: Use AI to test your understanding
-5. **Progress tracking**: Document how AI helps achieve your goals
-
-## Continuous Improvement
-
-### Refining Your AI Approach
-1. **Review AI interactions**: Which were most helpful?
-2. **Identify patterns**: Where does AI consistently add value?
-3. **Refine prompts**: Improve based on previous results
-4. **Explore new tools**: Test emerging AI capabilities
-5. **Share techniques**: Exchange strategies with peers
-
-### Evaluating Tool Effectiveness
-Periodically ask:
-- Is this tool saving me time?
-- Is it improving my academic performance?
-- Am I learning effectively while using it?
-- Does it fit within my ethical boundaries?
-- Is it worth the cost (time, money, privacy)?
-
-## Final Recommendations
-
-1. **Start small** with 2-3 core tools before expanding
-2. **Document effective prompts** for future use
-3. **Balance AI assistance** with independent work
-4. **Regularly reassess** your toolkit as needs change
-5. **Stay informed** about new AI capabilities and limitations
-
-Remember that your AI toolkit should evolve as your needs change, your skills develop, and AI technology advances. The goal is to create a personalized system that enhances your learning and productivity while aligning with your values and academic requirements.
-        `,
-        order_index: 4,
-        duration_minutes: 15,
-      },
-    ],
-  };
-
-  // Create the course with its modules and lessons
-  await createCourse(course, modules, lessonsData);
-};
-
-/**
- * Creates the Stock Market Basics Course with all modules and lessons
- */
-const createStockMarketCourse = async (): Promise<void> => {
-  // Check if course already exists
-  const exists = await courseExists("Stock Market Basics");
-  if (exists) {
-    console.log("Stock Market course already exists, skipping creation");
-    return;
-  }
-
-  const course: Course = {
-    id: "", // Will be assigned by the database
-    title: "Stock Market Basics",
-    description: "Learn the fundamentals of stock market investing with practical, beginner-friendly lessons.",
-    price: 1000, // ₹1000
-    image_url: "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?w=500&h=350&fit=crop",
-    level: "Beginner",
-    duration: "5 hours",
-    user_id: null,
-    created_at: new Date().toISOString(),
-  };
-
-  const modules: Module[] = [
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "Getting Started with Stocks",
-      description: "Understanding the fundamentals of stock markets and how they work.",
-      order_index: 1,
-    },
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "Investment Basics",
-      description: "Learn the core concepts and strategies for beginner investors.",
-      order_index: 2,
-    },
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "Market Analysis",
-      description: "Understanding how to analyze stocks and make informed decisions.",
-      order_index: 3,
-    },
-    {
-      id: "", // Will be assigned by the database
-      course_id: "", // Will be assigned later
-      title: "Building Your Portfolio",
-      description: "Practical steps to create and manage your investment portfolio.",
-      order_index: 4,
-    },
-  ];
-
-  const lessonsData: Record<string, Lesson[]> = {
-    "Getting Started with Stocks": [
-      {
-        id: "", // Will be assigned by the database
-        module_id: "", // Will be assigned later
-        title: "What is the Stock Market?",
-        content: `
-# What is the Stock Market?
-
-The stock market is a collection of exchanges where shares of publicly held companies are bought and sold. These financial activities are conducted through formal exchanges (like NSE and BSE in India) and over-the-counter (OTC) marketplaces that operate under defined rules.
-
-## Key Concepts
-
-### Stocks (Shares)
-- A stock represents partial ownership in a company
-- When you buy a stock, you become a shareholder
-- Owning shares gives you certain rights, including potential dividends and voting rights
-
-### Stock Exchanges
-- **National Stock Exchange (NSE)**: India's leading stock exchange
-- **Bombay Stock Exchange (BSE)**: One of Asia's oldest exchanges
-- These provide the infrastructure for trading stocks in a regulated environment
-
-### Market Participants
-- **Retail Investors**: Individual investors like you
-- **Institutional Investors**: Banks, mutual funds, insurance companies
-- **Brokers**: Intermediaries who execute trades
-- **Market Makers**: Provide liquidity to the market
-
-## How the Stock Market Works
-
-1. **Companies Issue Shares**: Through an Initial Public Offering (IPO), companies sell shares to raise capital for growth, research, or paying off debt.
-
-2. **Exchanges List Shares**: Once public, shares are listed on exchanges where they can be traded.
-
-3. **Buyers and Sellers Trade**: Investors buy and sell these shares based on their assessment of the company's current value and future prospects.
-
-4. **Price Determination**: Stock prices are determined by supply and demand - when more people want to buy than sell, prices rise, and vice versa.
-
-## Why the Stock Market Matters
-
-- **Capital Formation**: Helps companies raise money for growth
-- **Wealth Creation**: Allows individuals to participate in company growth
-- **Economic Indicator**: Often reflects the health of the economy
-- **Investment Avenue**: Offers potential returns higher than traditional savings
-
-## Common Misconceptions
-
-- **Not Just for the Wealthy**: Even small amounts can be invested
-- **Not Just Gambling**: Though risky, investing is different from speculation when based on research
-- **Not Just Short-term**: The real benefits often come from long-term investing
-
-## Getting Started
-
-To participate in the stock market, you'll need:
-- A trading and demat account with a registered broker
-- Basic understanding of how to evaluate stocks
-- A clear investment strategy
-- Patience and emotional discipline
-
-In the upcoming lessons, we'll explore each of these aspects in detail to prepare you for successful investing.
-        `,
-        order_index: 1,
-        duration_minutes: 20,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Why Invest in Stocks?",
-        content: `
-# Why Invest in Stocks?
-
-Investing in stocks offers numerous potential benefits, especially when compared to traditional investment options available in India. Let's explore why stocks deserve consideration in your investment portfolio.
-
-## Potential for Higher Returns
-
-- **Historical Performance**: Over the long term, stocks have historically outperformed many other investment classes like fixed deposits, gold, and bonds.
-  
-- **Compounding Growth**: When invested for long periods, returns can compound significantly, turning even modest investments into substantial sums.
-
-- **Real Examples**: ₹10,000 invested in HDFC Bank in 2000 would be worth over ₹9,00,000 today - far outpacing inflation and traditional savings.
-
-## Beating Inflation
-
-- **Purchasing Power Protection**: While fixed deposits might offer 5-6% returns, with inflation at 4-6%, your real returns are minimal. Stocks have historically provided returns that beat inflation.
-
-- **Growth Participation**: As the economy grows, companies grow, and as a shareholder, you participate in this growth.
-
-## Ownership in Real Businesses
-
-- **Partial Ownership**: When you buy stocks, you're buying a piece of an actual business.
-
-- **Dividend Income**: Many established companies share profits with shareholders through dividends.
-
-- **Voting Rights**: Shareholders can vote on important company matters.
-
-## Liquidity Advantages
-
-- **Easy to Sell**: Unlike real estate or some bonds, stocks can typically be sold quickly when you need funds.
-
-- **Transparent Pricing**: You can see the current value of your investments at any time.
-
-## Accessibility
-
-- **Low Entry Barrier**: You can start investing with as little as ₹500 in some cases.
-
-- **Fractional Investments**: Many platforms now allow buying fractions of expensive shares.
-
-## Tax Benefits
-
-- **Long-term Capital Gains**: Stocks held for more than one year benefit from either tax exemption (up to ₹1 lakh per year) or lower tax rates (10% above that threshold).
-
-- **ELSS Funds**: Equity Linked Savings Schemes offer tax benefits under Section 80C while providing exposure to stocks.
-
-## Diversification Benefits
-
-- **Portfolio Stability**: Adding stocks to a portfolio of fixed-income investments can actually reduce overall risk through diversification.
-
-- **Global Exposure**: Through Indian companies with global operations or funds that invest internationally, you gain exposure to global economic growth.
-
-## Building Real Wealth
-
-Historical data shows that for building significant wealth over decades, stocks have been one of the most effective vehicles for ordinary individuals.
-
-## The Psychological Factor
-
-- **Financial Education**: Investing in stocks encourages learning about businesses, economics, and finance.
-
-- **Discipline Building**: Regular investing builds financial discipline and long-term thinking.
-
-## Balancing the Picture: Risks
-
-It's important to acknowledge that stocks come with risks:
-
-- **Volatility**: Prices can fluctuate significantly in the short term
-- **Company-specific risks**: Individual businesses can fail
-- **Market risks**: Entire markets can decline during economic downturns
-
-However, these risks can be managed through proper research, diversification, and a long-term perspective - topics we'll cover in later lessons.
-
-Remember: Stocks are just one component of a well-balanced financial plan, but they're a component that's difficult to replace when building wealth over the long term.
-        `,
-        order_index: 2,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Types of Stocks and Market Terminology",
-        content: `
-# Types of Stocks and Market Terminology
-
-Understanding stock market terminology is essential for navigating the investment landscape. This lesson covers the most important terms and types of stocks you'll encounter.
-
-## Basic Stock Classifications
-
-### By Company Size (Market Capitalization)
-
-- **Large-Cap Stocks**: Companies valued at ₹20,000+ crore
-  - Examples: Reliance Industries, TCS, HDFC Bank
-  - Characteristics: More stable, established businesses, often pay dividends
-
-- **Mid-Cap Stocks**: Companies valued between ₹5,000-20,000 crore
-  - Examples: Federal Bank, Jubilant FoodWorks
-  - Characteristics: Balance of growth potential and stability
-
-- **Small-Cap Stocks**: Companies valued under ₹5,000 crore
-  - Characteristics: Higher growth potential but also higher risk
-
-### By Investment Style
-
-- **Growth Stocks**: Companies expected to grow earnings faster than the market
-  - Focus: Rapid revenue and profit growth
-  - Example: Asian Paints, which has consistently expanded its business
-
-- **Value Stocks**: Companies trading below their intrinsic value
-  - Focus: Strong fundamentals but currently underpriced
-  - Example: PSU banks during certain periods
-
-- **Income/Dividend Stocks**: Companies that regularly distribute earnings to shareholders
-  - Focus: Stable income through dividends
-  - Examples: ITC, Power Grid, which offer higher dividend yields
-
-### By Sectors
-
-- **Technology**: IT services, software companies (TCS, Infosys)
-- **Financial**: Banks, insurance, NBFCs (HDFC Bank, ICICI Bank)
-- **Consumer**: FMCG, retail, auto (Hindustan Unilever, Maruti)
-- **Healthcare**: Pharmaceuticals, hospitals (Sun Pharma, Apollo Hospitals)
-- **Energy**: Oil & gas, power generation (Reliance, NTPC)
-- **Manufacturing**: Industrial goods, engineering (L&T, Tata Steel)
-
-## Key Stock Market Terms
-
-### Trading Terminology
-
-- **Bull Market**: A market characterized by rising prices and optimism
-- **Bear Market**: A market characterized by falling prices and pessimism
-- **Rally**: A rapid increase in market prices
-- **Correction**: A decline of 10% or more from recent highs
-- **Volume**: The number of shares traded in a given period
-
-### Investment Metrics
-
-- **P/E Ratio (Price-to-Earnings)**: Stock price divided by earnings per share
-- **EPS (Earnings Per Share)**: Company's profit divided by outstanding shares
-- **Dividend Yield**: Annual dividends per share divided by price per share
-- **Book Value**: Company's assets minus liabilities
-- **Market Cap**: Total value of all outstanding shares
-
-### Order Types
-
-- **Market Order**: Buy or sell at the current best available price
-- **Limit Order**: Buy or sell only at a specified price or better
-- **Stop Loss**: Order to sell a stock when it reaches a specified price
-
-### Corporate Actions
-
-- **Dividend**: Distribution of company profits to shareholders
-- **Bonus Issue**: Free additional shares to existing shareholders
-- **Rights Issue**: Opportunity to buy additional shares at a discount
-- **Stock Split**: Increasing the number of shares while reducing price proportionally
-
-## Stock Indices
-
-Indices are baskets of stocks that represent a particular market or segment:
-
-- **NIFTY 50**: Represents the 50 largest companies on the NSE
-- **SENSEX**: 30 largest and most actively traded stocks on the BSE
-- **NIFTY Bank**: Represents the 12 most liquid banking stocks
-- **NIFTY Midcap 100**: Represents 100 mid-sized companies
-
-## Understanding Stock Price Movements
-
-Stock prices move based on:
-
-1. **Company Performance**: Earnings, growth prospects, management decisions
-2. **Industry Trends**: Developments affecting an entire sector
-3. **Economic Factors**: Interest rates, inflation, GDP growth
-4. **Market Sentiment**: Overall investor psychology and risk appetite
-5. **Global Events**: International trade, geopolitical developments
-
-## Common Terms You'll Hear in News
-
-- **Bloodbath**: Significant market decline
-- **All-time High/Low**: Highest or lowest price level ever reached
-- **Profit Booking**: Selling stocks to realize gains after a price increase
-- **Short Covering**: Buying shares to close out short positions
-- **Circuit Breaker**: Temporary trading halt due to extreme price movements
-
-Understanding these terms will help you follow market news, communicate with other investors, and make more informed decisions as you begin your investment journey.
-        `,
-        order_index: 3,
-        duration_minutes: 25,
-      },
-    ],
-    "Investment Basics": [
-      {
-        id: "",
-        module_id: "",
-        title: "Creating Your Trading Account",
-        content: `
-# Creating Your Trading Account
-
-To start investing in the Indian stock market, you'll need to set up the right accounts. This lesson guides you through the process of getting started.
-
-## Required Accounts for Stock Trading
-
-### 1. Trading Account
-- Facilitates buying and selling of securities
-- Provided by a stockbroker registered with SEBI
-
-### 2. Demat Account (Depository Account)
-- Holds your shares in electronic form
-- Similar to a bank account, but for securities
-- Maintained by depositories (NSDL or CDSL)
-
-### 3. Bank Account
-- Linked to your trading account
-- Used for fund transfers for buying stocks and receiving sale proceeds
-
-Most brokers offer all three accounts as a 3-in-1 package for convenience.
-
-## Types of Brokers in India
+Academic integrity means:
+- Honesty in your academic work
+- Proper credit for others' ideas
+- Completing your own learning journey
+- Following institutional policies
+
+## AI and Academic Policies
+
+### Current Landscape
+- Some institutions prohibit AI use entirely
+- Others allow it with disclosure
+- Many are developing policies as technology evolves
+- Most distinguish between using AI as a tool versus submitting AI work as your own
+
+### Common Policy Categories
+1. **Prohibited**: No AI use allowed
+2. **Restricted**: AI allowed only for specific purposes
+3. **Disclosure Required**: AI use must be documented
+4. **Integrated**: AI explicitly incorporated into learning
+
+## Ethical Guidelines for Students
+
+### Do:
+✅ **Check your institution's policies** before using AI
+✅ **Disclose AI assistance** when submitting work
+✅ **Use AI as a learning tool**, not a replacement for learning
+✅ **Verify AI-generated information** with reliable sources
+✅ **Contribute your own critical thinking** to AI-assisted work
+
+### Don't:
+❌ **Submit AI-generated work as entirely your own**
+❌ **Use AI to complete tests or exams** unless explicitly allowed
+❌ **Rely on AI for factual information** without verification
+❌ **Share AI tools for cheating purposes**
+❌ **Use AI to bypass learning essential skills**
+
+## Properly Citing AI Assistance
+
+### Example Citation Formats
+
+#### MLA Style:
+"This paper was written with research assistance from [AI Tool Name], an artificial intelligence tool. All AI-generated content has been reviewed, verified, and edited by the author."
+
+#### APA Style:
+"The author acknowledges the use of [AI Tool Name] (Version X) [URL] for [specific purpose: drafting, research assistance, editing, etc.]. All AI-generated content has been critically evaluated and revised by the human author."
+
+### Where to Include Citations
+- Acknowledgments section
+- Methodology section
+- Footnotes for specific AI-assisted passages
+- As directed by your instructor
+
+## Case Studies: Ethical vs. Unethical Use
+
+### Scenario 1: Writing Assistance
+**Ethical**: Using ChatGPT to brainstorm essay topics, outline structure, and get feedback on drafts you've written.
+**Unethical**: Having ChatGPT write your entire essay and submitting it without substantial revision or disclosure.
+
+### Scenario 2: Problem-Solving
+**Ethical**: Using AI to check your work after you've attempted problems, or to explain concepts you don't understand.
+**Unethical**: Feeding exam questions to AI and copying answers without understanding.
+
+### Scenario 3: Research
+**Ethical**: Using AI to summarize articles you've read, suggest additional sources, or help understand complex papers.
+**Unethical**: Relying solely on AI summaries without reading original sources, or using AI to fabricate citations.
+
+## Balancing AI Use with Learning Goals
+
+Remember the purpose of education:
+- To develop your critical thinking abilities
+- To build skills you'll need in your career
+- To learn how to evaluate and synthesize information
+- To become an independent thinker and problem-solver
+
+AI is most valuable when it enhances these goals rather than replacing the mental work that leads to real learning.
+
+💡 **Pro Tip**: When using AI, ask yourself: "Am I using this tool to enhance my learning, or to avoid learning?"`,
+              lesson_order: 1
+            },
+            {
+              title: "AI Prompt Engineering Basics",
+              content: `# AI Prompt Engineering Basics
+
+🔧 Effective prompt engineering is the key to getting the best results from AI tools. This skill will dramatically improve your AI interactions.
+
+## What is Prompt Engineering?
+
+Prompt engineering is the skill of crafting inputs to AI systems to get the most useful, accurate, and relevant outputs. It's like learning how to ask questions in a way that helps the AI understand exactly what you need.
+
+## The Anatomy of an Effective Prompt
+
+### 1. Clear Instructions
+Begin with a clear directive that specifies exactly what you want the AI to do:
+- "Explain..."
+- "Analyze..."
+- "Compare and contrast..."
+- "Create a step-by-step guide for..."
+
+### 2. Context and Background
+Provide relevant information the AI might need:
+- Your current knowledge level on the topic
+- The purpose of your request
+- Any specific requirements or constraints
+- Previous information from your conversation
+
+### 3. Format Specification
+Tell the AI how you want the information structured:
+- "Present this as a bulleted list"
+- "Format your response as a table with three columns"
+- "Write this in the style of a dialogue between experts"
+- "Include section headings for each main point"
+
+### 4. Examples (When Helpful)
+Provide examples of what a good response looks like:
+- "For example, when I ask about historical events, include dates, key figures, and long-term impacts"
+
+## Prompt Types for Different Tasks
+
+### 1. Learning Prompts
+For understanding concepts:
+"Explain [concept] at a level appropriate for a first-year undergraduate. Include analogies, examples, and address common misconceptions."
+
+### 2. Writing Assistance Prompts
+For help with papers:
+"Help me outline an essay on [topic]. The thesis is [your thesis]. The audience is [target audience]. Include potential main arguments and what evidence would support each."
+
+### 3. Problem-Solving Prompts
+For working through problems:
+"Walk me through how to solve this [subject] problem step-by-step: [problem]. Explain your reasoning at each stage and highlight potential pitfalls."
+
+### 4. Critical Analysis Prompts
+For developing analytical skills:
+"Analyze [text/concept/argument] from multiple perspectives. Identify strengths, weaknesses, and underlying assumptions. Suggest questions for further investigation."
+
+## Advanced Techniques
+
+### 1. Chain-of-Thought Prompting
+Ask the AI to show its reasoning process:
+"Think through this problem step by step before providing the final answer."
+
+### 2. Role Assignment
+Give the AI a specific role to frame its response:
+"Act as an expert in [field] explaining [topic] to a beginner."
+
+### 3. Constraint Setting
+Set boundaries for more focused responses:
+"Explain this using only terminology that would be familiar to high school students."
+
+### 4. Iterative Refinement
+Start broad, then gradually refine:
+1. First prompt: "Give me an overview of photosynthesis."
+2. Follow-up: "Now focus specifically on the light-dependent reactions."
+3. Further refinement: "Explain how ATP is generated during these reactions."
+
+## Common Prompt Issues and Solutions
+
+### Problem: Vague or Ambiguous Prompts
+❌ "Tell me about stars."
+✅ "Explain the life cycle of massive stars (>8 solar masses), focusing on their final stages and how they differ from lower-mass stars."
+
+### Problem: Overwhelming the AI
+❌ "Explain quantum physics, relativity, and string theory and how they relate to each other in detail."
+✅ "Give a high-level overview of how quantum physics and general relativity conflict with each other, focusing on 2-3 key incompatibilities."
+
+### Problem: Under-specified Output Format
+❌ "Help me study for my biology exam."
+✅ "Create 10 potential short-answer questions about cellular respiration that might appear on an undergraduate biology exam. Provide concise answers for each."
+
+## Prompt Templates for Students
+
+### Research Question Development
+"I'm interested in researching [broad topic]. Help me narrow this down to 3-5 specific research questions that would be appropriate for a [paper length] [assignment type]. For each question, suggest what type of sources might provide useful information."
+
+### Concept Comparison
+"Compare and contrast [concept A] and [concept B] in terms of: 1) key principles, 2) historical development, 3) practical applications, and 4) current limitations. Present this as a split-column comparison where appropriate."
+
+### Study Guide Creation
+"Create a comprehensive study guide for [topic]. Include: key terminology with definitions, main theories/principles, important examples, and potential exam questions. Organize this with clear headings and subheadings."
+
+💡 **Pro Tip**: Keep a document of your most effective prompts for different academic tasks. Refine them as you learn what works best!`,
+              lesson_order: 2
+            }
+          ]
+        }
+      ]
+    };
+    
+    // Create Stock Market course
+    const stockMarketCourse: CourseData = {
+      title: "Stock Market Basics",
+      price: 1000,
+      referral_reward: 500,
+      description: "Learn the fundamentals of stock market investing with practical advice for beginners.",
+      modules: [
+        {
+          title: "Introduction to Stock Markets",
+          description: "Understand what stock markets are and how they function.",
+          module_order: 1,
+          lessons: [
+            {
+              title: "What are Stocks and Stock Markets?",
+              content: `# What are Stocks and Stock Markets?
+
+💹 Understanding the basic concepts of stocks and stock markets is your first step toward successful investing.
+
+## What is a Stock?
+
+A **stock** (also called a **share**) represents partial ownership in a company. When you buy a stock, you're buying a small piece of that company.
+
+### Key Characteristics of Stocks:
+- **Ownership**: Each share represents a tiny fraction of ownership
+- **Limited Liability**: Your risk is limited to your investment amount
+- **Voting Rights**: Often gives you voting rights in company decisions
+- **Dividends**: May pay a portion of profits to shareholders
+- **Transferable**: Can be bought and sold on stock exchanges
+
+## What is a Stock Market?
+
+A **stock market** (or **stock exchange**) is a regulated marketplace where stocks are bought and sold.
+
+### Functions of Stock Markets:
+1. **Capital Raising**: Helps companies raise money for growth
+2. **Investment Opportunities**: Gives individuals a way to invest
+3. **Price Discovery**: Determines fair market prices through trading
+4. **Liquidity**: Makes it easy to buy or sell investments quickly
+
+## Major Stock Markets Around the World
+
+### United States
+- **NYSE (New York Stock Exchange)**: Oldest and largest US exchange
+- **NASDAQ**: Known for technology companies
+
+### India
+- **BSE (Bombay Stock Exchange)**: Asia's oldest stock exchange
+- **NSE (National Stock Exchange)**: India's leading stock exchange
+
+### Other Important Exchanges
+- London Stock Exchange (UK)
+- Tokyo Stock Exchange (Japan)
+- Shanghai Stock Exchange (China)
+
+## How Stock Markets Work
+
+### The Basics
+1. **Companies List Their Stocks**: Through an IPO (Initial Public Offering)
+2. **Brokers Facilitate Trading**: Act as intermediaries
+3. **Exchanges Match Buyers and Sellers**: Using order matching systems
+4. **Prices Fluctuate**: Based on supply and demand
+
+### Trading Hours
+Most exchanges operate during specific hours on weekdays:
+- US Markets: 9:30am - 4:00pm Eastern Time
+- Indian Markets: 9:15am - 3:30pm Indian Standard Time
+
+## Key Players in Stock Markets
+
+### Primary Participants
+- **Companies**: Issue stocks to raise capital
+- **Investors**: Buy stocks hoping for returns
+- **Brokers/Dealers**: Facilitate trades
+- **Regulators**: Ensure fair practices (SEC in US, SEBI in India)
+- **Market Makers**: Provide liquidity
+
+## Why Stock Markets Matter
+
+### For the Economy
+- Enable business growth and expansion
+- Create jobs through business funding
+- Indicate economic health
+
+### For Individuals
+- Build long-term wealth
+- Generate passive income through dividends
+- Provide opportunities to participate in economic growth
+
+## Common Stock Market Terms
+
+- **Bull Market**: Market is rising, optimistic
+- **Bear Market**: Market is falling, pessimistic
+- **Blue-Chip Stocks**: Large, established, financially sound companies
+- **Index**: Measures performance of a group of stocks (e.g., S&P 500, Sensex)
+- **Market Capitalization**: Total value of a company's shares
+
+💡 **Key Insight**: Stock markets are not just for the wealthy. Today's online platforms make investing accessible to almost everyone, often with minimal starting capital.`,
+              lesson_order: 1
+            },
+            {
+              title: "Why Invest in Stocks?",
+              content: `# Why Invest in Stocks?
+
+🎯 Understanding the benefits and risks of stock investing will help you make informed decisions about including stocks in your investment strategy.
+
+## The Power of Stock Market Returns
+
+### Historical Performance
+- **Long-term average returns**: ~10% annually (before inflation)
+- **Outperforms most asset classes**: Better than bonds, savings accounts, and often real estate
+- **Compounds over time**: Small investments can grow substantially
+
+### Visual Example: Growth of ₹10,000 Over Time
+
+| Time Period | Fixed Deposit (5%) | Stock Market (10%) |
+|-------------|-------------------|-------------------|
+| 5 years     | ₹12,763          | ₹16,105          |
+| 10 years    | ₹16,289          | ₹25,937          |
+| 20 years    | ₹26,533          | ₹67,275          |
+| 30 years    | ₹43,219          | ₹174,494         |
+
+## Key Benefits of Stock Investing
+
+### 1. Wealth Building
+- **Capital appreciation**: Stock prices increase over time
+- **Dividend income**: Regular payments from profitable companies
+- **Ownership in real businesses**: Participate in company growth
+
+### 2. Inflation Protection
+- Historically, stocks have outpaced inflation
+- Preserves purchasing power of your money
+- Fixed income investments often lose value to inflation
+
+### 3. Liquidity
+- Buy or sell quickly during market hours
+- No lock-in periods (unlike real estate or some fixed deposits)
+- Easy to convert to cash when needed
+
+### 4. Accessibility
+- Start with small amounts (even ₹500 in some cases)
+- Invest through mobile apps from anywhere
+- Wide range of options for different goals
+
+### 5. Flexibility
+- Choose your investment style (growth, value, dividend)
+- Adjust your strategy as needs change
+- Mix with other investments for diversification
+
+## Understanding Stock Market Risks
+
+### 1. Market Volatility
+- Prices fluctuate daily, sometimes dramatically
+- Short-term losses are common and normal
+- Requires emotional discipline
+
+### 2. Company-Specific Risk
+- Individual companies can fail
+- Management problems, competition, disruption
+- Can be reduced through diversification
+
+### 3. Timing Risk
+- Difficult to predict short-term market movements
+- Poor timing can reduce returns significantly
+- Solution: long-term investment approach
+
+### 4. Psychological Challenges
+- Fear and greed drive irrational decisions
+- Media headlines can provoke emotional reactions
+- Solution: stick to a plan, avoid impulsive moves
+
+## Who Should Invest in Stocks?
+
+### Good candidates for stock investing:
+- Have a long-term outlook (5+ years)
+- Can tolerate some short-term volatility
+- Have emergency funds already established
+- Are seeking growth rather than immediate income
+- Are willing to learn basic investment principles
+
+### Not ideal for:
+- Money needed within 1-3 years
+- Emergency funds
+- Those who cannot tolerate any risk to principal
+- Those who will panic sell during market declines
+
+## How Stocks Fit in Your Financial Plan
+
+### The Investment Pyramid
+1. **Base**: Emergency fund, insurance
+2. **Middle**: Core investments (including stocks)
+3. **Top**: Speculative investments (if any)
+
+### Typical Allocation by Age
+- **20-30s**: 80-90% stocks (long time horizon)
+- **40-50s**: 60-70% stocks (balancing growth and stability)
+- **60+**: 40-50% stocks (more focus on capital preservation)
+
+## Alternatives to Direct Stock Investment
+
+- **Mutual Funds**: Professionally managed portfolios
+- **ETFs**: Exchange-traded funds tracking indices
+- **Index Funds**: Low-cost funds tracking market indices
+- **SIPs**: Systematic Investment Plans for disciplined investing
+
+💡 **Key Insight**: The greatest advantage of stock investing is time. The earlier you start—even with small amounts—the more you benefit from compounding returns.`,
+              lesson_order: 2
+            }
+          ]
+        },
+        {
+          title: "Getting Started with Stock Investing",
+          description: "Learn the practical steps to begin your investment journey.",
+          module_order: 2,
+          lessons: [
+            {
+              title: "Setting Up Your Trading Account",
+              content: `# Setting Up Your Trading Account
+
+🏦 Getting properly set up with the right brokerage account is the crucial first step in your investing journey.
+
+## Types of Brokerage Accounts in India
 
 ### Full-Service Brokers
-- **Features**: Provide research, advice, relationship manager
+- **Features**: Research, advice, personalized service
+- **Cost**: Higher brokerage fees (typically percentage-based)
 - **Examples**: ICICI Direct, HDFC Securities, Kotak Securities
-- **Costs**: Higher brokerage fees (typically 0.3-0.5% per trade)
-- **Best for**: New investors needing guidance
+- **Best for**: Beginners wanting guidance, high-value investors
 
 ### Discount Brokers
-- **Features**: Basic trading platform, minimal frills
+- **Features**: Basic trading platform, minimal support
+- **Cost**: Very low flat fees per trade
 - **Examples**: Zerodha, Upstox, Groww, Angel One
-- **Costs**: Much lower fees (flat ₹0-20 per trade)
 - **Best for**: Cost-conscious traders, self-directed investors
 
-## Steps to Open Your Trading & Demat Account
+## Required Documents for Account Opening
 
-### 1. Choose a Suitable Broker
-- Consider factors like:
-  - Brokerage charges
-  - Platform usability
-  - Customer service
-  - Research quality
-  - Additional fees
+### Essential Documents (KYC Requirements)
+1. **PAN Card** (mandatory)
+2. **Aadhaar Card**
+3. **Bank Account Details**
+4. **Mobile Number** (linked to Aadhaar)
+5. **Email ID**
+6. **Passport-sized Photographs**
+7. **Income Proof** (sometimes required)
 
-### 2. Gather Required Documents
-- PAN Card (mandatory)
-- Aadhaar Card
-- Address proof (if different from Aadhaar)
-- Income proof (sometimes required)
-- Bank account details
-- Passport-sized photographs
+### Account Types to Open
+1. **Trading Account**: For buying/selling securities
+2. **Demat Account**: For holding securities electronically
+3. **Linked Bank Account**: For fund transfers
 
-### 3. Complete KYC Process
-Most brokers now offer digital KYC through:
-- Video verification
-- Aadhaar-based e-KYC
-- In-person verification (less common now)
+## Step-by-Step Account Opening Process
 
-### 4. Account Activation
-- Sign the account opening form (digital or physical)
-- Complete in-person verification if required
-- Pay account opening charges if applicable
+### 1. Choose a Broker
+- Research fees, platforms, customer service
+- Read user reviews and compare features
+- Consider ease of use if you're a beginner
 
-### 5. Setup Trading Platform
-- Download broker's trading app
-- Set up login credentials
-- Link your bank account
-- Deposit initial funds
+### 2. Complete the Online Application
+- Visit broker's website or download their app
+- Fill in personal details
+- Upload digital copies of required documents
 
-## Important Considerations When Choosing a Broker
+### 3. Complete the KYC Process
+- Digital verification through Aadhaar
+- In-person verification (occasionally required)
+- Video KYC (becoming more common)
 
-### Costs to Compare
-- **Account Opening Fees**: One-time cost (₹0-500)
-- **Maintenance Fees**: Annual demat account charges (₹0-750)
-- **Brokerage**: Cost per transaction
-- **Other Charges**: DP charges, call & trade fees, etc.
+### 4. Sign Agreements
+- Read the terms and conditions
+- Understand the fee structure
+- Digital signature or physical signing
 
-### Platform Features
-- Ease of use
-- Research tools
+### 5. Fund Your Account
+- Transfer initial amount via UPI/NEFT/IMPS
+- Link your bank account for future transfers
+- Set up auto-pay if using SIPs
+
+### 6. Install Trading Platforms
+- Mobile app for on-the-go trading
+- Desktop platform for detailed analysis
+- Familiarize yourself with the interface
+
+## Important Account Features to Consider
+
+### Trading Tools
 - Charting capabilities
-- Order types supported
-- Mobile app quality
+- Real-time price updates
+- Research reports access
+
+### Fees to Understand
+- **Account opening fees** (many brokers now offer free opening)
+- **Annual maintenance charges** for demat account
+- **Brokerage fees** per transaction
+- **Taxes** (STT, GST, Stamp duty, etc.)
+- **Convenience fees** for using certain payment methods
 
 ### Security Features
 - Two-factor authentication
-- Encryption standards
-- Insurance protection
-
-## Funding Your Account
-
-- Most brokers offer multiple deposit options:
-  - UPI
-  - NEFT/RTGS
-  - Payment gateways
-
-- Start with an amount you're comfortable with
-- Avoid investing all your funds at once
-
-## Common Questions About Trading Accounts
-
-### How long does account opening take?
-With digital KYC, accounts can be activated in 1-2 days. Traditional processes might take 3-7 days.
-
-### Is there a minimum deposit required?
-Most brokers don't require a minimum deposit, but you need sufficient funds to buy the stocks you want.
-
-### Can I have multiple trading accounts?
-Yes, you can open accounts with different brokers.
-
-### What happens if my broker goes bankrupt?
-Your shares are safe in your demat account. Only keep necessary trading funds with the broker.
-
-## Tips for New Account Holders
-
-1. **Start with the basics**: Learn the platform before making complex trades
-2. **Enable all security features**: Protect your account with all available security options
-3. **Keep records**: Maintain documentation of all your transactions
-4. **Understand charges**: Review your contract note and account statements regularly
-
-Once your accounts are set up, you'll be ready to make your first investment, which we'll cover in upcoming lessons.
-        `,
-        order_index: 1,
-        duration_minutes: 15,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Understanding Risk and Return",
-        content: `
-# Understanding Risk and Return
-
-The relationship between risk and return is fundamental to investing. This lesson explores how they work together and how to find your personal balance.
+- Biometric login
+- Withdrawal safeguards
+
+## Setting Up Your Account Properly
 
-## The Risk-Return Relationship
-
-### The Basic Principle
-- Higher potential returns generally come with higher risks
-- Lower-risk investments typically offer lower returns
-- There's no such thing as a high-return, risk-free investment
-
-### Visual Representation
-On the risk-return spectrum:
-- Fixed deposits (lowest risk, lowest return)
-- Government bonds (low risk, low return)
-- Corporate bonds (moderate risk, moderate return)
-- Blue-chip stocks (moderate-high risk, moderate-high return)
-- Small-cap stocks (high risk, potentially high return)
-- Speculative investments (highest risk, potentially highest return)
+### Risk Profile Configuration
+- Many brokers require this during setup
+- Be honest about your risk tolerance
+- This may affect trading permissions
+
+### Trading Limits
+- Understand intraday vs. delivery limits
+- Margin trading requirements (if applicable)
+- F&O segment eligibility (for advanced trading)
+
+### Nominee Registration
+- Register a nominee for your account
+- Update personal details accurately
+- Keep beneficiary information current
 
-## Types of Investment Risks
-
-### Market Risk
-- Affects the entire market
-- Caused by economic changes, political events, etc.
-- Cannot be eliminated through diversification
-- Example: 2020 COVID-19 crash affected almost all stocks
-
-### Company-Specific Risk
-- Affects only particular companies or sectors
-- Caused by business issues, competition, management changes
-- Can be reduced through diversification
-- Example: A pharmaceutical company failing drug trials
-
-### Inflation Risk
-- The risk that investment returns won't keep pace with inflation
-- Particularly affects fixed-income investments
-- Example: 6% FD returns with 6% inflation means 0% real return
-
-### Liquidity Risk
-- Difficulty selling an investment quickly without loss
-- Higher in small-cap stocks, real estate
-- Example: Small-cap shares with few buyers when you need to sell
-
-### Currency Risk
-- Applies to international investments
-- Changes in exchange rates affecting returns
-- Example: US stocks declining in rupee terms despite dollar gains
-
-## Measuring Risk
-
-### Volatility
-- How much a stock's price varies over time
-- Typically measured by standard deviation
-- Higher volatility = higher risk
-- Example: A stock that moves 3% daily vs. one that moves 0.5%
-
-### Beta
-- Measures a stock's volatility compared to the market
-- Beta > 1: More volatile than the market
-- Beta < 1: Less volatile than the market
-- Example: TCS (low beta) vs. Yes Bank (high beta)
-
-## Understanding Returns
-
-### Types of Returns
-
-#### Capital Appreciation
-- Growth in the price of your investment
-- Example: Buying a share at ₹100 that grows to ₹150
-
-#### Dividend Income
-- Periodic payouts from company profits
-- Example: Receiving ₹3 per share annually as dividend
-
-#### Total Return
-- Capital appreciation + dividends
-- The complete picture of investment performance
-
-### Calculating Returns
-
-#### Absolute Return
-- Simple percentage change: (Final Value - Initial Value) / Initial Value × 100
-- Example: Investment grows from ₹10,000 to ₹12,000 = 20% absolute return
-
-#### Annualized Return (CAGR)
-- Compound Annual Growth Rate over multiple years
-- Formula: (Final Value / Initial Value)^(1/number of years) - 1
-- Example: ₹10,000 becomes ₹16,000 after 4 years = 12.5% CAGR
-
-#### Inflation-Adjusted (Real) Return
-- Nominal return minus inflation rate
-- What your money can actually buy
-- Example: 12% return - 5% inflation = 7% real return
-
-## Finding Your Risk Tolerance
-
-Your risk tolerance depends on:
-
-### Time Horizon
-- Longer time horizons can withstand more volatility
-- Short-term needs require lower-risk investments
-
-### Financial Goals
-- Critical goals (education, retirement) may warrant lower risk
-- Aspirational goals might accept higher risk
-
-### Personal Comfort
-- Your emotional reaction to market downturns
-- Ability to stay invested during volatility
-
-### Financial Situation
-- Emergency funds and stable income allow for more risk
-- High financial obligations suggest lower risk
-
-## Building a Portfolio Based on Risk-Return Balance
-
-### Conservative Portfolio (Lower Risk)
-- 70-80% Large-cap stocks and index funds
-- 10-20% Fixed income
-- 5-10% Cash
-- Suitable for: Near-term goals, low risk tolerance
-
-### Moderate Portfolio (Balanced Risk)
-- 40-60% Large-cap stocks
-- 20-30% Mid-cap stocks
-- 10-20% Fixed income
-- Suitable for: Medium-term goals, average risk tolerance
-
-### Aggressive Portfolio (Higher Risk)
-- 40-50% Mid-cap stocks
-- 20-30% Small-cap stocks
-- 20-30% Large-cap stocks
-- Suitable for: Long-term goals, high risk tolerance
-
-## Key Takeaways
-
-1. **No free lunch**: Higher returns require accepting higher risk
-2. **Know yourself**: Understand your personal risk tolerance
-3. **Time matters**: Longer time horizons can absorb more risk
-4. **Diversification helps**: It reduces certain types of risk
-5. **Real returns matter**: Always consider inflation
-6. **Risk changes**: Regularly reassess your risk tolerance as life changes
-
-In the next lessons, we'll explore how to analyze stocks and build a diversified portfolio aligned with your risk tolerance.
-        `,
-        order_index: 2,
-        duration_minutes: 20,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Investment Strategies for Beginners",
-        content: `
-# Investment Strategies for Beginners
-
-Developing a sound investment strategy is crucial for successful investing. This lesson introduces proven strategies that work well for beginners in the Indian stock market.
-
-## Long-Term vs. Short-Term Investing
-
-### Long-Term Investing (Recommended for Beginners)
-- **Time Horizon**: 5+ years
-- **Focus**: Company fundamentals, growth potential
-- **Advantages**: 
-  - Less affected by market volatility
-  - Lower transaction costs and taxes
-  - Benefits from compounding
-  - Requires less monitoring
-- **Example**: Buying HDFC Bank shares to hold for a decade
-
-### Short-Term Trading
-- **Time Horizon**: Days to months
-- **Focus**: Price movements, technical patterns
-- **Challenges**: 
-  - Requires more time and expertise
-  - Higher transaction costs and taxes
-  - More stressful and emotional
-  - Often lower probability of success
-- **Not recommended** for beginners
-
-## Proven Beginner-Friendly Strategies
-
-### 1. Systematic Investment Plan (SIP)
-- **What it is**: Regular, fixed amount investments at set intervals
-- **How it works**: 
-  - Invest ₹2,000-5,000 monthly in selected stocks or funds
-  - Benefits from rupee-cost averaging (buying more shares when prices are low)
-- **Benefits**: 
-  - Disciplined approach
-  - Reduces impact of market timing
-  - Manageable for small investors
-- **Example**: Monthly ₹5,000 investment in Nifty 50 index fund
-
-### 2. Index Investing
-- **What it is**: Buying funds that track market indices
-- **How it works**: 
-  - Invest in Nifty 50 or Sensex index funds/ETFs
-  - Get exposure to India's largest companies in one investment
-- **Benefits**: 
-  - Instant diversification
-  - Lower costs than active funds
-  - Eliminates stock selection risk
-  - Historically outperforms most active strategies
-- **Example**: UTI Nifty Index Fund, HDFC Sensex ETF
-
-### 3. Blue-Chip Focus Strategy
-- **What it is**: Investing in established, financially sound companies
-- **How it works**: 
-  - Buy shares of 8-10 leading companies across different sectors
-  - Focus on companies with strong balance sheets and consistent performance
-- **Benefits**: 
-  - Lower volatility than broader market
-  - Better downside protection
-  - Often pay dividends
-- **Example Portfolio**: HDFC Bank, TCS, Asian Paints, Hindustan Unilever, Reliance
-
-### 4. Core and Satellite Strategy
-- **What it is**: Combining stable investments with growth opportunities
-- **How it works**: 
-  - Core (70-80%): Index funds, blue-chip stocks
-  - Satellite (20-30%): Selected growth stocks or sector funds
-- **Benefits**: 
-  - Balances stability and growth
-  - Allows some active management while controlling risk
-- **Example**: 
-  - Core: Nifty 50 index fund (70%)
-  - Satellite: 2-3 promising mid-cap stocks (30%)
-
-## Practical Implementation Steps
-
-### 1. Define Your Investment Goals
-- **Long-term wealth**: Focus on growth-oriented strategies
-- **Regular income**: Consider dividend stocks
-- **Specific financial goal**: Calculate required returns and plan accordingly
-
-### 2. Allocate Funds Properly
-- **Emergency fund first**: Keep 6 months' expenses in liquid funds/savings
-- **Only then invest**: Use only surplus funds for stock investments
-- **Start small**: Begin with amounts you're comfortable with
-
-### 3. Choose Your Entry Approach
-- **Lump sum**: Good during market corrections
-- **Staggered entry**: Divide your capital into 3-6 parts and invest over time
-- **SIP**: Best for monthly income earners
-
-### 4. Create a Simple Investment Policy
-Write down:
-- Your investment goals
-- Risk tolerance
-- Time horizon
-- Strategy you're following
-- Criteria for buying/selling
-
-## Common Beginner Mistakes to Avoid
-
-### 1. Chasing Hot Tips
-- **Problem**: Acting on unverified recommendations
-- **Solution**: Do your own research or stick to index funds
-
-### 2. Overdiversification
-- **Problem**: Buying too many stocks dilutes performance
-- **Solution**: For beginners, 8-12 quality stocks or 2-3 funds are sufficient
-
-### 3. Frequent Portfolio Checking
-- **Problem**: Leads to emotional decisions during volatility
-- **Solution**: Review quarterly for long-term investments
-
-### 4. Lack of Patience
-- **Problem**: Expecting quick returns leads to disappointment
-- **Solution**: Focus on 5+ year performance, not daily movements
-
-## Strategy Adjustment Timeline
-
-- **First 6 months**: Start with index or blue-chip investments
-- **6-12 months**: Learn and add selective additional investments
-- **1-2 years**: Refine strategy based on experience and research
-- **2+ years**: Develop your personal investment philosophy
-
-## Key Takeaways
-
-1. **Begin with simplicity**: Index funds and blue-chips offer the easiest start
-2. **Consistency matters more than timing**: Regular investing beats market timing
-3. **Patience is crucial**: The best returns come from time in the market
-4. **Start small but start now**: The power of compounding works best with time
-5. **Follow a plan, not emotions**: Documented strategies prevent emotional mistakes
-
-In the next lessons, we'll explore how to analyze individual stocks for those interested in direct equity investments.
-        `,
-        order_index: 3,
-        duration_minutes: 20,
-      },
-    ],
-    "Market Analysis": [
-      {
-        id: "",
-        module_id: "",
-        title: "Fundamental Analysis Basics",
-        content: `
-# Fundamental Analysis Basics
-
-Fundamental analysis involves evaluating a company's financial health, business model, competitive position, and growth prospects to determine its intrinsic value. This lesson covers the essential elements of fundamental analysis for beginners.
-
-## Key Financial Statements to Understand
-
-### 1. Income Statement
-- **What it shows**: Revenue, expenses, and profit over a specific period
-- **Key metrics to examine**:
-  - Revenue growth (year-over-year)
-  - Gross margin (gross profit/revenue)
-  - Net profit margin (net profit/revenue)
-  - Earnings per share (EPS)
-
-### 2. Balance Sheet
-- **What it shows**: Company's assets, liabilities, and shareholders' equity at a point in time
-- **Key metrics to examine**:
-  - Debt-to-equity ratio
-  - Current ratio (current assets/current liabilities)
-  - Return on equity (net income/shareholders' equity)
-  - Cash and cash equivalents
-
-### 3. Cash Flow Statement
-- **What it shows**: Cash generated and used during a period
-- **Key metrics to examine**:
-  - Operating cash flow
-  - Free cash flow
-  - Cash flow vs. reported profits
-  - Capital expenditures
-
-## Important Fundamental Ratios
-
-### Valuation Ratios
-- **P/E Ratio (Price-to-Earnings)**
-  - Formula: Share price / Earnings per share
-  - What it means: How much investors are willing to pay for each rupee of earnings
-  - Interpretation: Lower is potentially better value, but varies by industry
-  - Example: TCS with P/E of 30 vs. industry average of 25
-
-- **P/B Ratio (Price-to-Book)**
-  - Formula: Share price / Book value per share
-  - What it means: Price relative to company's accounting value
-  - Useful for: Financial companies, asset-heavy businesses
-  - Example: SBI with P/B of 1.5 vs. private banks at 3-4
-
-- **Dividend Yield**
-  - Formula: Annual dividend per share / Share price × 100
-  - What it means: Percentage return from dividends alone
-  - Interpretation: Higher yields may indicate better income but check sustainability
-  - Example: Power Grid offering 4% yield vs. market average of 1.5%
-
-### Profitability Ratios
-- **Return on Equity (ROE)**
-  - Formula: Net income / Shareholders' equity × 100
-  - What it means: How efficiently company uses shareholders' money
-  - Good range: 15-20% or higher consistently
-  - Example: Asian Paints with 25% ROE vs. industry average of 15%
-
-- **Operating Margin**
-  - Formula: Operating profit / Revenue × 100
-  - What it means: Profitability from core business operations
-  - Look for: Stability or improvement over time
-  - Example: HUL with 24% operating margin vs. smaller FMCG at 15%
-
-### Financial Health Ratios
-- **Debt-to-Equity**
-  - Formula: Total debt / Shareholders' equity
-  - What it means: Leverage and financial risk
-  - Generally safer: Below 1 (varies by industry)
-  - Example: IT companies often below 0.1 vs. infrastructure firms at 2+
-
-- **Interest Coverage Ratio**
-  - Formula: EBIT / Interest expense
-  - What it means: Ability to pay interest obligations
-  - Safe zone: Above 3
-  - Example: Company with ratio of 7 can pay interest 7 times over
-
-## Qualitative Analysis Factors
-
-### Management Quality
-- Track record of delivering on promises
-- Transparency in communications
-- Skin in the game (promoter ownership)
-- Dividend and capital allocation history
-
-### Competitive Advantages (Moats)
-- **Brand power**: Strong consumer loyalty (e.g., Asian Paints)
-- **Network effects**: Value increases with users (e.g., IndiaMART)
-- **Switching costs**: Difficult for customers to change (e.g., TCS)
-- **Cost advantages**: Able to produce at lower costs (e.g., Maruti Suzuki)
-
-### Industry Analysis
-- Market size and growth rate
-- Competitive intensity
-- Regulatory environment
-- Barriers to entry
-
-### Business Model Evaluation
-- Revenue predictability and recurring nature
-- Scalability without proportional cost increases
-- Working capital requirements
-- Pricing power with customers
-
-## Step-by-Step Fundamental Analysis Process
-
-### 1. Industry Selection
-- Identify growing industries with favorable long-term trends
-- Understand industry-specific metrics and averages
-- Example: IT services, consumer staples, private banking
-
-### 2. Company Screening
-- Use screeners to filter based on basic criteria:
-  - Consistent profitability (5+ years)
-  - Low/manageable debt
-  - Reasonable valuation relative to growth
-  - Decent ROE (15%+)
-
-### 3. Deep Financial Analysis
-- Review 5 years of financial statements
-- Look for trends rather than single-year figures
-- Compare against industry peers
-- Check for red flags (accounting changes, qualified audit reports)
-
-### 4. Qualitative Assessment
-- Study annual reports, especially management discussion
-- Listen to conference calls if available
-- Research management background and track record
-- Understand competitive position in the industry
-
-### 5. Valuation
-- Estimate fair value using:
-  - P/E comparison to historical average and peers
-  - Discounted cash flow (more advanced)
-  - Asset-based valuation (for certain industries)
-
-### 6. Investment Decision
-- Buy only if trading at discount to estimated fair value
-- Consider position sizing based on conviction
-- Document your investment thesis
-
-## Resources for Fundamental Analysis
-
-### Information Sources
-- Company annual reports and investor presentations
-- Screeners: Screener.in, Trendlyne, Tijori Finance
-- Financial websites: Moneycontrol, ValueResearchOnline
-- Regulatory filings on BSE/NSE websites
-
-### Key Metrics by Sector
-- **Banking**: NPA ratio, NIM, CASA ratio, credit growth
-- **FMCG**: Volume growth, distribution reach, gross margin
-- **IT Services**: Client concentration, attrition rate, utilization
-- **Manufacturing**: Capacity utilization, raw material costs
-
-## Common Mistakes in Fundamental Analysis
-
-1. **Focusing only on P/E ratio** without considering growth or quality
-2. **Ignoring cash flows** while fixating on reported profits
-3. **Not comparing within industry context** (each industry has different norms)
-4. **Overemphasizing recent results** rather than long-term trends
-5. **Neglecting qualitative factors** like management and competitive position
-
-In the next lesson, we'll explore technical analysis as a complementary approach to fundamental analysis.
-        `,
-        order_index: 1,
-        duration_minutes: 30,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Technical Analysis Overview",
-        content: `
-# Technical Analysis Overview
-
-Technical analysis involves studying price movements and trading volumes to identify patterns and trends that may indicate future price behavior. This lesson provides a beginner-friendly introduction to technical analysis concepts.
-
-## Fundamental vs. Technical Analysis
-
-### Fundamental Analysis:
-- Focuses on company financials and business strength
-- Determines intrinsic value of a stock
-- Long-term oriented (months to years)
-- Answers: "What to buy?"
-
-### Technical Analysis:
-- Focuses on price and volume patterns
-- Identifies entry and exit points
-- Short to medium-term oriented (days to months)
-- Answers: "When to buy or sell?"
-
-Many successful investors use both approaches: fundamental analysis to select stocks and technical analysis to time their entries and exits.
-
-## Core Principles of Technical Analysis
-
-### 1. Price Discounts Everything
-- All known information is reflected in the price
-- Market participants' collective wisdom drives prices
-- No need to analyze news separately
-
-### 2. Prices Move in Trends
-- Trends tend to continue rather than reverse
-- Identifying trend direction is crucial
-- Three types: uptrend, downtrend, and sideways
-
-### 3. History Tends to Repeat
-- Market patterns recur due to similar investor psychology
-- Recognizable patterns can help predict future movements
-- Past support/resistance levels often remain relevant
-
-## Essential Technical Analysis Tools
-
-### Price Charts
-- **Types of charts**:
-  - Line charts: Simplest, shows closing prices
-  - Bar charts: Shows open, high, low, close (OHLC)
-  - Candlestick charts: More visual representation of OHLC
-  - Point and figure: Focus on price changes, ignores time
-
-- **Timeframes**:
-  - Intraday: 1-minute to 1-hour (very short-term)
-  - Daily: Most commonly used
-  - Weekly/Monthly: For longer-term perspective
-
-### Trend Analysis
-
-- **Uptrend**: Series of higher highs and higher lows
-  - Strategy: Buy on pullbacks to support
-  
-- **Downtrend**: Series of lower highs and lower lows
-  - Strategy: Sell on rebounds to resistance
-
-- **Sideways/Range**: Price moves between support and resistance
-  - Strategy: Buy near support, sell near resistance
-
-- **Trend Lines**: Diagonal lines connecting highs or lows
-  - Uptrend line: Connects higher lows
-  - Downtrend line: Connects lower highs
-  - Breakout: When price crosses the trend line
-
-### Support and Resistance
-
-- **Support**: Price level where buying pressure exceeds selling pressure
-  - Often previous lows or round numbers (e.g., ₹500, ₹1000)
-  - Strategy: Consider buying near support levels
-
-- **Resistance**: Price level where selling pressure exceeds buying pressure
-  - Often previous highs or round numbers
-  - Strategy: Consider booking profits near resistance
-
-- **Role Reversal**: Support becomes resistance after breakdown; resistance becomes support after breakout
-
-### Moving Averages
-
-- **What they are**: Average price over a specific period
-  - Simple Moving Average (SMA): Equal weight to all prices
-  - Exponential Moving Average (EMA): More weight to recent prices
-
-- **Common periods**:
-  - 50-day MA: Intermediate trend
-  - 200-day MA: Long-term trend
-
-- **Trading signals**:
-  - Golden Cross: 50-day crosses above 200-day (bullish)
-  - Death Cross: 50-day crosses below 200-day (bearish)
-  - Price above MA: Bullish
-  - Price below MA: Bearish
-
-### Volume Analysis
-
-- **Volume**: Number of shares traded in a period
-  - Rising price + rising volume = strong trend
-  - Rising price + falling volume = weakening trend
-  - Falling price + rising volume = strong downtrend
-  - Falling price + falling volume = weakening downtrend
-
-- **Volume precedes price**: Often volume changes happen before price changes
-  - High volume at support = potential reversal
-  - Volume spike on breakout = more reliable breakout
-
-## Common Chart Patterns
-
-### Reversal Patterns
-
-- **Head and Shoulders**
-  - Formation: Higher high (head) between two lower highs (shoulders)
-  - Signal: Breakdown below neckline indicates reversal from uptrend to downtrend
-  - Target: Distance from head to neckline, projected downward
-
-- **Double Top/Bottom**
-  - Formation: Two peaks at similar levels (top) or two troughs (bottom)
-  - Signal: Break of neckline confirms reversal
-  - Common in: Range-bound markets transitioning to trends
-
-### Continuation Patterns
-
-- **Flags and Pennants**
-  - Formation: Brief consolidation after strong move
-  - Signal: Continuation in original direction after breakout
-  - Duration: Usually short-term (few days to weeks)
-
-- **Triangles**
-  - Ascending: Higher lows, flat tops (bullish)
-  - Descending: Lower highs, flat bottoms (bearish)
-  - Symmetric: Converging trend lines (follows prevailing trend)
-
-## Popular Technical Indicators
-
-### Momentum Indicators
-
-- **Relative Strength Index (RSI)**
-  - Range: 0 to 100
-  - Overbought: Above 70
-  - Oversold: Below 30
-  - Divergence: Price makes new high but RSI doesn't (bearish)
-
-- **Moving Average Convergence Divergence (MACD)**
-  - Components: MACD line, signal line, histogram
-  - Bullish signal: MACD crosses above signal line
-  - Bearish signal: MACD crosses below signal line
-
-### Volatility Indicators
-
-- **Bollinger Bands**
-  - Components: 20-day MA with bands 2 standard deviations above/below
-  - Signals: 
-    - Price touching upper band = potential resistance
-    - Price touching lower band = potential support
-    - Bands narrowing = decreased volatility, potential breakout coming
-
-## Practical Application for Beginners
-
-### Starting Steps
-1. **Learn to identify trends** first (uptrend, downtrend, sideways)
-2. **Recognize basic support and resistance** levels
-3. **Use simple moving averages** (50-day and 200-day)
-4. **Add one momentum indicator** (RSI is beginner-friendly)
-5. **Start with daily charts** before exploring other timeframes
-
-### Sensible Approach for Beginners
-- Use technical analysis for timing, not stock selection
-- Combine with fundamental analysis for better results
-- Start with longer timeframes (daily/weekly) to avoid noise
-- Paper trade before using real money
-- Keep your analysis simple and focused
-
-## Common Technical Analysis Mistakes
-
-1. **Using too many indicators** (indicator overload)
-2. **Ignoring the broader trend** while focusing on minor signals
-3. **Forcing patterns** to fit your bias
-4. **Not respecting stop losses** when signals fail
-5. **Overtrading** based on minor signals
-
-Remember: Technical analysis is probabilistic, not deterministic. No pattern or indicator works 100% of the time, and risk management remains essential.
-
-In our next lesson, we'll explore how to build a diversified portfolio using both fundamental and technical insights.
-        `,
-        order_index: 2,
-        duration_minutes: 25,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Reading Financial News Effectively",
-        content: `
-# Reading Financial News Effectively
-
-Financial news can significantly impact stock prices, but knowing how to interpret this information is crucial. This lesson will help you develop skills to read financial news critically and use it to make better investment decisions.
-
-## Types of Financial News and Their Impact
-
-### Corporate Events
-- **Earnings announcements**: Quarterly/annual results compared to expectations
-  - Impact: Often causes significant price movements
-  - Example: TCS reports 15% profit growth vs. expected 12%
-
-- **Management changes**: CEO/CFO appointments or resignations
-  - Impact: Can signal strategic shifts
-  - Example: New CEO appointment at Infosys affecting stock price
-
-- **Mergers and acquisitions**: Companies buying or merging with others
-  - Impact: Can affect both acquirer and target company
-  - Example: HDFC Bank's merger with HDFC Ltd
-
-- **Product launches**: New offerings introduced to market
-  - Impact: May indicate growth potential
-  - Example: Tata Motors launching new EV models
-
-### Regulatory News
-- **Policy changes**: Government regulations affecting industries
-  - Impact: Can reshape entire sectors
-  - Example: New telecom policy affecting Airtel and Jio
-
-- **Legal developments**: Court rulings, settlements, investigations
-  - Impact: May create uncertainty or resolve existing issues
-  - Example: Supreme Court ruling on AGR dues for telecom companies
-
-### Economic Indicators
-- **GDP growth**: Overall economic health
-  - Impact: Affects market sentiment broadly
-  - Example: GDP growth dropping below 5%
-
-- **Inflation data**: Consumer or wholesale price indices
-  - Impact: Influences interest rate expectations
-  - Example: CPI inflation rising above RBI's comfort zone
-
-- **Interest rate decisions**: RBI monetary policy announcements
-  - Impact: Affects borrowing costs and valuations
-  - Example: RBI raising repo rate by 25 basis points
-
-## News Sources: Quality and Reliability
-
-### Reliable Financial News Sources in India
-- **Business newspapers**: Economic Times, Business Standard, Mint
-- **Financial websites**: Moneycontrol, LiveMint, Bloomberg Quint
-- **Official sources**: Company filings on BSE/NSE, RBI website
-- **Business TV channels**: CNBC-TV18, ET Now, Bloomberg
-
-### Evaluating News Source Quality
-- **Reputation and track record**: Established sources with journalistic standards
-- **Business model**: Subscription models often have less clickbait
-- **Attribution**: Clear sourcing of information
-- **Correction policy**: Willingness to correct mistakes
-
-### Red Flags in Financial News
-- **Sensational headlines** that don't match content
-- **Anonymous sources** without specificity
-- **Excessive predictions** about precise price movements
-- **Conflict of interest** (undisclosed holdings)
-- **Urgency** ("Act now!" language)
-
-## How to Read Financial News Critically
-
-### Step 1: Understand the Context
-- What's the broader situation this news fits into?
-- Is this part of an ongoing story or something new?
-- Is this information already priced into the stock?
-
-### Step 2: Separate Facts from Opinion
-- Identify concrete data points vs. interpretations
-- Look for actual numbers and verifiable information
-- Be wary of editorializing disguised as reporting
-
-### Step 3: Consider the Source and Motive
-- Why is this news being reported now?
-- Who benefits from this information being public?
-- Is there a potential agenda behind the timing?
-
-### Step 4: Assess Actual Relevance to Fundamentals
-- Will this news impact the company's earnings?
-- Does it affect the competitive landscape?
-- How long-lasting will the impact be?
-
-### Step 5: Look for Consensus and Dissent
-- What are multiple sources saying?
-- Are there contrasting viewpoints?
-- What are industry experts (not just market commentators) saying?
-
-## Interpreting Different Types of News
-
-### Earnings Reports
-- **Look beyond headlines**: "Profits up 10%" could still be a miss if 15% was expected
-- **Compare to expectations**: Market reaction often based on performance vs. consensus
-- **Check quality of earnings**: One-time gains vs. sustainable growth
-- **Listen to guidance**: Future outlook often more important than past results
-- **Read management commentary**: What challenges do they highlight?
-
-### Economic Data
-- **Compare to previous periods**: Is it improving or deteriorating?
-- **Check revisions**: Were previous numbers adjusted?
-- **Understand seasonality**: Some metrics fluctuate predictably
-- **Look at trends, not single data points**: Direction more important than one reading
-
-### Policy and Regulatory News
-- **Consider implementation timeline**: When will changes take effect?
-- **Assess adaptation ability**: Which companies can adjust quickly?
-- **Look for sector-wide effects**: How are competitors affected?
-- **Watch for second-order effects**: Beyond the obvious first impact
-
-## Common Market Reactions to News
-
-### "Buy the rumor, sell the news"
-- Prices often move on expectations before official announcements
-- Good news that's already anticipated may not move prices further
-- Example: Stock rising before earnings, then falling despite good results
-
-### Overreaction and correction
-- Markets often initially overreact to surprising news
-- Subsequent days may see a more measured response
-- Example: Dramatic drop after negative news, followed by partial recovery
-
-### Sector sympathy moves
-- News affecting one company often moves related stocks
-- May create opportunities if unaffected companies drop
-- Example: All banking stocks falling when one bank reports NPAs
-
-## Creating Your News Consumption Strategy
-
-### For Long-Term Investors
-- **Focus on**: Quarterly results, annual reports, major corporate developments
-- **Limit**: Daily market commentary, short-term predictions
-- **Schedule**: Weekly news review rather than constant checking
-- **Prioritize**: Industry trends over daily price movements
-
-### For Active Traders
-- **Focus on**: Economic releases, breaking news, technical triggers
-- **Tools**: News alerts, economic calendars
-- **Develop**: "Trading the news" rules to avoid emotional decisions
-- **Create**: Pre-market routine to review overnight developments
-
-## Using News in Your Investment Process
-
-### Integration with Analysis
-- Use news to update your fundamental thesis
-- Question whether news changes your long-term view
-- Distinguish between noise and signal
-
-### Creating Information Edges
-- Follow specialized industry sources
-- Listen to company conference calls
-- Read beyond headlines into detailed reports
-- Track news that others might miss
-
-### Using News for Contrarian Opportunities
-- Extreme negative sentiment can indicate buying opportunities
-- Overwhelming positive consensus might signal caution
-- Look for disconnects between news reaction and fundamental impact
-
-## Key Takeaways
-
-1. **Quality matters**: Focus on reliable sources with good track records
-2. **Context is crucial**: Understand how news fits into bigger picture
-3. **Facts over opinions**: Prioritize verifiable information
-4. **Relevance test**: Ask how news affects long-term business value
-5. **Manage consumption**: Develop a disciplined news routine
-6. **Separate signal from noise**: Most financial news is not actionable
-7. **Use news as one input**: Never make decisions based solely on news
-
-In our next lesson, we'll explore how to build and manage a diversified stock portfolio.
-        `,
-        order_index: 3,
-        duration_minutes: 20,
-      },
-    ],
-    "Building Your Portfolio": [
-      {
-        id: "",
-        module_id: "",
-        title: "Portfolio Construction Basics",
-        content: `
-# Portfolio Construction Basics
-
-Building an effective investment portfolio is more than just picking good stocks—it's about creating a balanced collection of investments that work together to meet your goals while managing risk. This lesson covers the fundamentals of portfolio construction.
-
-## Portfolio Construction Principles
-
-### 1. Goal-Based Approach
-- **Define clear objectives**: Growth, income, capital preservation
-- **Set realistic targets**: Expected returns based on asset allocation
-- **Establish time horizon**: Short-term (0-3 years), medium-term (3-7 years), long-term (7+ years)
-- **Consider liquidity needs**: When might you need to access the money?
-
-### 2. Risk Management Through Diversification
-- **Concept**: Not putting all eggs in one basket
-- **Benefits**: Reduces impact of any single investment performing poorly
-- **Key types of diversification**:
-  - Across asset classes (stocks, bonds, gold)
-  - Across sectors (banking, IT, consumer)
-  - Across market caps (large, mid, small)
-  - Across geographies (domestic, international)
-
-### 3. Asset Allocation
-- **Definition**: Distribution of investments across different asset classes
-- **Importance**: Determines ~90% of portfolio returns variability
-- **Factors affecting allocation**:
-  - Age and investment horizon
-  - Risk tolerance
-  - Financial goals
-  - Current financial situation
-
-## Building a Stock Portfolio: Step-by-Step
-
-### Step 1: Define Your Investment Parameters
-- **Determine amount to invest**: Only use surplus funds after emergency savings
-- **Set time horizon**: How long can you stay invested?
-- **Establish risk tolerance**: Conservative, moderate, or aggressive
-- **Define return expectations**: Realistic targets based on risk level
-
-### Step 2: Create Your Asset Allocation
-- **Conservative example** (lower risk):
-  - 60% Large-cap stocks/index funds
-  - 20% Fixed income
-  - 10% Gold
-  - 10% Cash
-  
-- **Moderate example**:
-  - 40% Large-cap stocks/index funds
-  - 30% Mid-cap stocks
-  - 15% Fixed income
-  - 10% Gold
-  - 5% Cash
-  
-- **Aggressive example** (higher risk):
-  - 40% Mid-cap stocks
-  - 30% Large-cap stocks
-  - 20% Small-cap stocks
-  - 5% International stocks
-  - 5% Cash
-
-### Step 3: Sector Allocation
-- **Defensive sectors**: FMCG, pharmaceuticals, utilities
-- **Cyclical sectors**: Banking, auto, real estate
-- **Growth sectors**: IT, e-commerce, renewable energy
-- **Balanced approach**: Exposure to 5-7 sectors with no single sector >25%
-
-### Step 4: Stock Selection Within Sectors
-- **Quality parameters**:
-  - Consistently profitable
-  - Low debt levels
-  - Good return on equity (15%+)
-  - Competitive advantages
-  - Capable management
-
-- **Valuation considerations**:
-  - Reasonable P/E relative to growth
-  - P/E compared to sector average
-  - Price-to-book value
-  - Dividend yield (if income is a goal)
-
-### Step 5: Position Sizing
-- **General guideline**: No single stock >5-10% of portfolio
-- **Conviction-based adjustment**: Higher allocation to highest conviction ideas
-- **Risk-based sizing**: Lower allocation to higher-risk stocks
-- **Practical example**:
-  - Core positions (stronger companies): 5-7% each
-  - Satellite positions (growth opportunities): 2-4% each
-
-### Step 6: Entry Strategy
-- **For lump sum investing**:
-  - Staggered entry over 3-6 months
-  - Buy in 2-3 tranches to average out entry price
-  
-- **For regular investing**:
-  - Set up SIPs for mutual funds/index funds
-  - Regular monthly purchases of stocks
-
-## Portfolio Models for Different Investors
-
-### Beginner Portfolio (0-2 years experience)
-- **Structure**: 
-  - 70-80% Index funds (Nifty 50, Nifty Next 50)
-  - 20-30% Large-cap blue-chip stocks (5-7 stocks)
-- **Advantage**: Simplicity, lower risk, less monitoring
-- **Example allocation**:
-  - Nifty 50 index fund: 50%
-  - Nifty Next 50 index fund: 30%
-  - 4 blue-chip stocks: 5% each
-
-### Intermediate Portfolio (2-5 years experience)
-- **Structure**:
-  - 40-50% Index funds
-  - 30-40% Direct stocks (10-15 companies)
-  - 10-20% Thematic opportunities
-- **Advantage**: Balance of simplicity and potential outperformance
-- **Example sectors**: Banking, IT, FMCG, Pharma, Auto
-
-### Advanced Portfolio (5+ years experience)
-- **Structure**:
-  - 60-70% Direct stocks (15-20 companies)
-  - 20-30% Strategic sector allocations
-  - 10% High-potential opportunities
-- **Advantage**: Customization and potential for higher returns
-- **Requires**: More time, knowledge, and monitoring
-
-## Portfolio Monitoring and Rebalancing
-
-### Regular Review Process
-- **Quarterly**: Review performance vs. benchmarks
-- **Semi-annually**: Detailed fundamental review of holdings
-- **Annually**: Major rebalancing if needed
-
-### When to Rebalance
-- **Time-based**: Fixed schedule (e.g., annually)
-- **Threshold-based**: When allocations drift beyond set limits (e.g., ±5%)
-- **Combination approach**: Regular review with threshold triggers
-
-### What to Monitor
-- **Company fundamentals**: Earnings growth, ROE, debt levels
-- **Valuation metrics**: P/E ratio, P/B ratio
-- **Sector developments**: Regulatory changes, competitive landscape
-- **Portfolio concentration**: Ensuring diversification is maintained
-
-## Common Portfolio Construction Mistakes
-
-### 1. Overdiversification
-- **Problem**: Too many stocks dilute returns and attention
-- **Solution**: Quality over quantity; 15-20 stocks maximum for most investors
-- **Warning sign**: You can't remember what you own and why
-
-### 2. Emotional Allocation
-- **Problem**: Building portfolio based on recent performance or news
-- **Solution**: Systematic approach based on fundamentals and valuation
-- **Warning sign**: Frequent buying of "hot stocks" or sectors
-
-### 3. Ignoring Correlation
-- **Problem**: Owning many stocks that move similarly
-- **Solution**: Check how holdings have performed in different market conditions
-- **Warning sign**: Portfolio moves dramatically up or down as a whole
-
-### 4. Neglecting Portfolio Drift
-- **Problem**: Original allocation changes as some investments grow faster
-- **Solution**: Regular rebalancing to maintain target allocation
-- **Warning sign**: One position becomes >15% of portfolio
-
-### 5. Lack of Documentation
-- **Problem**: No record of why investments were made
-- **Solution**: Investment journal noting thesis for each position
-- **Warning sign**: Unable to articulate why you own something
-
-## Creating Your Investment Policy Statement
-
-An Investment Policy Statement (IPS) is a written document that outlines your:
-
-1. **Investment goals and objectives**
-2. **Time horizon for different goals**
-3. **Risk tolerance and constraints**
-4. **Target asset allocation**
-5. **Selection criteria for investments**
-6. **Rebalancing strategy and triggers**
-7. **Performance evaluation benchmarks**
-
-Having this document helps maintain discipline and consistency in your approach.
-
-## Key Takeaways
-
-1. **Start with allocation, not stock picking**: The broad structure matters more than individual selections
-2. **Match portfolio to your situation**: No perfect portfolio exists—only one that's right for you
-3. **Build gradually**: Start simple and add complexity as your knowledge grows
-4. **Diversify purposefully**: Each holding should serve a specific role
-5. **Document your strategy**: Write down your plan and reasons for each investment
-6. **Review regularly but trade infrequently**: Most good investments need time to work
-
-Our next lesson will cover portfolio monitoring and management techniques to help you maintain your investment strategy over time.
-        `,
-        order_index: 1,
-        duration_minutes: 25,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Tax Planning for Investors",
-        content: `
-# Tax Planning for Investors
-
-Understanding the tax implications of your investments is crucial for maximizing returns. This lesson covers the fundamentals of tax planning for stock market investors in India.
-
-## Types of Investment-Related Taxes
-
-### Capital Gains Tax
-- **Definition**: Tax on profits made from selling investments
-- **Types**:
-  - Short-term capital gains (STCG): Assets held for ≤ 1 year
-  - Long-term capital gains (LTCG): Assets held for > 1 year
-
-### Dividend Tax
-- **Definition**: Tax on dividends received from investments
-- **Current status**: Taxed in the hands of the investor at their applicable income tax slab rate
-
-### Securities Transaction Tax (STT)
-- **Definition**: Tax collected at source on purchase or sale of securities
-- **Application**: Automatically deducted during transactions on recognized exchanges
-
-## Capital Gains Tax Rates (Current as of 2023)
-
-### Equity Shares and Equity Mutual Funds
-
-#### Short-Term Capital Gains (≤ 1 year)
-- **Tax rate**: 15% (plus applicable surcharge and cess)
-- **Example**: 
-  - Buy: 100 shares @ ₹500 = ₹50,000
-  - Sell after 8 months: 100 shares @ ₹600 = ₹60,000
-  - STCG: ₹10,000
-  - Tax: ₹10,000 × 15% = ₹1,500 (plus surcharge and cess if applicable)
-
-#### Long-Term Capital Gains (> 1 year)
-- **Tax rate**: 10% on gains exceeding ₹1 lakh per financial year (without indexation benefit)
-- **Example**:
-  - Buy: 100 shares @ ₹400 = ₹40,000
-  - Sell after 2 years: 100 shares @ ₹650 = ₹65,000
-  - LTCG: ₹25,000
-  - Exempt amount: ₹1,00,000 per year
-  - Taxable amount: Nil (as gains are below exemption threshold)
-
-### Debt Mutual Funds and Bonds
-
-#### Short-Term Capital Gains (≤ 3 years)
-- **Tax rate**: Added to income and taxed as per income tax slab
-
-#### Long-Term Capital Gains (> 3 years)
-- **Tax rate**: 20% with indexation benefit
-- **Indexation**: Adjusts purchase price for inflation, reducing the taxable gain
-
-## Tax-Efficient Investment Strategies
-
-### 1. Hold for Long Term
-- **Strategy**: Maintain equity investments for >1 year
-- **Benefit**: Lower tax rate (10% vs 15%) plus ₹1 lakh exemption
-- **Example**: Selling shares worth ₹10 lakhs with 20% gain:
-  - If sold before 1 year: Tax = ₹30,000 (₹2 lakh gain × 15%)
-  - If sold after 1 year: Tax = ₹10,000 (₹2 lakh gain - ₹1 lakh exemption) × 10%
-
-### 2. Harvest Tax Losses
-- **Strategy**: Offset gains by realizing losses before financial year-end
-- **Process**:
-  - Identify investments trading below purchase price
-  - Sell to book losses
-  - Repurchase after 3 days (to avoid wash sale implications)
-- **Benefit**: Reduces taxable gains for the year
-- **Example**: 
-  - You have LTCG of ₹2 lakhs in Stock A
-  - Stock B is showing a loss of ₹50,000
-  - Sell Stock B to realize loss
-  - Net taxable LTCG: ₹1.5 lakhs (₹2 lakhs - ₹50,000)
-
-### 3. Plan Redemptions Across Financial Years
-- **Strategy**: Spread large redemptions across financial years
-- **Benefit**: Utilize the ₹1 lakh LTCG exemption each year
-- **Example**:
-  - Instead of selling shares with ₹3 lakhs gain in March
-  - Sell half in March and half in April (new financial year)
-  - Utilize exemption twice (₹1 lakh each year)
-
-### 4. Use Tax-Efficient Investment Vehicles
-- **Strategy**: Invest through vehicles with favorable tax treatment
-- **Options**:
-  - Equity-Linked Savings Scheme (ELSS): Tax deduction under 80C and favorable LTCG treatment
-  - National Pension System (NPS): Deductions under 80C and 80CCD with partially tax-free withdrawals
-  - Unit-Linked Insurance Plans (ULIPs): Tax-free returns if conditions met
-
-### 5. Optimize Dividend vs. Growth Options
-- **Strategy**: Choose growth option for compounding during wealth-building phase
-- **Rationale**: Dividends taxed at income tax slab rate (potentially 30%+), while long-term capital gains taxed at 10%
-- **Exception**: Retirees needing regular income might prefer dividend option despite tax inefficiency
-
-## Securities Transaction Tax (STT) Awareness
-
-### Current STT Rates (as of 2023)
-- **Equity delivery-based buying**: 0.1% of transaction value
-- **Equity delivery-based selling**: 0.1% of transaction value
-- **Equity intraday/F&O**: 0.025% of transaction value
-- **Futures**: 0.01% of transaction value
-- **Options premium**: 0.05% of premium value
-- **Options exercise**: 0.125% of settlement price
-
-### Impact on Trading Strategies
-- **Higher impact on frequent traders**: Consider STT in break-even calculations
-- **Lower impact on long-term investors**: Minimal effect when amortized over holding period
-
-## Tax Compliance for Investors
-
-### Reporting Investment Income
-- **ITR forms**: Different forms based on income sources
-  - ITR-1: Not applicable if you have capital gains
-  - ITR-2: For individuals with capital gains
-  - ITR-3: For individuals with business income plus investments
-
-### Documents to Maintain
-- **Contract notes**: For all buy/sell transactions
-- **Account statements**: Demat and trading account statements
-- **Form 26AS**: Tax credit statement showing TDS
-- **Capital gains statement**: From broker or self-prepared
-
-### Common Compliance Pitfalls
-- **Under-reporting dividends**: All dividends must be reported
-- **Missing penny stocks gains**: Even small transactions count
-- **Incorrect holding period calculation**: Verify dates carefully
-- **Not reporting foreign investments**: Mandatory disclosure requirements
-
-## Special Tax Situations
-
-### Inherited or Gifted Shares
-- **Cost basis**: Original purchase price of previous owner
-- **Holding period**: Includes previous owner's holding period
-- **Documentation**: Maintain proof of inheritance/gift
-
-### Corporate Actions
-- **Stock splits/bonuses**: Cost basis is adjusted proportionately
-- **Mergers/demergers**: Special rules for calculating cost basis
-- **Buybacks**: Taxed as capital gains, not dividends
-
-### Foreign Investments
-- **US stocks/ETFs**: Subject to both Indian and potential US tax implications
-- **Reporting requirement**: Schedule FA for foreign assets
-- **DTAA benefits**: Check Double Taxation Avoidance Agreements
-
-## Tax Planning Calendar
-
-### Quarterly
-- **Review unrealized gains/losses**: Identify tax-loss harvesting opportunities
-- **Estimate advance tax liability**: For large expected capital gains
-
-### December-January
-- **Tax-loss harvesting**: Realize losses to offset gains before year-end
-- **ELSS investments**: Complete Section 80C investments
-
-### February-March
-- **Plan redemptions**: Decide whether to sell before or after March 31
-- **Finalize tax-saving investments**: Complete any remaining tax-saving investments
-
-### July
-- **File tax returns**: Submit ITR with complete investment details
-- **Verify Form 26AS**: Ensure all TDS is correctly reflected
-
-## Key Takeaways
-
-1. **Tax planning is legitimate**: It's different from tax evasion and should be part of your investment strategy
-2. **Holding period matters**: Significant tax advantages for long-term investments
-3. **Documentation is crucial**: Maintain proper records of all transactions
-4. **Stay updated**: Tax laws change; review strategies annually
-5. **Consider after-tax returns**: Focus on what you keep, not just what you earn
-6. **Seek professional advice**: Consult a tax professional for complex situations
-
-Remember that while tax efficiency is important, investment decisions should primarily be based on fundamentals and your financial goals—tax benefits should be secondary.
-
-Our next lesson will cover the practical aspects of monitoring your portfolio and making adjustments as needed.
-        `,
-        order_index: 2,
-        duration_minutes: 20,
-      },
-      {
-        id: "",
-        module_id: "",
-        title: "Managing Emotions in Investing",
-        content: `
-# Managing Emotions in Investing
-
-Emotional decision-making is one of the biggest obstacles to investment success. This lesson explores how emotions affect investment decisions and provides practical strategies to manage them effectively.
-
-## How Emotions Impact Investment Decisions
-
-### Common Emotional Biases
-
-#### Fear
-- **Manifestation**: Selling during market downturns, avoiding good investment opportunities
-- **Market impact**: Exiting positions at lows, missing recovery
-- **Example**: Panic selling during March 2020 COVID crash, missing the subsequent rally
-
-#### Greed
-- **Manifestation**: Chasing performance, buying at market peaks
-- **Market impact**: Buying high, increasing risk exposure at wrong time
-- **Example**: Piling into IT stocks at peak valuations during 2021
-
-#### Overconfidence
-- **Manifestation**: Excessive trading, concentrated positions, ignoring risks
-- **Market impact**: Increased costs, under-diversification, unexpected losses
-- **Example**: Taking oversized positions in "sure thing" stocks
-
-#### Confirmation Bias
-- **Manifestation**: Seeking information that supports existing views
-- **Market impact**: Ignoring warning signs, failing to reassess thesis
-- **Example**: Only reading positive news about stocks you own
-
-#### Recency Bias
-- **Manifestation**: Giving too much weight to recent events
-- **Market impact**: Extrapolating short-term trends too far
-- **Example**: Assuming a three-month rally will continue indefinitely
-
-#### Loss Aversion
-- **Manifestation**: Feeling losses more strongly than equivalent gains
-- **Market impact**: Holding losing positions too long, selling winners too soon
-- **Example**: Refusing to sell a stock that's down 30% to avoid "locking in" the loss
-
-## The Behavior Gap: Emotions vs. Returns
-
-### What Research Shows
-- **Investor returns vs. investment returns**: Studies consistently show average investors underperform their own investments
-- **Behavior gap**: Difference between investment performance and investor performance due to timing decisions
-- **Quantified impact**: DALBAR studies show 3-5% annual underperformance due to behavioral mistakes
-
-### Why It Happens
-- **Market timing mistakes**: Buying high (when confident) and selling low (when scared)
-- **Performance chasing**: Investing in what's recently performed well
-- **Inconsistent strategy**: Switching approaches based on recent results
-- **Overreaction**: Responding too strongly to both positive and negative news
-
-## Creating an Emotional Management System
-
-### 1. Develop an Investment Policy Statement (IPS)
-- **What it is**: Written document outlining investment strategy, criteria, and processes
-- **Key components**:
-  - Investment goals and time horizon
-  - Risk tolerance assessment
-  - Asset allocation targets
-  - Criteria for buying and selling
-  - Rebalancing schedule
-- **How it helps**: Provides objective reference point during emotional periods
-
-### 2. Implement Rules-Based Decision Making
-- **Entry rules**: Specific criteria that must be met before buying
-  - Example: "Only buy stocks with P/E below sector average, 5-year revenue growth >10%, and debt-to-equity <0.5"
-  
-- **Exit rules**: Predetermined conditions for selling
-  - Example: "Sell if fundamentals deteriorate (ROE drops below 12% for 2 consecutive quarters) or valuation exceeds threshold (P/E > 40)"
-  
-- **Allocation rules**: Guidelines for position sizing
-  - Example: "No single stock >5% of portfolio; gradually add to positions in 3 tranches"
-
-### 3. Automate Where Possible
-- **Systematic investment plans** (SIPs): Regular, fixed-amount investments
-- **Automatic rebalancing**: Schedule regular portfolio adjustments
-- **Alerts instead of constant checking**: Set price or news alerts rather than watching continuously
-
-### 4. Develop Self-Awareness Practices
-- **Investment journal**: Record decisions, rationale, and emotional state
-  - Example entry: "Bought Company X today because [reasons]. Feeling [emotion] about the market currently."
-  
-- **Pre-mortems**: Imagine investment has failed and identify potential causes
-  - Example: "If this investment loses 30%, what would likely have gone wrong?"
-  
-- **Emotional check-in**: Before making decisions, assess your current emotional state
-  - Ask: "Am I making this decision out of fear, greed, or rational analysis?"
-
-## Strategies for Specific Market Conditions
-
-### During Bull Markets
-- **Combat overconfidence and greed**:
-  - Regularly rebalance to target allocation
-  - Maintain selling discipline when valuations get stretched
-  - Keep cash reserve for opportunities
-  - Remember that trees don't grow to the sky
-
-- **Reality check questions**:
-  - "Would I buy this at current prices if I didn't already own it?"
-  - "What could go wrong with the bullish thesis?"
-  - "Am I increasing risk because everyone else seems to be making easy money?"
-
-### During Bear Markets
-- **Combat fear and pessimism**:
-  - Review your original investment thesis
-  - Focus on fundamentals, not prices
-  - Implement predetermined buying plans
-  - Limit consumption of alarming financial news
-
-- **Reality check questions**:
-  - "Has the long-term outlook for this company fundamentally changed?"
-  - "Am I selling because of price action or deteriorating fundamentals?"
-  - "What's the historical context for this decline?"
-
-### During Sideways/Volatile Markets
-- **Combat impatience and overtrading**:
-  - Focus on long-term goals rather than short-term performance
-  - Use dollar-cost averaging to reduce timing pressure
-  - Find productive activities besides watching portfolio
-
-- **Reality check questions**:
-  - "Is this new strategy truly better, or am I just bored?"
-  - "What's the cost (taxes, fees) of making changes now?"
-  - "Am I confusing activity with progress?"
-
-## Practical Techniques for Emotional Management
-
-### Media and Information Diet
-- **Limit consumption**: Reduce financial news watching during volatile periods
-- **Quality over quantity**: Focus on fundamental analysis rather than price predictions
-- **Designated times**: Schedule specific times for market updates rather than constant checking
-
-### Support Systems
-- **Investment buddy**: Trusted friend to discuss decisions and provide perspective
-- **Professional advisor**: Objective third-party for major decisions
-- **Investment communities**: Groups following similar discipline-focused strategies
-
-### Cognitive Restructuring
-- **Reframing market declines**: View them as sales or opportunities rather than losses
-- **Separating price from value**: Remind yourself that price volatility doesn't equal change in intrinsic value
-- **Extending time horizon**: Consider 5-10 year outlook instead of next week or month
-
-### Stress Management Techniques
-- **Breathing exercises**: Simple 4-7-8 breathing when feeling market anxiety
-- **Physical activity**: Exercise before making important investment decisions
-- **Sleeping on it**: 24-hour rule for significant portfolio changes
-
-## Learning from Behavioral Mistakes
-
-### Post-Decision Assessment
-- **Regular review**: Quarterly review of all buying/selling decisions
-- **Outcome vs. process**: Evaluate the decision process, not just the result
-- **Improvement focus**: Identify patterns and create safeguards
-
-### Questions for Review
-1. Was this decision made based on my predetermined strategy?
-2. What emotions influenced this decision?
-3. What information did I have, and what did I miss?
-4. Would I make the same decision again given the same circumstances?
-5. How can I improve my decision process next time?
-
-## Key Takeaways
-
-1. **Emotions are natural**: Everyone experiences them; success comes from managing, not eliminating them
-2. **Systems beat willpower**: Create processes that work when emotions are strong
-3. **Preparation is key**: Decide how you'll act in different scenarios before they happen
-4. **Self-awareness matters**: Recognizing emotional states is the first step to managing them
-5. **Process over outcomes**: Focus on making good decisions, not perfect predictions
-6. **Consistency beats timing**: Disciplined approach outperforms emotional reactions
-7. **Progress, not perfection**: Emotional management is a skill developed over time
-
-In our final lesson, we'll explore advanced concepts and bringing together everything you've learned into a cohesive investment approach.
-        `,
-        order_index: 3,
-        duration_minutes: 20,
-      },
-    ],
-  };
-
-  // Create the course with its modules and lessons
-  await createCourse(course, modules, lessonsData);
-};
-
-/**
- * Initialize data for the app
- * This creates courses, modules, and lessons if they don't exist yet
- */
-export const initializeAppData = async (): Promise<void> => {
-  try {
-    console.log("Starting app data initialization");
+## Common Mistakes to Avoid
+
+### ❌ Choosing solely based on lowest fees
+Look beyond cost to platform quality and service
+
+### ❌ Not reading the fee structure carefully
+Hidden charges can add up significantly
+
+### ❌ Creating multiple accounts unnecessarily
+This complicates tax reporting and portfolio tracking
+
+### ❌ Providing incorrect personal information
+Causes problems during verification and tax filing
+
+### ❌ Rushing through the setup process
+Take time to understand all features and limitations
+
+## Getting Help
+
+### Learning Resources
+- Most brokers offer tutorials and demos
+- YouTube videos on platform navigation
+- Community forums for specific brokers
+
+### Customer Support
+- Save broker's support number in your contacts
+- Know email support options
+- Check if chat support is available
+
+💡 **Pro Tip**: After opening your account, start by using the "paper trading" or demo features many brokers offer before investing real money. This will help you get comfortable with the platform without any risk.`,
+              lesson_order: 1
+            },
+            {
+              title: "Understanding Stock Market Indices",
+              content: `# Understanding Stock Market Indices
+
+📊 Stock market indices are essential tools that help investors track market performance and make more informed investment decisions.
+
+## What is a Stock Market Index?
+
+A stock market index is a measure of the value of a section of the stock market. It is computed from the prices of selected stocks, typically using a weighted average.
+
+### Purpose of Indices
+- **Market Performance Indicator**: Reflects overall market direction
+- **Benchmark**: Comparison standard for investment performance
+- **Investment Vehicle**: Basis for index funds and ETFs
+- **Economic Indicator**: Reflects economic health and investor sentiment
+
+## Major Indian Stock Market Indices
+
+### Sensex (S&P BSE SENSEX)
+- **Exchange**: Bombay Stock Exchange (BSE)
+- **Components**: 30 largest, most liquid BSE-listed companies
+- **Base Year**: 1978-79 = 100 points
+- **Calculation**: Free-float market capitalization weighted
+- **Significance**: Oldest index, widely followed benchmark
+
+### Nifty 50 (NSE NIFTY 50)
+- **Exchange**: National Stock Exchange (NSE)
+- **Components**: 50 largest NSE-listed companies
+- **Base Year**: November 3, 1995 = 1000 points
+- **Calculation**: Free-float market capitalization weighted
+- **Significance**: Most widely used index for derivatives
+
+### Other Important Indian Indices
+- **Nifty Next 50**: The next 50 companies after Nifty 50
+- **BSE 500 & Nifty 500**: Broader market indices
+- **Sectoral Indices**: Bank Nifty, Nifty IT, Nifty Auto, etc.
+- **Nifty Midcap 150**: Mid-sized companies
+- **Nifty Smallcap 250**: Smaller companies
+
+## Major Global Indices
+
+### United States
+- **S&P 500**: 500 largest US companies
+- **Dow Jones Industrial Average**: 30 significant stocks
+- **NASDAQ Composite**: Technology-heavy index
+
+### Other Countries
+- **FTSE 100** (UK)
+- **Nikkei 225** (Japan)
+- **Shanghai Composite** (China)
+- **DAX** (Germany)
+
+## How Indices are Calculated
+
+### Common Weighting Methods
+1. **Market Capitalization Weighted**
+   - Larger companies have more impact
+   - Most common method (Sensex, Nifty, S&P 500)
+
+2. **Price Weighted**
+   - Higher-priced stocks have more impact
+   - Example: Dow Jones Industrial Average
+
+3. **Equal Weighted**
+   - All stocks have same impact regardless of size
+   - Example: Nifty50 Equal Weight Index
+
+4. **Free-Float Market Cap Weighted**
+   - Based on shares actually available for trading
+   - Used by most modern indices including Nifty and Sensex
+
+### Index Reconstitution
+- Periodic review and updating of index components
+- Companies added/removed based on defined criteria
+- Maintains relevance and representation of the market
+
+## How to Invest in Indices
+
+### 1. Index Funds
+- Mutual funds that track specific indices
+- Low expense ratio compared to active funds
+- Examples: UTI Nifty Index Fund, HDFC Sensex Index Fund
+
+### 2. Exchange Traded Funds (ETFs)
+- Trade on exchanges like individual stocks
+- Often lower expense ratio than index funds
+- Examples: Nippon India ETF Nifty BeES, SBI ETF Sensex
+
+### 3. Index Futures and Options
+- Derivative contracts based on indices
+- Used for hedging or speculation
+- Higher risk, requires more knowledge
+
+## Reading and Interpreting Index Movements
+
+### Daily Movement Terms
+- **Points Change**: Absolute change in index value
+- **Percentage Change**: Relative change (more meaningful)
+- **Volume**: Number of shares traded
+- **Breadth**: Advancing vs declining stocks
+
+### Common Patterns
+- **Bull Market**: Sustained uptrend (20%+ increase)
+- **Bear Market**: Sustained downtrend (20%+ decrease)
+- **Correction**: 10-20% drop from recent peak
+- **Rally**: Strong short-term upward movement
+
+### Technical Levels
+- **Support**: Price level where buying pressure overcomes selling
+- **Resistance**: Price level where selling pressure overcomes buying
+- **Moving Averages**: 50-day, 200-day averages show trends
+
+## Using Indices in Your Investment Strategy
+
+### For Passive Investors
+- Invest in broad market indices for diversification
+- Regular SIPs into index funds for long-term wealth building
+- Low-cost, tax-efficient approach
+
+### For Active Investors
+- Use as benchmarks to evaluate performance
+- Track sector indices to identify rotation trends
+- Monitor index internals for market health
+
+### For Market Timing (Advanced)
+- Index put/call ratios as sentiment indicators
+- VIX (volatility index) for gauging market fear
+- Index relative strength compared to global markets
+
+## Popular Index Investing Strategies
+
+### 1. Core-Satellite
+- Core: Large allocation to broad index funds
+- Satellite: Smaller allocations to active funds or individual stocks
+
+### 2. Asset Allocation with Indices
+- Different indices for different asset classes
+- Regular rebalancing to maintain allocation
+
+### 3. Tactical Allocation
+- Overweight/underweight sectors based on economic cycles
+- Use sector indices to implement views
+
+💡 **Key Insight**: For most beginning investors, a simple strategy of regular investments into a broad market index fund (like Nifty 50 or Sensex) is often the most reliable path to long-term wealth creation.`,
+              lesson_order: 2
+            },
+            {
+              title: "Making Your First Stock Purchase",
+              content: `# Making Your First Stock Purchase
+
+🛒 This step-by-step guide will walk you through the process of researching, selecting, and purchasing your first stock.
+
+## Before You Buy: Essential Preparation
+
+### 1. Financial Readiness Checklist
+✅ Emergency fund (3-6 months of expenses)
+✅ No high-interest debt (credit cards, personal loans)
+✅ Clear investment goals and time horizon
+✅ Understanding of basic stock concepts
+✅ Money you can afford to invest (not needed soon)
+
+### 2. Research Resources to Bookmark
+- **Company websites**: Investor relations pages
+- **Stock screeners**: Screener.in, Tickertape, MoneyControl
+- **Financial news**: Economic Times, LiveMint, Bloomberg Quint
+- **Broker research**: Reports from your brokerage
+- **Annual reports**: From company websites or BSE/NSE
+
+### 3. Set Up Your Watchlist
+- Create a list of 8-12 companies that interest you
+- Track them for a few weeks before investing
+- Note price movements and news impacts
+- Get familiar with their business models
+
+## Choosing Your First Stock
+
+### 1. Consider Starting With
+- **Blue-chip companies**: Established, stable businesses
+- **Companies you understand**: Products/services you use
+- **Dividend-paying stocks**: For some predictable returns
+- **Index heavyweights**: Major components of Nifty/Sensex
+
+### 2. Basic Analysis Factors
+- **Revenue growth**: Consistent increases over years
+- **Profit margins**: Stable or improving
+- **Debt levels**: Manageable compared to equity
+- **Competitive advantage**: What makes the company special
+- **Valuation**: Price relative to earnings (P/E ratio)
+
+### 3. Red Flags for Beginners to Avoid
+- Extremely volatile price history
+- No consistent profit history
+- Recent major scandals or controversies
+- Extremely high P/E ratio compared to peers
+- Industries you don't understand
+
+## Step-by-Step Purchase Process
+
+### 1. Log Into Your Trading Platform
+- Use your credentials to access your broker's website/app
+- Ensure you have sufficient funds in your trading account
+- Check trading hours (9:15 AM - 3:30 PM, Mon-Fri)
+
+### 2. Find Your Selected Stock
+- Enter the company name or stock symbol in search
+- Verify you have the right stock (BSE vs NSE listing)
+- Review the current market price and day's range
+
+### 3. Order Placement Basics
+- **Order Types**:
+  - **Market Order**: Buy at current market price
+  - **Limit Order**: Buy only at specified price or better
+- **Timeline**:
+  - **Intraday**: Must be sold same day (not recommended for beginners)
+  - **Delivery/CNC**: For longer-term holding (recommended)
+
+### 4. Placing Your First Order: Step by Step
+1. Select the stock symbol
+2. Choose "Buy" option
+3. Select "Delivery/CNC" (for investment)
+4. Enter quantity of shares to purchase
+5. For beginners: Choose "Market" order
+6. Review order details carefully
+7. Submit the order
+8. Check for confirmation notification
+
+### 5. After Your Purchase
+- Order confirmation will appear on screen
+- Check "Portfolio" section to confirm holdings
+- Contract note will be sent via email
+- Shares will appear in your demat account (T+1 days)
+
+## Common First-Time Buyer Questions
+
+### "How many shares should I buy?"
+Start small—perhaps 10-15% of your total planned portfolio in a single stock. Consider round lots for easier tracking.
+
+### "Should I buy all at once or in parts?"
+For beginners, consider splitting your purchase across 2-3 transactions to average your entry price.
+
+### "What if the price drops after I buy?"
+This is normal and expected. Focus on your long-term investment thesis rather than short-term price movements.
+
+### "When should I sell?"
+Set clear criteria before buying: target price, fundamental changes, or time horizon. Don't sell based on emotions.
+
+## Tracking Your Investment
+
+### Essential Monitoring Points
+- Quarterly results announcements
+- Important management changes
+- Major news affecting the company or sector
+- Annual reports and shareholder meetings
+
+### Healthy Tracking Habits
+- ✅ Review portfolio monthly, not daily
+- ✅ Compare performance to appropriate benchmarks
+- ✅ Focus on business fundamentals, not just price
+- ✅ Keep trading activity minimal as a beginner
+
+### Unhealthy Habits to Avoid
+- ❌ Checking stock price multiple times daily
+- ❌ Overreacting to short-term price movements
+- ❌ Frequently changing your investment thesis
+- ❌ Trading based on tips or rumors
+
+## First Stock Purchase Dos and Don'ts
+
+### DO:
+✅ Start with a company you understand
+✅ Invest an amount you're comfortable losing
+✅ Document why you bought the stock
+✅ Have realistic expectations
+✅ Keep records for tax purposes
+
+### DON'T:
+❌ Try to time the market perfectly
+❌ Put all your money in one stock
+❌ Buy based on tips without research
+❌ Expect to get rich quickly
+❌ Panic sell if the market drops
+
+💡 **Pro Tip**: After making your first purchase, write down your investment thesis—why you bought the stock and what you expect from it. Review this document before making any selling decisions to avoid emotional reactions.`,
+              lesson_order: 3
+            }
+          ]
+        },
+        {
+          title: "Investment Strategies for Beginners",
+          description: "Learn foundational investment approaches suitable for new investors.",
+          module_order: 3,
+          lessons: [
+            {
+              title: "Understanding SIPs and Rupee Cost Averaging",
+              content: `# Understanding SIPs and Rupee Cost Averaging
+
+💰 Systematic Investment Plans (SIPs) and Rupee Cost Averaging are powerful strategies that help you build wealth consistently while reducing risk.
+
+## What is a Systematic Investment Plan (SIP)?
+
+A SIP is a method of investing a fixed amount at regular intervals (typically monthly) in mutual funds or stocks.
+
+### Key Features of SIPs
+- **Automated**: Set up once, runs automatically
+- **Flexible**: Can start with as little as ₹500/month
+- **Disciplined**: Enforces regular investing habit
+- **Adjustable**: Can increase/decrease/pause as needed
+- **Long-term**: Designed for wealth creation over time
+
+## How Rupee Cost Averaging Works
+
+Rupee Cost Averaging is the principle behind SIPs. By investing a fixed amount regularly regardless of market conditions:
+
+- You buy **more units** when prices are low
+- You buy **fewer units** when prices are high
+- Your **average purchase price** is typically lower than the average market price over time
+
+### Practical Example of Rupee Cost Averaging
+
+| Month | Amount Invested | Market Price | Units Purchased | Total Units |
+|-------|----------------|--------------|----------------|-------------|
+| Jan   | ₹5,000         | ₹100         | 50.00          | 50.00       |
+| Feb   | ₹5,000         | ₹80          | 62.50          | 112.50      |
+| Mar   | ₹5,000         | ₹70          | 71.43          | 183.93      |
+| Apr   | ₹5,000         | ₹90          | 55.56          | 239.49      |
+| May   | ₹5,000         | ₹120         | 41.67          | 281.16      |
+| Jun   | ₹5,000         | ₹110         | 45.45          | 326.61      |
+
+**Total Invested**: ₹30,000
+**Total Units**: 326.61
+**Average Cost Per Unit**: ₹91.85 (₹30,000 ÷ 326.61)
+**Average Market Price**: ₹95 (sum of prices ÷ 6)
+**Current Value**: ₹35,927 (326.61 units × ₹110)
+
+Even though the market price fluctuated significantly, your average purchase price is lower than the average market price!
+
+## Benefits of SIP Investing
+
+### 1. Disciplined Investing
+- Removes emotional decision-making
+- Creates a habit of regular saving
+- Avoids the temptation to time the market
+
+### 2. Risk Mitigation
+- Spreads investments across different market cycles
+- Reduces impact of market volatility
+- Protects against poor timing decisions
+
+### 3. Power of Compounding
+- Regular investments maximize compound growth
+- Earlier investments have more time to grow
+- Even small increases in monthly amount have significant impact
+
+### 4. Flexibility
+- Can start with small amounts
+- Option to increase contribution as income grows
+- Facility to pause during financial emergencies
+
+## Setting Up Your SIP Strategy
+
+### 1. Choosing Between Mutual Funds and Direct Stocks
+- **Mutual Fund SIPs**: Professionally managed, diversified
+- **Direct Equity SIPs**: More control, potentially higher returns but higher risk
+- **Beginners**: Usually better to start with mutual fund SIPs
+
+### 2. Determining Your SIP Amount
+- Start with what's comfortable (even ₹500-1000/month)
+- Aim for 15-20% of your monthly income eventually
+- Increase gradually with income growth
+
+### 3. Selecting the Right Frequency
+- **Monthly**: Most common and convenient
+- **Quarterly**: For irregular income earners
+- **Weekly**: More averaging benefit (but more transactions)
+
+### 4. Setting Up the Process
+- Through mutual fund apps/websites
+- Via your bank's auto-debit facility
+- Through broker platforms for stock SIPs
+
+## SIPs for Different Financial Goals
+
+### Short-Term Goals (1-3 years)
+- **Suitable funds**: Liquid, ultra-short, short duration
+- **Expected returns**: 5-7%
+- **Risk level**: Very low to low
+
+### Medium-Term Goals (3-7 years)
+- **Suitable funds**: Balanced advantage, conservative hybrid
+- **Expected returns**: 8-10%
+- **Risk level**: Low to moderate
+
+### Long-Term Goals (7+ years)
+- **Suitable funds**: Equity, index funds
+- **Expected returns**: 10-12%
+- **Risk level**: Moderate to high
+
+## Advanced SIP Strategies
+
+### 1. SIP Top-Up
+Increase your SIP amount annually to align with income growth:
+- Start with ₹5,000/month
+- Increase by 10% each year
+- After 5 years: ₹8,053/month
+- Significantly boosts long-term corpus
+
+### 2. Value Averaging (Advanced)
+Adjust your investment amount to reach a predetermined portfolio growth path:
+- Invest more when market underperforms
+- Invest less when market outperforms
+- Requires more active management
+
+### 3. SIP Diversification
+Distribute your SIP across different types of funds:
+- 50% in large-cap/index funds
+- 30% in mid-cap funds
+- 20% in small-cap/sector funds
+
+## Common SIP Mistakes to Avoid
+
+### ❌ Starting and stopping frequently
+Disrupts the power of compounding and averaging
+
+### ❌ Checking performance too often
+SIPs are designed for long-term growth, not short-term gains
+
+### ❌ Not increasing SIP with income growth
+Limits the potential of your investment
+
+### ❌ Withdrawing at first sign of market decline
+Defeats the purpose of rupee cost averaging
+
+### ❌ Not reviewing fund performance annually
+Even SIPs need periodic assessment for optimization
+
+💡 **Key Insight**: The magic of SIPs lies not in timing the market but in time in the market. Consistency over long periods, regardless of market conditions, is what leads to wealth creation.`,
+              lesson_order: 1
+            },
+            {
+              title: "Diversification for Beginners",
+              content: `# Diversification for Beginners
+
+🔄 Diversification is one of the most powerful risk management strategies available to investors—it's essentially not putting all your eggs in one basket.
+
+## What is Diversification?
+
+Diversification means spreading your investments across different assets to reduce risk without significantly sacrificing returns.
+
+### The Core Principle Explained
+- Different investments perform differently under various economic conditions
+- Losses in one area can be offset by gains in another
+- Overall portfolio volatility is reduced
+- Long-term returns become more stable and predictable
+
+## Why Every Investor Needs Diversification
+
+### Risk Reduction
+- Protects against company-specific issues
+- Shields from sector-wide downturns
+- Provides buffer against market crashes
+- Reduces impact of regional economic problems
+
+### Real Examples of Diversification Benefits
+- **2008 Financial Crisis**: When stocks fell 50%+, government bonds gained value
+- **COVID-19 Crash**: Technology stocks recovered quickly while travel/hospitality suffered
+- **Inflation Periods**: Commodities and real estate often thrive while bonds struggle
+
+## Types of Diversification for Beginners
+
+### 1. Asset Class Diversification
+Spreading investments across different types of assets:
+- **Stocks**: Ownership in companies, higher growth potential
+- **Bonds**: Fixed income securities, more stable
+- **Cash/Liquid Funds**: For stability and emergencies
+- **Gold**: Traditional hedge against inflation
+
+### 2. Equity Diversification
+Within your stock investments:
+- **Market Capitalization**: Large, mid, and small-cap
+- **Sectors**: IT, Banking, FMCG, Pharma, etc.
+- **Investment Styles**: Growth, value, dividend
+- **Geographic**: Domestic and international
+
+### 3. Time Diversification
+- **SIPs**: Regular investments over time
+- **Staggered Entry**: Dividing lump sum into multiple investments
+- **Laddering**: For fixed income investments with different maturities
+
+## Simple Diversification Strategies for Beginners
+
+### 1. The Basic Three-Fund Portfolio
+- **70%**: Large-cap index fund (Nifty 50 or Sensex)
+- **20%**: Bond fund or government securities
+- **10%**: Gold ETF or sovereign gold bonds
+
+### 2. The Five-Pocket Allocation
+- **40%**: Large-cap fund
+- **20%**: Mid and small-cap fund
+- **20%**: International fund
+- **15%**: Debt fund
+- **5%**: Gold
+
+### 3. Sector-Based Approach
+- **25%**: Financial services
+- **20%**: Information technology
+- **15%**: Consumer goods
+- **15%**: Healthcare
+- **10%**: Manufacturing
+- **15%**: Others (energy, utilities, etc.)
+
+## Creating Your Diversified Portfolio
+
+### Step 1: Assess Your Risk Tolerance
+- **Conservative**: Higher allocation to bonds and stable assets
+- **Moderate**: Balanced allocation between growth and stability
+- **Aggressive**: Higher allocation to equities and growth assets
+
+### Step 2: Consider Your Time Horizon
+- **Short-term (1-3 years)**: Safety and liquidity prioritized
+- **Medium-term (3-7 years)**: Moderate growth with stability
+- **Long-term (7+ years)**: Growth prioritized, more equity
+
+### Step 3: Build Your Core Holdings
+- Start with broad market index funds
+- Add bond funds for stability
+- Consider a small gold allocation
+
+### Step 4: Add Satellite Investments
+- Sector funds for specific opportunities
+- Individual stocks you understand well
+- International exposure
+
+## Warning Signs of Poor Diversification
+
+### High Correlation Between Investments
+- If all your investments move in the same direction at the same time
+- Example: Multiple funds with overlapping holdings
+
+### Overexposure to Single Factors
+- Too much in one sector (e.g., only tech stocks)
+- Concentrated in one geographic region
+- Dependent on one economic factor (e.g., interest rates)
+
+### Too Many Similar Investments
+- Multiple funds with similar strategies
+- Several stocks from the same industry
+- Different instruments with the same underlying asset
+
+## Common Diversification Mistakes
+
+### ❌ Over-Diversification
+- Owning too many similar funds or stocks
+- Dilutes the benefit of top performers
+- Makes portfolio tracking complicated
+- Solution: Focus on 8-12 well-chosen investments
+
+### ❌ Under-Diversification
+- Concentrated in a few stocks or sectors
+- Exposed to unnecessary specific risks
+- Solution: Ensure representation across major sectors and asset classes
+
+### ❌ Ignoring Correlation
+- Investments that move together don't provide diversification
+- Solution: Choose assets that historically behave differently
+
+### ❌ Diversifying Without Research
+- Buying random stocks across sectors
+- Not understanding what you own
+- Solution: Research each investment, even if it's for diversification
+
+## Tools for Managing Diversification
+
+### 1. Portfolio Trackers
+- Morningstar Portfolio Manager
+- ValueResearch Portfolio Manager
+- Broker platforms with analytical tools
+
+### 2. Rebalancing Strategy
+- Review your portfolio every 6-12 months
+- Bring allocations back to target percentages
+- Systematically "buy low, sell high"
+
+### 3. Correlation Analysis
+- Check how your investments move in relation to each other
+- Aim for assets with low or negative correlations
+- Most portfolio analysis tools provide this feature
+
+## Ready-Made Diversified Options for Beginners
+
+### Multi-Asset Funds
+- Single funds that invest across stocks, bonds, and gold
+- Professional management of diversification
+- Example: ICICI Prudential Multi-Asset Fund
+
+### Asset Allocation Funds
+- Automatically adjust between equity and debt based on market conditions
+- Example: DSP Dynamic Asset Allocation Fund
+
+### Index Funds
+- Provide instant diversification across top companies
+- Low-cost and simple
+- Example: UTI Nifty Index Fund, SBI Sensex Fund
+
+💡 **Key Insight**: Proper diversification shouldn't just spread your money—it should spread your risk. Aim for investments that respond differently to economic events while still aligning with your long-term goals.`,
+              lesson_order: 2
+            }
+          ]
+        },
+        {
+          title: "Stock Market Psychology",
+          description: "Understand the psychological aspects of investing and how to overcome common cognitive biases.",
+          module_order: 4,
+          lessons: [
+            {
+              title: "Managing Emotions While Investing",
+              content: `# Managing Emotions While Investing
+
+🧠 The greatest challenge in investing isn't finding the best stocks—it's controlling your own emotions. Successful investors master their psychology first, then the markets.
+
+## The Emotional Cycle of Investing
+
+### Typical Emotional Stages
+1. **Optimism**: "The market is doing well, I should invest!"
+2. **Excitement**: "My investments are growing nicely!"
+3. **Thrill**: "This is amazing! I'm making so much money!"
+4. **Euphoria**: "I'm a genius investor! Nothing can go wrong!"
+5. **Anxiety**: "Why is the market dropping? It's just temporary..."
+6. **Denial**: "My stocks are solid, they'll bounce back soon."
+7. **Fear**: "I'm losing too much money. What should I do?"
+8. **Desperation**: "I need to do something to stop these losses!"
+9. **Panic**: "I can't take it anymore! Sell everything!"
+10. **Despondency**: "I'll never invest in stocks again."
+11. **Depression**: "I've lost so much money..."
+12. **Hope**: "Maybe the market is stabilizing now?"
+13. **Relief**: "My portfolio is finally recovering."
+14. **Optimism**: The cycle begins again...
+
+### How This Affects Your Returns
+- **Buy high**: Most people invest heavily during stages 3-4
+- **Sell low**: Most people sell during stages 8-9
+- **Miss recovery**: Most people stay out during stages 10-13
+- **Result**: Significantly worse performance than the market average
+
+## Common Emotional Biases in Investing
+
+### 1. Fear of Missing Out (FOMO)
+- **Symptoms**: Investing in hot stocks without research, buying near market tops
+- **Dangers**: Buying overvalued assets, taking excessive risks
+- **Example**: Cryptocurrency rushes, IPO frenzies
+
+### 2. Loss Aversion
+- **Symptoms**: Holding losing stocks too long, selling winners too early
+- **Dangers**: Small winners, large losers in portfolio
+- **Research**: People feel losses 2-3 times more strongly than equivalent gains
+
+### 3. Confirmation Bias
+- **Symptoms**: Only seeking information that supports your existing beliefs
+- **Dangers**: Missing warning signs, ignoring negative developments
+- **Example**: Following only bullish analysts when you own a stock
+
+### 4. Recency Bias
+- **Symptoms**: Giving too much weight to recent events
+- **Dangers**: Extrapolating short-term trends too far into future
+- **Example**: Assuming a bull market will continue indefinitely
+
+### 5. Herd Mentality
+- **Symptoms**: Investing based on what others are doing
+- **Dangers**: Buying high, selling low alongside the crowd
+- **Warren Buffett Quote**: "Be fearful when others are greedy, and greedy when others are fearful"
+
+## Signs You're Making Emotional Decisions
+
+### Red Flags in Your Behavior
+- Checking your portfolio multiple times daily
+- Making investment decisions late at night or when stressed
+- Feeling urgency to act immediately
+- Unable to explain your investment rationale clearly
+- Borrowing money to invest because you "can't miss this opportunity"
+- Feeling jealous about others' investment returns
+
+### Physical and Mental Signs
+- Increased heart rate when checking investments
+- Sleep disruption due to market concerns
+- Mood swings tied to portfolio performance
+- Difficulty concentrating on other areas of life
+
+## Building Your Emotional Resilience
+
+### 1. Create a Written Investment Plan
+- Document your goals, time horizon, and risk tolerance
+- Establish clear criteria for buying and selling
+- Set realistic return expectations
+- Review during calm times, follow during volatile times
+
+### 2. Implement Automatic Safeguards
+- **Regular investing**: Set up SIPs to invest automatically
+- **Rebalancing schedule**: Calendar-based, not emotion-based
+- **Position sizing rules**: Limit exposure to any single investment
+- **Stop-loss orders**: For traders, not long-term investors
+
+### 3. Develop Healthy Information Habits
+- Consume financial news in scheduled batches, not continuously
+- Follow thoughtful analysts with different perspectives
+- Distinguish between noise (daily market moves) and signal (fundamental changes)
+- Take social media investment advice with extreme caution
+
+### 4. Create Decision-Making Protocols
+Before any significant investment decision, ask yourself:
+1. Does this align with my written plan?
+2. Would I make this same decision if the market were closed for the next week?
+3. Can I clearly articulate why I'm making this move?
+4. Am I acting out of fear or greed right now?
+5. Have I considered the opposite viewpoint?
+
+## Techniques for Specific Emotional Challenges
+
+### For Market Crashes
+- **Perspective shift**: View crashes as sales on quality companies
+- **Historical context**: Review how markets have always recovered
+- **Opportunity fund**: Keep cash ready to deploy during significant drops
+- **Media diet**: Reduce financial news consumption during extreme volatility
+
+### For Bull Markets
+- **Valuation discipline**: Be increasingly cautious as valuations stretch
+- **Rebalancing**: Systematically take some profits from winners
+- **Contrarian thinking**: Consider what could go wrong when everyone is optimistic
+- **Historical context**: Remember all bull markets eventually end
+
+### For Personal Investment Mistakes
+- **Journaling**: Document decisions and learn from results
+- **Sunk cost thinking**: Past losses shouldn't influence future decisions
+- **Forgiveness practice**: Everyone makes investing mistakes
+- **Learning mindset**: Replace "failure" with "feedback"
+
+## Professional Support Systems
+
+### 1. Investment Advisors
+A good advisor's greatest value often isn't stock picking but behavioral coaching during market extremes.
+
+### 2. Accountability Partners
+Share your investment plan with a trusted, level-headed friend who can question your emotional decisions.
+
+### 3. Investment Communities
+Join groups focused on rational, long-term investing approaches rather than get-rich-quick strategies.
+
+## Mantras for Emotional Balance
+
+- "Time in the market beats timing the market."
+- "This too shall pass."
+- "I'm investing for years, not days."
+- "Be greedy when others are fearful, fearful when others are greedy."
+- "The market is a voting machine in the short run, a weighing machine in the long run."
+
+💡 **Key Insight**: Your investment returns are determined more by your behavior than by your knowledge. The investor who maintains emotional discipline through market cycles will outperform the knowledgeable investor who succumbs to fear and greed.`,
+              lesson_order: 1
+            },
+            {
+              title: "Building Long-Term Wealth Mindset",
+              content: `# Building Long-Term Wealth Mindset
+
+🌱 Successful investing is not about getting rich quick—it's about developing the mindset, habits, and patience to build wealth consistently over time.
+
+## Understanding True Wealth Building
+
+### The Mathematics of Wealth
+- **Compound Growth**: The exponential effect of returns on returns
+- **Time Advantage**: Starting early is more powerful than investing more
+- **Consistency Premium**: Regular investing beats sporadic large investments
+- **Sustainable Rate**: Steady 12-15% returns outperform volatile higher returns
+
+### The 7-Year Doubling Rule
+At 10% annual returns:
+- ₹1 lakh becomes ₹2 lakhs in ~7 years
+- ₹1 lakh becomes ₹4 lakhs in ~14 years
+- ₹1 lakh becomes ₹8 lakhs in ~21 years
+- ₹1 lakh becomes ₹16 lakhs in ~28 years
+
+This exponential growth means the majority of your wealth accumulates in the later years—patience is essential.
+
+## Core Principles of Long-Term Investing
+
+### 1. Ignore Short-Term Fluctuations
+- Daily, weekly, even monthly movements are just noise
+- Market timing is consistently proven to reduce returns
+- Focus on business fundamentals, not stock prices
+
+### 2. Quality Over Speculation
+- Invest in companies with:
+  - Strong competitive advantages
+  - Consistent profitability
+  - Capable and honest management
+  - Growth potential
+- Avoid "hot tips" and market fads
+
+### 3. Compounding as a Lifestyle
+- Allow dividends to reinvest
+- Let winners keep running
+- Minimize turnover in your portfolio
+- Think in decades, not years
+
+### 4. View Market Drops as Opportunities
+- Stock market "sales" happen periodically
+- Downturns are when wealth transfers from impatient to patient investors
+- Keep cash reserves to deploy during significant corrections
+
+## Developing Patience as an Investor
+
+### The Reality of Returns
+- **Stock market averages**:
+  - Positive years: ~70% of the time
+  - Negative years: ~30% of the time
+  - Average bull market: 6+ years
+  - Average bear market: 1.3 years
+
+- **Individual stocks**:
+  - Even great companies have bad quarters
+  - Most multibaggers had 30-50% drawdowns on their way up
+  - Price often disconnects from value for extended periods
+
+### Techniques to Cultivate Patience
+- **Reduce monitoring frequency**: Check portfolios monthly, not daily
+- **Focus on income streams**: Dividends provide tangible progress
+- **Visualize end goals**: Connect investments to life objectives
+- **Study investing history**: Understand market cycles and recoveries
+- **Read investor biographies**: Learn from the masters of patience
+
+## Creating Your Personal Wealth Philosophy
+
+### Questions to Define Your Approach
+1. What does financial success mean to you specifically?
+2. What rate of return is realistically sustainable for your investment style?
+3. What level of volatility can you truly tolerate emotionally?
+4. How involved do you want to be with managing investments?
+5. What are non-negotiable ethical considerations for your investments?
+
+### Sample Wealth Philosophies
+- "I invest in quality businesses at reasonable prices and hold them for years while they compound."
+- "I build wealth through index funds while focusing my energy on my career and family."
+- "I create a portfolio of dividend-growing stocks that will eventually replace my salary."
+
+## Setting Realistic Expectations
+
+### Returns Expectations
+- **Aggressive growth**: 15-18% annually with significant volatility
+- **Balanced growth**: 12-15% annually with moderate volatility
+- **Conservative growth**: 8-12% annually with lower volatility
+- **All approaches**: Will include years with negative returns
+
+### Time Horizons for Different Goals
+- **Retirement**: Longest horizon, highest growth allocation
+- **Children's education**: Medium horizon, moderate growth/stability mix
+- **Home purchase**: Shorter horizon, more stability focused
+
+## Creating Accountability Systems
+
+### 1. Annual Investment Review
+Schedule a yearly "meeting with yourself" to assess:
+- Performance versus appropriate benchmarks
+- Alignment with long-term goals
+- Changes needed to asset allocation
+- Tax efficiency opportunities
+
+### 2. Investment Journal
+Keep records of:
+- Why you purchased each investment
+- What would make you sell
+- Lessons learned from both wins and losses
+- Emotional reactions to market events
+
+### 3. Progress Milestones
+Create meaningful targets:
+- First ₹1 lakh invested
+- First year of beating inflation
+- First dividend that covers a monthly bill
+- Portfolio value equals one year's salary
+
+## Avoiding Wealth-Building Derailments
+
+### 1. Lifestyle Inflation
+- As income increases, maintain or increase savings rate
+- Evaluate purchases by hours worked rather than rupee cost
+- Practice conscious spending rather than automatic consumption
+
+### 2. Get-Rich-Quick Temptations
+- Recognize schemes that promise unrealistic returns
+- Consider opportunity costs of speculative investments
+- Remember: sustainable wealth rarely happens overnight
+
+### 3. Overconfidence After Success
+- Bull markets make everyone feel like a genius
+- Initial success often leads to excessive risk-taking
+- Maintain discipline regardless of recent performance
+
+## Passing the Generational Wealth Mindset
+
+### Teaching Children About Investing
+- Start with simple concepts at young ages
+- Demonstrate compound growth with real examples
+- Share both successes and mistakes
+- Emphasize purpose over pure accumulation
+
+### Family Wealth Discussions
+- Communicate values around money and wealth
+- Create shared goals and milestones
+- Discuss inheritance plans openly
+- Consider family philanthropy projects
+
+## The Bigger Picture: Wealth With Purpose
+
+### Beyond Accumulation
+- Define "enough" for your lifestyle
+- Identify meaningful uses for wealth beyond basics
+- Consider knowledge and time as forms of wealth to share
+- Balance wealth building with present enjoyment
+
+### Common Purposes For Building Wealth
+- Financial independence and career flexibility
+- Educational opportunities for family
+- Philanthropic impact
+- Legacy creation
+- Life experiences and memories
+
+💡 **Key Insight**: The most successful investors are not those who pick the best stocks, but those who maintain a consistent approach through market cycles, align investments with personal values, and focus on the long-term compounding of reasonable returns rather than pursuing spectacular short-term gains.`,
+              lesson_order: 2
+            }
+          ]
+        }
+      ]
+    };
     
-    // Create the AI Tools course
-    await createAIToolsCourse();
-    
-    // Create the Stock Market course
-    await createStockMarketCourse();
+    // Create the courses
+    await createCourse(aiToolsCourse);
+    await createCourse(stockMarketCourse);
     
     console.log("App data initialization complete");
   } catch (error) {
-    console.error("Error in initializeAppData:", error);
+    console.error("Error initializing app data:", error);
   }
 };
