@@ -9,12 +9,7 @@ import CourseProgressCard from '@/components/dashboard/CourseProgressCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Module, 
-  CourseWithProgress, 
-  GetCourseModulesParams,
-  GetCourseModulesResponse 
-} from '@/types/course';
+import { Module, CourseWithProgress } from '@/types/course';
 
 interface Course {
   id: string;
@@ -62,30 +57,15 @@ const Dashboard: React.FC = () => {
               coursesData
                 .filter(course => courseIds.includes(course.id))
                 .map(async (course) => {
-                  // Get modules for this course using RPC
+                  // Get modules for this course
                   const { data: modulesData, error: modulesError } = await supabase
-                    .rpc<GetCourseModulesResponse, GetCourseModulesParams>(
-                      'get_course_modules', 
-                      { course_id_param: course.id }
-                    );
+                    .from('course_modules')
+                    .select('*')
+                    .eq('course_id', course.id)
+                    .order('module_order', { ascending: true });
                     
-                  let modules: Module[] = [];
-                  
-                  if (modulesError) {
-                    console.error("Error fetching modules via RPC:", modulesError);
-                    
-                    // Fallback to direct query
-                    const { data: directModulesData, error: directModulesError } = await supabase
-                      .from('course_modules')
-                      .select('*')
-                      .eq('course_id', course.id)
-                      .order('module_order', { ascending: true });
-                      
-                    if (directModulesError) throw directModulesError;
-                    modules = directModulesData as Module[];
-                  } else if (modulesData) {
-                    modules = modulesData;
-                  }
+                  if (modulesError) throw modulesError;
+                  const modules = modulesData as Module[];
                   
                   // Get user progress for this course's modules
                   const { data: progressData, error: progressError } = await supabase

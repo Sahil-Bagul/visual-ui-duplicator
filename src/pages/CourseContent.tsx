@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -9,18 +8,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { 
-  Module, 
-  UserProgress, 
-  GetCourseModulesParams,
-  GetCourseModulesResponse,
-  GetUserProgressParams,
-  GetUserProgressResponse,
-  UpdateUserProgressParams,
-  UpdateUserProgressResponse,
-  CreateUserProgressParams,
-  CreateUserProgressResponse
-} from '@/types/course';
+import { Module, UserProgress } from '@/types/course';
 import { Check, ChevronLeft, ChevronRight, BookOpen, CheckCircle } from 'lucide-react';
 
 const CourseContent: React.FC = () => {
@@ -75,71 +63,37 @@ const CourseContent: React.FC = () => {
         if (courseError) throw courseError;
         setCourseTitle(courseData.title);
         
-        // Get modules for this course using RPC
+        // Get modules for this course using direct query
         const { data: modulesData, error: modulesError } = await supabase
-          .rpc<GetCourseModulesResponse, GetCourseModulesParams>(
-            'get_course_modules', 
-            { course_id_param: courseId }
-          );
-          
-        if (modulesError) {
-          console.error("Error fetching modules via RPC:", modulesError);
-          
-          // Fallback to direct query
-          const { data: directModulesData, error: directModulesError } = await supabase
-            .from('course_modules')
-            .select('*')
-            .eq('course_id', courseId)
-            .order('module_order', { ascending: true });
+          .from('course_modules')
+          .select('*')
+          .eq('course_id', courseId)
+          .order('module_order', { ascending: true });
             
-          if (directModulesError) throw directModulesError;
+        if (modulesError) throw modulesError;
           
-          if (directModulesData && directModulesData.length > 0) {
-            setModules(directModulesData as Module[]);
+        if (modulesData && modulesData.length > 0) {
+          setModules(modulesData as Module[]);
             
-            // Set the first module as active if no active module
-            if (directModulesData.length > 0 && !activeModule) {
-              setActiveModule(directModulesData[0] as Module);
-            }
-          }
-        } else if (modulesData) {
-          setModules(modulesData);
-          
           // Set the first module as active if no active module
           if (modulesData.length > 0 && !activeModule) {
-            setActiveModule(modulesData[0]);
+            setActiveModule(modulesData[0] as Module);
           }
         }
         
-        // Get user progress using RPC
-        const { data: progressData, error: progressError } = await supabase
-          .rpc<GetUserProgressResponse, GetUserProgressParams>(
-            'get_user_progress', 
-            { 
-              user_id_param: user.id,
-              course_id_param: courseId
-            }
-          );
-          
-        if (progressError) {
-          console.error("Error fetching progress via RPC:", progressError);
-          
-          // Fallback to direct query if RPC fails
-          if (modules.length > 0) {
-            const { data: directProgressData, error: directProgressError } = await supabase
-              .from('user_progress')
-              .select('*')
-              .eq('user_id', user.id)
-              .in('module_id', modules.map(m => m.id));
+        // Get user progress
+        if (modules.length > 0) {
+          const { data: progressData, error: progressError } = await supabase
+            .from('user_progress')
+            .select('*')
+            .eq('user_id', user.id)
+            .in('module_id', modules.map(m => m.id));
               
-            if (directProgressError) throw directProgressError;
+          if (progressError) throw progressError;
             
-            if (directProgressData) {
-              setUserProgress(directProgressData as UserProgress[]);
-            }
+          if (progressData) {
+            setUserProgress(progressData as UserProgress[]);
           }
-        } else if (progressData) {
-          setUserProgress(progressData);
         }
         
       } catch (error) {
@@ -199,65 +153,33 @@ const CourseContent: React.FC = () => {
       const existingProgress = userProgress.find(p => p.module_id === activeModule.id);
       
       if (existingProgress) {
-        // Update existing record using RPC
-        const { data, error } = await supabase
-          .rpc<UpdateUserProgressResponse, UpdateUserProgressParams>(
-            'update_user_progress',
-            {
-              progress_id_param: existingProgress.id,
-              completed_param: true
-            }
-          );
-          
-        if (error) {
-          console.error("Error with RPC:", error);
-          
-          // Fallback to direct update
-          const { error: directError } = await supabase
-            .from('user_progress')
-            .update({ 
-              completed: true,
-              completed_at: new Date().toISOString()
-            })
-            .eq('id', existingProgress.id);
+        // Update existing record directly
+        const { error: directError } = await supabase
+          .from('user_progress')
+          .update({ 
+            completed: true,
+            completed_at: new Date().toISOString()
+          })
+          .eq('id', existingProgress.id);
             
-          if (directError) throw directError;
-        }
+        if (directError) throw directError;
       } else {
-        // Create new progress record using RPC
-        const { data, error } = await supabase
-          .rpc<CreateUserProgressResponse, CreateUserProgressParams>(
-            'create_user_progress',
-            {
-              user_id_param: user.id,
-              module_id_param: activeModule.id,
-              completed_param: true
-            }
-          );
-          
-        if (error) {
-          console.error("Error with RPC:", error);
-          
-          // Fallback to direct insert
-          const { data: directData, error: directError } = await supabase
-            .from('user_progress')
-            .insert({
-              user_id: user.id,
-              module_id: activeModule.id,
-              completed: true,
-              completed_at: new Date().toISOString()
-            })
-            .select();
+        // Create new progress record directly
+        const { data: directData, error: directError } = await supabase
+          .from('user_progress')
+          .insert({
+            user_id: user.id,
+            module_id: activeModule.id,
+            completed: true,
+            completed_at: new Date().toISOString()
+          })
+          .select();
             
-          if (directError) throw directError;
+        if (directError) throw directError;
           
-          // Add new progress to local state
-          if (directData && directData.length > 0) {
-            setUserProgress(prev => [...prev, directData[0] as UserProgress]);
-          }
-        } else if (data) {
-          // Add new progress to local state
-          setUserProgress(prev => [...prev, data]);
+        // Add new progress to local state
+        if (directData && directData.length > 0) {
+          setUserProgress(prev => [...prev, directData[0] as UserProgress]);
         }
       }
       
@@ -268,16 +190,13 @@ const CourseContent: React.FC = () => {
       
       // Refresh user progress data
       const { data: refreshedProgress, error } = await supabase
-        .rpc<GetUserProgressResponse, GetUserProgressParams>(
-          'get_user_progress', 
-          { 
-            user_id_param: user.id,
-            course_id_param: courseId as string
-          }
-        );
+        .from('user_progress')
+        .select('*')
+        .eq('user_id', user.id)
+        .in('module_id', modules.map(m => m.id));
         
       if (refreshedProgress) {
-        setUserProgress(refreshedProgress);
+        setUserProgress(refreshedProgress as UserProgress[]);
       }
       
       // If this is the last module, show special message
