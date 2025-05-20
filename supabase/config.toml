@@ -6,7 +6,7 @@
 name = "learnandearn"
 organizationId = ""
 
-# Define RPC functions for course modules and user progress
+# Define RPC functions for course modules, lessons, and user progress
 [[functions]]
 name = "get_course_modules"
 verbosity = "debug"
@@ -24,6 +24,22 @@ $$;
 """
 
 [[functions]]
+name = "get_module_lessons"
+verbosity = "debug"
+verify_jwt = true
+schema = "public"
+language = "sql"
+definition = """
+CREATE OR REPLACE FUNCTION public.get_module_lessons(module_id_param UUID)
+RETURNS SETOF public.lessons
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT * FROM public.lessons WHERE module_id = module_id_param ORDER BY lesson_order ASC;
+$$;
+"""
+
+[[functions]]
 name = "get_user_progress"
 verbosity = "debug"
 verify_jwt = true
@@ -36,7 +52,8 @@ LANGUAGE sql
 SECURITY DEFINER
 AS $$
   SELECT up.* FROM public.user_progress up
-  JOIN public.course_modules cm ON up.module_id = cm.id
+  JOIN public.lessons l ON up.lesson_id = l.id
+  JOIN public.course_modules cm ON l.module_id = cm.id
   WHERE up.user_id = user_id_param AND cm.course_id = course_id_param;
 $$;
 """
@@ -68,15 +85,15 @@ verify_jwt = true
 schema = "public"
 language = "sql"
 definition = """
-CREATE OR REPLACE FUNCTION public.create_user_progress(user_id_param UUID, module_id_param UUID, completed_param BOOLEAN)
+CREATE OR REPLACE FUNCTION public.create_user_progress(user_id_param UUID, lesson_id_param UUID, completed_param BOOLEAN)
 RETURNS public.user_progress
 LANGUAGE sql
 SECURITY DEFINER
 AS $$
-  INSERT INTO public.user_progress (user_id, module_id, completed, completed_at)
+  INSERT INTO public.user_progress (user_id, lesson_id, completed, completed_at)
   VALUES (
     user_id_param,
-    module_id_param,
+    lesson_id_param,
     completed_param,
     CASE WHEN completed_param THEN CURRENT_TIMESTAMP ELSE NULL END
   )

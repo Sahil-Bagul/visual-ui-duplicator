@@ -14,6 +14,7 @@ export type Database = {
           content: string
           course_id: string
           created_at: string
+          description: string | null
           id: string
           module_order: number
           title: string
@@ -22,6 +23,7 @@ export type Database = {
           content: string
           course_id: string
           created_at?: string
+          description?: string | null
           id?: string
           module_order: number
           title: string
@@ -30,6 +32,7 @@ export type Database = {
           content?: string
           course_id?: string
           created_at?: string
+          description?: string | null
           id?: string
           module_order?: number
           title?: string
@@ -70,6 +73,41 @@ export type Database = {
           title?: string
         }
         Relationships: []
+      }
+      lessons: {
+        Row: {
+          content: string
+          created_at: string
+          id: string
+          lesson_order: number
+          module_id: string
+          title: string
+        }
+        Insert: {
+          content: string
+          created_at?: string
+          id?: string
+          lesson_order: number
+          module_id: string
+          title: string
+        }
+        Update: {
+          content?: string
+          created_at?: string
+          id?: string
+          lesson_order?: number
+          module_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payout_methods: {
         Row: {
@@ -238,7 +276,8 @@ export type Database = {
           completed_at: string | null
           created_at: string
           id: string
-          module_id: string
+          lesson_id: string | null
+          module_id: string | null
           user_id: string
         }
         Insert: {
@@ -246,7 +285,8 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
-          module_id: string
+          lesson_id?: string | null
+          module_id?: string | null
           user_id: string
         }
         Update: {
@@ -254,10 +294,18 @@ export type Database = {
           completed_at?: string | null
           created_at?: string
           id?: string
-          module_id?: string
+          lesson_id?: string | null
+          module_id?: string | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "user_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "user_progress_module_id_fkey"
             columns: ["module_id"]
@@ -322,7 +370,29 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      get_course_structure: {
+        Args: { course_id_param: string }
+        Returns: {
+          course_id: string
+          course_title: string
+          course_description: string
+          module_id: string
+          module_title: string
+          module_description: string
+          module_order: number
+          lesson_id: string
+          lesson_title: string
+          lesson_order: number
+        }[]
+      }
+      get_user_course_progress: {
+        Args: { user_id_param: string; course_id_param: string }
+        Returns: {
+          lesson_id: string
+          completed: boolean
+          completed_at: string
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never
