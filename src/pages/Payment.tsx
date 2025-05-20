@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -115,7 +114,7 @@ const Payment: React.FC<PaymentProps> = () => {
           user_id: user.id,
           course_id: courseId,
           used_referral_code: referralCode,
-          purchase_id: data?.[0]?.id // Store the purchase ID for webhook reference
+          purchase_id: data?.[0]?.id // Use the ID from the returned data instead of purchaseData.id
         },
         theme: {
           color: '#00C853'
