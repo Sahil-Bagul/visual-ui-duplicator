@@ -12,9 +12,13 @@ import { useToast } from '@/hooks/use-toast';
 import { 
   Module, 
   UserProgress, 
+  GetCourseModulesParams,
   GetCourseModulesResponse,
+  GetUserProgressParams,
   GetUserProgressResponse,
+  UpdateUserProgressParams,
   UpdateUserProgressResponse,
+  CreateUserProgressParams,
   CreateUserProgressResponse
 } from '@/types/course';
 import { Check, ChevronLeft, ChevronRight, BookOpen, CheckCircle } from 'lucide-react';
@@ -73,7 +77,10 @@ const CourseContent: React.FC = () => {
         
         // Get modules for this course using RPC
         const { data: modulesData, error: modulesError } = await supabase
-          .rpc<GetCourseModulesResponse, { course_id_param: string }>('get_course_modules', { course_id_param: courseId });
+          .rpc<GetCourseModulesResponse, GetCourseModulesParams>(
+            'get_course_modules', 
+            { course_id_param: courseId }
+          );
           
         if (modulesError) {
           console.error("Error fetching modules via RPC:", modulesError);
@@ -106,10 +113,13 @@ const CourseContent: React.FC = () => {
         
         // Get user progress using RPC
         const { data: progressData, error: progressError } = await supabase
-          .rpc<GetUserProgressResponse, { user_id_param: string, course_id_param: string }>('get_user_progress', { 
-            user_id_param: user.id,
-            course_id_param: courseId
-          });
+          .rpc<GetUserProgressResponse, GetUserProgressParams>(
+            'get_user_progress', 
+            { 
+              user_id_param: user.id,
+              course_id_param: courseId
+            }
+          );
           
         if (progressError) {
           console.error("Error fetching progress via RPC:", progressError);
@@ -191,10 +201,13 @@ const CourseContent: React.FC = () => {
       if (existingProgress) {
         // Update existing record using RPC
         const { data, error } = await supabase
-          .rpc<UpdateUserProgressResponse, { progress_id_param: string, completed_param: boolean }>('update_user_progress', {
-            progress_id_param: existingProgress.id,
-            completed_param: true
-          });
+          .rpc<UpdateUserProgressResponse, UpdateUserProgressParams>(
+            'update_user_progress',
+            {
+              progress_id_param: existingProgress.id,
+              completed_param: true
+            }
+          );
           
         if (error) {
           console.error("Error with RPC:", error);
@@ -213,11 +226,14 @@ const CourseContent: React.FC = () => {
       } else {
         // Create new progress record using RPC
         const { data, error } = await supabase
-          .rpc<CreateUserProgressResponse, { user_id_param: string, module_id_param: string, completed_param: boolean }>('create_user_progress', {
-            user_id_param: user.id,
-            module_id_param: activeModule.id,
-            completed_param: true
-          });
+          .rpc<CreateUserProgressResponse, CreateUserProgressParams>(
+            'create_user_progress',
+            {
+              user_id_param: user.id,
+              module_id_param: activeModule.id,
+              completed_param: true
+            }
+          );
           
         if (error) {
           console.error("Error with RPC:", error);
@@ -251,11 +267,14 @@ const CourseContent: React.FC = () => {
       });
       
       // Refresh user progress data
-      const { data: refreshedProgress } = await supabase
-        .rpc<GetUserProgressResponse, { user_id_param: string, course_id_param: string }>('get_user_progress', { 
-          user_id_param: user.id,
-          course_id_param: courseId as string
-        });
+      const { data: refreshedProgress, error } = await supabase
+        .rpc<GetUserProgressResponse, GetUserProgressParams>(
+          'get_user_progress', 
+          { 
+            user_id_param: user.id,
+            course_id_param: courseId as string
+          }
+        );
         
       if (refreshedProgress) {
         setUserProgress(refreshedProgress);

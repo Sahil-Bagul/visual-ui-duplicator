@@ -9,7 +9,7 @@ import { BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Module, GetCourseModulesResponse } from '@/types/course';
+import { Module, GetCourseModulesParams, GetCourseModulesResponse } from '@/types/course';
 
 interface Course {
   id: string;
@@ -49,7 +49,10 @@ const CourseDetail: React.FC = () => {
         
         // Fetch course modules (just titles for preview)
         const { data: modulesData, error: modulesError } = await supabase
-          .rpc<GetCourseModulesResponse, { course_id_param: string }>('get_course_modules', { course_id_param: id });
+          .rpc<GetCourseModulesResponse, GetCourseModulesParams>(
+            'get_course_modules', 
+            { course_id_param: id }
+          );
           
         if (modulesError) {
           console.error("Error fetching modules via RPC:", modulesError);

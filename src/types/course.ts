@@ -13,6 +13,7 @@ export interface UserProgress {
   module_id: string;
   completed: boolean;
   completed_at: string | null;
+  created_at: string;
 }
 
 export interface CourseWithProgress {
@@ -24,6 +25,27 @@ export interface CourseWithProgress {
   totalModules: number;
   completedModules: number;
   progress: number;
+}
+
+// Parameters types for RPC functions
+export type GetCourseModulesParams = {
+  course_id_param: string;
+}
+
+export type GetUserProgressParams = {
+  user_id_param: string;
+  course_id_param: string;
+}
+
+export type UpdateUserProgressParams = {
+  progress_id_param: string;
+  completed_param: boolean;
+}
+
+export type CreateUserProgressParams = {
+  user_id_param: string;
+  module_id_param: string;
+  completed_param: boolean;
 }
 
 // Define return types for RPC functions

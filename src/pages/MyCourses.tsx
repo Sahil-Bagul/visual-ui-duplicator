@@ -12,6 +12,7 @@ import { BookOpen } from 'lucide-react';
 import { 
   CourseWithProgress, 
   Module,
+  GetCourseModulesParams,
   GetCourseModulesResponse
 } from '@/types/course';
 
@@ -46,7 +47,10 @@ const MyCourses: React.FC = () => {
           purchasedCourses.map(async (course) => {
             // Get modules for this course using RPC
             const { data: modulesData, error: modulesError } = await supabase
-              .rpc<GetCourseModulesResponse, { course_id_param: string }>('get_course_modules', { course_id_param: course.id });
+              .rpc<GetCourseModulesResponse, GetCourseModulesParams>(
+                'get_course_modules', 
+                { course_id_param: course.id }
+              );
               
             let modules: Module[] = [];
             
@@ -62,7 +66,7 @@ const MyCourses: React.FC = () => {
                 
               if (directModulesError) throw directModulesError;
               modules = directModulesData as Module[];
-            } else {
+            } else if (modulesData) {
               modules = modulesData;
             }
             
