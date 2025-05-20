@@ -3,7 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { BookOpen, ChevronRight } from 'lucide-react';
+import { BookOpen, ChevronRight, AlertCircle } from 'lucide-react';
 import { CourseWithProgress } from '@/types/course';
 
 interface CourseProgressCardProps {
@@ -29,17 +29,24 @@ const CourseProgressCard: React.FC<CourseProgressCardProps> = ({ course }) => {
         </div>
       </div>
       
-      <div className="mb-4">
-        <div className="flex justify-between items-center mb-1.5">
-          <span className="text-xs font-medium text-gray-700">
-            {completedModules}/{totalModules} modules
-          </span>
-          <span className="text-xs font-medium text-gray-700">
-            {progress}%
-          </span>
+      {hasModules ? (
+        <div className="mb-4">
+          <div className="flex justify-between items-center mb-1.5">
+            <span className="text-xs font-medium text-gray-700">
+              {completedModules}/{totalModules} modules
+            </span>
+            <span className="text-xs font-medium text-gray-700">
+              {progress}%
+            </span>
+          </div>
+          <Progress value={progress} className="h-1.5" />
         </div>
-        <Progress value={progress} className="h-1.5" />
-      </div>
+      ) : (
+        <div className="mb-4 py-2 px-3 bg-amber-50 border border-amber-100 rounded-md flex items-center gap-2">
+          <AlertCircle className="w-4 h-4 text-amber-500" />
+          <span className="text-xs text-amber-700">Content is being prepared</span>
+        </div>
+      )}
       
       <Button 
         variant="ghost" 
