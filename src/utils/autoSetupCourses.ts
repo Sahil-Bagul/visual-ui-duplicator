@@ -1,3157 +1,3316 @@
 
-import { supabase } from '@/integrations/supabase/client';
-
-// Course content data
-const aiCourseData = {
-  title: 'AI Tools for Students',
-  price: 500,
-  description: 'Learn how to leverage AI tools to enhance your productivity, creativity, and learning as a student.',
-  referral_reward: 250,
-  modules: [
-    {
-      title: 'Introduction to AI Tools',
-      module_order: 1,
-      description: 'Learn the basics of AI tools and their importance for students.',
-      lessons: [
-        {
-          title: 'What are AI Tools?',
-          lesson_order: 1,
-          content: `# What are AI Tools?
-
-AI tools are software programs powered by artificial intelligence that can perform tasks that would typically require human intelligence. These tools can understand, learn, and adapt to different situations based on data they've been trained on.
-
-## Key Features of AI Tools:
-
-* 💡 **Automation** - They can complete repetitive tasks without human intervention
-* 💡 **Natural Language Processing** - They can understand and generate human language
-* 💡 **Pattern Recognition** - They can identify patterns in data that humans might miss
-* 💡 **Learning Capability** - They improve over time as they process more data
-
-## Common Types of AI Tools for Students:
-
-* 📝 **Writing Assistants** - Help with grammar, style, and content generation
-* 🔍 **Research Tools** - Help find and summarize information quickly
-* 📊 **Data Analysis Tools** - Help process and visualize complex data
-* 🎨 **Creative Tools** - Assist with design, art, and content creation
-* 📚 **Learning Assistants** - Provide personalized tutoring and explanations
-
-AI tools are becoming increasingly accessible to students, with many offering free tiers or student discounts. These tools can significantly enhance your academic experience by saving time, improving the quality of your work, and helping you learn complex concepts more efficiently.`
-        },
-        {
-          title: 'Why AI is Important for Students',
-          lesson_order: 2,
-          content: `# Why AI is Important for Students
-
-Artificial Intelligence is revolutionizing how students learn, research, and create. Understanding AI and incorporating AI tools into your student life can give you a significant advantage.
-
-## Benefits of AI for Students:
-
-### 🚀 Enhanced Productivity
-* Automates time-consuming tasks like formatting citations
-* Helps organize notes and research material
-* Speeds up routine assignments, giving you more time for deep learning
-
-### 📈 Improved Learning Outcomes
-* Provides instant feedback on writing and assignments
-* Offers alternative explanations for difficult concepts
-* Creates personalized learning experiences based on your strengths and weaknesses
-
-### 🧠 Develops Future-Ready Skills
-* Familiarizes you with technology you'll encounter in your career
-* Teaches you how to work alongside AI (a critical workplace skill)
-* Helps you understand AI's capabilities and limitations
-
-### 🌍 Levels the Playing Field
-* Gives access to high-quality educational resources regardless of location
-* Provides support for students with different learning needs
-* Offers 24/7 assistance without requiring expensive tutors
-
-## Real-World Impact:
-
-> "According to a 2023 survey, 78% of students who regularly use AI tools reported higher grades and better understanding of complex subjects."
-
-As AI becomes more integrated into workplaces and daily life, students who become proficient with these tools now will have a competitive advantage in their future careers. Rather than replacing human intelligence, AI tools augment your natural abilities and help you focus on higher-level thinking and creativity.`
-        }
-      ]
-    },
-    {
-      title: 'AI for Productivity',
-      module_order: 2,
-      description: 'Discover how AI tools can boost your productivity and academic performance.',
-      lessons: [
-        {
-          title: 'Using ChatGPT for Research & Learning',
-          lesson_order: 1,
-          content: `# Using ChatGPT for Research & Learning
-
-ChatGPT is a powerful AI assistant that can transform how you approach research and learning. When used effectively, it can be like having a personal tutor available 24/7.
-
-## Getting Started with ChatGPT
-
-1. **Access**: Visit [chat.openai.com](https://chat.openai.com) and create a free account
-2. **Free vs. Paid**: The free version has limitations but is sufficient for most student needs
-3. **Interface**: Type your questions in the chat box at the bottom of the screen
-
-## Effective Research Strategies
-
-### 📚 Literature Review Assistance
-* Ask ChatGPT to summarize complex academic concepts
-* Request explanations of difficult terms in simple language
-* Have it generate research questions on your topic of interest
-
-Example prompt:
-> "Explain the concept of neural networks in simple terms, as if explaining to a beginner"
-
-### 🔍 Finding Relevant Sources
-* Ask for recommended books, articles, or papers on specific topics
-* Request citations in various formats (APA, MLA, Chicago)
-* Use it to brainstorm keywords for your database searches
-
-### ⚠️ Important Limitations
-* ChatGPT doesn't have real-time internet access
-* Its knowledge cutoff means it lacks recent information
-* It may occasionally provide incorrect information
-* Always verify facts and citations from reliable sources
-
-## Learning Enhancement Techniques
-
-### 🧠 Study Aid Applications
-* Create flashcards based on your study material
-* Have ChatGPT quiz you on key concepts
-* Ask it to explain concepts from multiple angles if you're struggling
-
-Example prompt:
-> "Create 5 practice questions about photosynthesis that would be appropriate for a college biology exam"
-
-### 💡 Problem-Solving Coach
-* Get step-by-step explanations for math or science problems
-* Ask for hints rather than complete solutions to better learn the material
-* Have it analyze your approach and suggest improvements
-
-Remember: ChatGPT should be used as a supplement to—not a replacement for—traditional learning methods. The most effective approach is to use AI tools alongside your textbooks, lectures, and discussions with professors and peers.`
-        },
-        {
-          title: 'Using Notion AI for Note-taking & Planning',
-          lesson_order: 2,
-          content: `# Using Notion AI for Note-taking & Planning
-
-Notion AI combines the powerful organization features of Notion with artificial intelligence to supercharge your note-taking and planning workflows.
-
-## What is Notion?
-
-Notion is an all-in-one workspace that lets you:
-* Create notes, documents, and wikis
-* Build databases and project trackers
-* Organize your tasks and calendar
-* Collaborate with others
-
-## What Notion AI Adds
-
-Notion AI is an integrated AI assistant that enhances Notion with capabilities like:
-
-* ✍️ **Writing assistance** - Helps draft, edit, and improve your writing
-* 📝 **Summarization** - Creates concise summaries of long text
-* 🔄 **Transformation** - Converts content between different formats
-* 💡 **Ideation** - Helps generate ideas and brainstorm
-
-## Setting Up Notion AI
-
-1. Create a Notion account at [notion.so](https://www.notion.so)
-2. Notion AI is a paid feature (approximately ₹800/month)
-3. Access a 7-day free trial to test the features
-4. Enable AI by clicking the "/" command or the sparkle icon ✨
-
-## Note-taking with Notion AI
-
-### Creating Smart Class Notes
-* Record basic notes during class
-* Use AI to expand your bullet points into detailed notes
-* Ask AI to explain concepts you didn't fully understand
-* Have AI generate practice questions from your notes
-
-Example command:
-> /ai Expand these bullet points into detailed notes
-
-### Summarizing Reading Materials
-* Paste long articles or book chapters into Notion
-* Use AI to generate concise summaries
-* Ask AI to extract key concepts and vocabulary
-* Create flashcards from complex reading materials
-
-## Planning with Notion AI
-
-### Academic Planning
-* Create a project template for assignments
-* Use AI to break down large projects into manageable tasks
-* Ask AI to generate schedules based on deadlines
-* Have AI suggest study strategies based on your goals
-
-### Personal Planning
-* Build habit trackers and goal-setting systems
-* Use AI to generate ideas for achieving your goals
-* Ask AI to analyze your productivity patterns
-* Create templates for weekly/monthly reviews
-
-## Pro Tips
-
-* 💡 Create a "Notion AI Prompts" page to save useful AI commands
-* 💡 Use Notion databases to organize information before using AI
-* 💡 Combine Notion AI with templates for maximum efficiency
-* 💡 Always review and refine AI-generated content
-
-Remember that Notion AI works best when you provide clear instructions and context. The more specific your requests, the better results you'll get.`
-        },
-        {
-          title: 'Grammarly & Quillbot for Writing Help',
-          lesson_order: 3,
-          content: `# Grammarly & Quillbot for Writing Help
-
-Good writing is essential for academic success. Fortunately, AI-powered tools like Grammarly and Quillbot can significantly improve your writing quality.
-
-## Grammarly: Your AI Writing Assistant
-
-Grammarly is an AI-powered writing assistant that helps you with:
-
-### 🔎 Grammar & Spelling
-* Catches spelling errors and typos
-* Identifies grammatical mistakes
-* Suggests punctuation corrections
-
-### 💬 Style & Clarity
-* Highlights wordy sentences
-* Suggests clearer phrasing
-* Identifies passive voice
-* Detects inconsistent tone
-
-### 📊 Advanced Features (Premium)
-* Plagiarism detection
-* Vocabulary enhancement
-* Genre-specific style suggestions
-* Tone adjustments
-
-### How to Use Grammarly
-1. **Browser Extension**: Install on Chrome, Firefox, Safari, or Edge
-2. **Desktop App**: Download for Windows or Mac
-3. **Mobile Keyboard**: Install on iOS or Android
-4. **Web Editor**: Use directly at [grammarly.com](https://www.grammarly.com)
-
-### Free vs. Premium
-* Free version covers basic grammar and spelling
-* Premium (₹1,000-1,200/month) includes style suggestions and advanced features
-* Student discounts available
-
-## Quillbot: AI Paraphrasing Tool
-
-Quillbot uses AI to rewrite and restructure your text while preserving meaning.
-
-### 🔄 Core Features
-* **Paraphraser**: Rewords your text in different styles
-* **Grammar Checker**: Corrects grammatical errors
-* **Summarizer**: Condenses long text into key points
-* **Citation Generator**: Creates properly formatted citations
-
-### Paraphrasing Modes
-* **Standard**: Balanced changes (free)
-* **Fluency**: Improves readability (free)
-* **Formal**: Makes text more academic (premium)
-* **Simple**: Uses easier vocabulary (premium)
-* **Creative**: More extensive rewording (premium)
-
-### How to Use Quillbot
-1. Visit [quillbot.com](https://quillbot.com)
-2. Install the browser extension for seamless use
-3. Copy and paste text into the editor
-4. Select your desired mode and click "Paraphrase"
-
-### Free vs. Premium
-* Free: 2 modes, character limits
-* Premium (₹500-600/month): All modes, no character limits
-
-## Using These Tools Effectively
-
-### ✅ Do's:
-* Use as learning tools to improve your writing skills
-* Review all suggestions before accepting
-* Use paraphrasing to understand concepts in your own words
-* Check final work manually even after using these tools
-
-### ❌ Don'ts:
-* Don't rely completely on AI suggestions
-* Don't use paraphrasing to avoid plagiarism (it can still be detected)
-* Don't ignore context-specific writing requirements
-* Don't skip learning proper writing skills
-
-## Academic Integrity Note
-
-Always check your institution's policies regarding the use of AI writing tools. Some professors may require disclosure when using these tools. Remember, these tools should enhance your writing skills, not replace them.`
-        }
-      ]
-    },
-    {
-      title: 'AI for Creativity',
-      module_order: 3,
-      description: 'Learn how to use AI tools to enhance your creative projects and presentations.',
-      lessons: [
-        {
-          title: 'Using Canva AI for Design',
-          lesson_order: 1,
-          content: `# Using Canva AI for Design
-
-Canva has integrated powerful AI tools that make creating professional designs easier than ever for students with no design background.
-
-## Getting Started with Canva AI
-
-### 🔑 Accessing Canva
-* Create a free account at [canva.com](https://www.canva.com)
-* Students can get Canva Pro features free with educational email
-* Mobile app available for on-the-go design
-
-### 💡 Key AI Features
-* **Magic Write**: AI text generation for design copy
-* **Text to Image**: Creates images from descriptions
-* **Background Remover**: Automatically removes image backgrounds
-* **Magic Resize**: Adapts designs to different formats
-* **Magic Switch**: Changes languages while maintaining design
-
-## Creating Academic Designs with Canva AI
-
-### 📊 Presentations
-* Start with a template or blank canvas
-* Use Magic Write to generate section content:
-  * `/write an introduction about renewable energy`
-  * `/write 3 key points about solar power`
-* Convert bullet points into visuals with "Text to Image"
-* Add "breathing room" to slides with AI layout suggestions
-
-Example prompt for Text to Image:
-> "A simple illustration showing renewable energy sources including solar panels, wind turbines and hydroelectric dam in a minimalist style"
-
-### 📄 Research Posters
-* Select an academic poster template
-* Use AI to generate concise research summaries
-* Create custom visuals that explain your methodology
-* Automatically balance text and image layout
-
-### 📝 Infographics
-* Start with data you want to visualize
-* Ask Magic Write to suggest visualization methods:
-  * `/suggest ways to visualize statistics about climate change`
-* Generate complementary icons and imagery
-* Use AI to ensure consistent color schemes
-
-## Advanced Canva AI Techniques
-
-### 🎨 Style Consistency
-* Use "Brand Kit" to maintain consistent colors
-* Have AI generate variations while keeping your style
-* Apply consistent styling to multiple designs at once
-
-### 📱 Multi-format Content
-* Create one design (like a presentation)
-* Use Magic Resize to adapt it for:
-  * Social media posts
-  * Handouts
-  * Website graphics
-  * Mobile-friendly formats
-
-### 🔤 Accessibility Enhancements
-* Check text contrast with AI tools
-* Get suggestions for more readable fonts
-* Optimize color schemes for color blindness
-
-## Student Tips for Canva AI
-
-* 💡 Start projects early to allow time for refinement
-* 💡 Save versions before making major AI-suggested changes
-* 💡 Combine AI suggestions with your personal touch
-* 💡 Use AI to overcome creative blocks, not replace creativity
-* 💡 Give very specific prompts for better results
-
-Canva AI doesn't just make designs look better—it helps you communicate your ideas more effectively, which is crucial for academic success. The best designs come from combining AI assistance with your unique perspective and knowledge of your subject matter.`
-        },
-        {
-          title: 'Using Leonardo AI for Images',
-          lesson_order: 2,
-          content: `# Using Leonardo AI for Images
-
-Leonardo AI is a powerful image generation tool that lets students create custom visuals without artistic skills. This can elevate your presentations, reports, and creative projects.
-
-## Getting Started with Leonardo AI
-
-### 🚀 Setting Up
-* Create an account at [leonardo.ai](https://leonardo.ai)
-* Free tier includes limited generations per day
-* Student discounts available for premium features
-* Web-based interface (no downloads required)
-
-### 🎭 Key Features
-* **Text-to-Image**: Create images from text descriptions
-* **Image-to-Image**: Modify existing images with AI
-* **Canvas**: More control over composition and editing
-* **Styles & Presets**: Apply consistent visual styles
-* **Community Resources**: Access models trained by others
-
-## Creating Academic Visuals
-
-### 📚 Subject Illustrations
-Perfect for presentations, study notes, and assignments:
-
-1. Use clear, detailed prompts:
-   > "A detailed cross-section diagram of a plant cell showing organelles with labels, educational style, light background, scientifically accurate"
-
-2. Specify the style:
-   > "...in the style of a textbook illustration"
-   > "...using a minimalist infographic approach"
-
-3. Improve results with parameters:
-   * Adjust image dimensions (16:9 for presentations)
-   * Increase "Guidance Scale" for more prompt-adherent images
-   * Use "Negative Prompts" to remove unwanted elements
-
-### 🔬 Research Visualizations
-For papers, posters, and theses:
-
-* Create conceptual models of theoretical frameworks
-* Generate visualizations of data patterns
-* Illustrate experimental setups
-
-Example prompt:
-> "A schematic diagram showing the methodology of a psychology experiment, with participants, stimulus presentation, and data collection illustrated in a clean, professional style suitable for an academic paper"
-
-## Advanced Techniques
-
-### 🎨 Style Consistency
-* Create and save "Presets" combining:
-  * Base model
-  * Style settings
-  * Parameter configurations
-* Use these presets across projects for consistent visuals
-
-### 🖼️ Image Manipulation
-* Upload your own sketches or images
-* Use "Image-to-Image" to enhance or transform them
-* Maintain scientific accuracy while improving visual appeal
-
-### 📱 Integration with Other Tools
-* Export in multiple formats (.png, .jpg)
-* Use with Canva for complete project design
-* Incorporate into documents, slides, and websites
-
-## Ethical Considerations
-
-### ⚠️ Important Guidelines
-* Always cite Leonardo AI as your image source
-* Check your institution's policies on AI-generated images
-* Use for educational purposes, not to misrepresent information
-* Be aware of potential biases in AI-generated imagery
-* Do not generate inappropriate or copyrighted content
-
-### 🔍 Academic Integrity
-* Use AI images to enhance understanding, not to deceive
-* Be transparent about AI use in academic submissions
-* Focus on accuracy when creating scientific visualizations
-
-## Student Success Tips
-
-* 💡 Build a personal library of successful prompts
-* 💡 Allow time for multiple generations and refinements
-* 💡 Study the work of others in the Leonardo community
-* 💡 Combine AI images with traditional visuals for best results
-* 💡 Remember that clarity is more important than artistic flair in academic contexts
-
-With Leonardo AI, you can create custom imagery that perfectly matches your learning needs and academic requirements—no design skills needed.`
-        },
-        {
-          title: 'Using Descript for Video Editing',
-          lesson_order: 3,
-          content: `# Using Descript for Video Editing
-
-Descript revolutionizes video editing by allowing you to edit video as easily as editing a text document. Its AI-powered features make creating professional-quality videos accessible to students with no prior editing experience.
-
-## Getting Started with Descript
-
-### 📱 Setup & Access
-* Create an account at [descript.com](https://www.descript.com)
-* Free plan includes 3 hours of transcription
-* Student discount available on paid plans
-* Available for Windows and Mac
-
-### 🎬 Core Features
-* **Transcription-Based Editing**: Edit video by editing text
-* **Studio Sound**: AI noise reduction and audio enhancement
-* **Overdub**: AI voice cloning for corrections
-* **Green Screen**: AI-powered background removal
-* **Filler Word Removal**: Automatically cuts "um," "uh," etc.
-
-## Creating Academic Videos
-
-### 🎓 Class Presentations
-Transform PowerPoint presentations into engaging videos:
-
-1. Record your presentation (screen + webcam)
-2. Import into Descript
-3. Edit the automatic transcription to:
-   * Remove mistakes and repetitions
-   * Cut rambling sections
-   * Improve clarity
-4. Add visual elements like:
-   * Text overlays for key points
-   * Screen highlights
-   * Transitions between sections
-
-### 📚 Tutorial Videos
-Create educational content for peers or projects:
-
-1. Plan your tutorial structure
-2. Record demonstration (can be rough—AI will help clean it)
-3. Use Descript's AI to:
-   * Remove background noise
-   * Cut mistakes automatically
-   * Generate captions
-4. Add visual enhancements:
-   * Zoom effects on important elements
-   * Text callouts for key steps
-   * Chapter markers for navigation
-
-## Advanced AI Features
-
-### 🗣️ Overdub (Voice Clone)
-* Record at least 10 minutes of your voice
-* Create an AI voice clone
-* Use it to:
-  * Fix mistakes without re-recording
-  * Add narration to sections
-  * Create consistent voiceovers
-
-⚠️ Note: Always disclose AI voice use in academic work
-
-### 🎭 Script-Based Creation
-Start with a script and build your video:
-
-1. Write your script in Descript
-2. Record yourself reading it
-3. Use AI to align audio perfectly with text
-4. Add visuals, b-roll, and screen recordings
-5. Fine-tune with AI tools
-
-### 🎬 One-Click Templates
-* Stock intro/outro sequences
-* Lower-third graphics (name labels)
-* Caption styles
-* Scene transitions
-
-## Publishing & Sharing
-
-### 📤 Export Options
-* Direct upload to YouTube/Vimeo
-* MP4 download (various quality options)
-* Audio-only podcast format
-* Transcript export for notes
-
-### 📱 Mobile-Friendly Output
-* Vertical format for Instagram/TikTok
-* Square format for social posts
-* Automatic captions for silent viewing
-
-## Student Tips for Success
-
-* 💡 Script important sections before recording
-* 💡 Don't worry about mistakes—fix them in editing
-* 💡 Use chapter markers for long educational videos
-* 💡 Add captions for accessibility and mobile viewing
-* 💡 Start with the free version to learn the basics
-
-## Academic Integrity Considerations
-
-* Always disclose AI usage in academic submissions
-* Don't use AI voices to impersonate others
-* Focus on enhancing educational value, not just aesthetics
-
-Descript makes professional-quality video production accessible to students regardless of technical skill. By focusing on your content while letting AI handle the technical aspects, you can create engaging videos that enhance learning and showcase your knowledge effectively.`
-        },
-        {
-          title: 'Using Soundraw for Music Generation',
-          lesson_order: 4,
-          content: `# Using Soundraw for Music Generation
-
-Soundraw is an AI-powered music generation tool that lets students create custom, royalty-free music for video projects, presentations, and other academic work without musical skills or expensive software.
-
-## Getting Started with Soundraw
-
-### 🎵 Access Options
-* Visit [soundraw.io](https://soundraw.io) to create an account
-* Free tier: Limited exports with watermark
-* Student discount available on paid plans (₹800-1000/month)
-* Web-based interface (no downloads needed)
-
-### 🎹 Core Features
-* **Mood-Based Generation**: Create music based on emotion
-* **Genre Selection**: Multiple styles from ambient to electronic
-* **Length Control**: Set exact duration for your projects
-* **Instrument Focus**: Highlight specific instruments
-* **Customization**: Adjust tempo, energy, and arrangement
-
-## Creating Custom Music for Academic Projects
-
-### 🎬 Video Project Soundtracks
-Perfect for documentary-style projects, presentations, and explainer videos:
-
-1. Determine the mood of your project section
-2. Select appropriate genre (Documentary, Ambient, etc.)
-3. Set length to match your video segment
-4. Adjust parameters:
-   * Tempo: Match speaking pace or scene changes
-   * Energy: Lower for serious topics, higher for dynamic content
-   * Focus instruments: Choose based on subject matter
-
-Example settings for scientific explanation video:
-> Genre: Ambient
-> Mood: Curious
-> Length: 2:30
-> Energy: Medium-low
-> Instruments: Piano, soft synths
-
-### 📊 Presentation Background Music
-For live presentations or recorded slideshows:
-
-1. Choose subtle, non-distracting genres
-2. Set low energy and volume
-3. Avoid tracks with dramatic changes
-4. Export at a slightly longer length than needed
-5. Loop if necessary for longer presentations
-
-## Advanced Techniques
-
-### 🎭 Emotional Storytelling
-Match music to narrative arc:
-
-* Introduction: Curious, gentle tempo
-* Problem statement: Tense, minor key
-* Methodology: Neutral, steady rhythm
-* Results: Gradually building energy
-* Conclusion: Resolving, optimistic tone
-
-### 🔄 Song Structure Customization
-* Intro length: Shorter for academic work
-* Arrangement: Choose simpler for background use
-* Transition points: Align with content sections
-* Export separate segments for different sections
-
-### 🎚️ Post-Processing Options
-* Download stems (separate instrument tracks)
-* Adjust volume levels in video editor
-* Create fade-ins/fade-outs
-* Layer multiple tracks for complex projects
-
-## Practical Applications
-
-### 📚 Academic Use Cases
-* **Research Presentations**: Enhance engagement
-* **Educational Videos**: Improve professionalism
-* **Digital Storytelling Projects**: Add emotional depth
-* **Interactive Learning Materials**: Create immersive experience
-* **Podcasts & Interviews**: Professional intros/outros
-
-## Legal & Attribution Considerations
-
-### ⚖️ Usage Rights
-* All Soundraw music is royalty-free
-* Free accounts require attribution
-* Paid accounts allow use without attribution
-* Acceptable for academic and commercial use
-
-### 🏫 Academic Integrity
-* Disclose music creation tools in production credits
-* Focus on using music to enhance understanding
-* Consider accessibility (some viewers may prefer no music)
-
-## Tips for Students
-
-* 💡 Create multiple versions and get peer feedback
-* 💡 Keep volume subtle for academic contexts
-* 💡 Save favorite parameter combinations
-* 💡 Consider the cultural context of different genres
-* 💡 Export music in high quality for final projects
-
-Soundraw lets you add a professional audio dimension to your academic work without musical training or copyright concerns. This can significantly enhance the engagement and impact of your educational content.`
-        }
-      ]
-    },
-    {
-      title: 'Career & Future with AI',
-      module_order: 4,
-      description: 'Discover how AI skills can enhance your career prospects and future opportunities.',
-      lessons: [
-        {
-          title: 'Jobs that Use AI Tools',
-          lesson_order: 1,
-          content: `# Jobs that Use AI Tools
-
-Understanding the intersection of AI and various career paths can help you prepare for future opportunities. Many careers now incorporate AI tools, and students with these skills have a competitive advantage.
-
-## AI-Enhanced Career Paths
-
-### 💼 Business & Marketing
-* **Digital Marketing Specialist**
-  * Uses AI for content creation and optimization
-  * Analyzes customer data with AI tools
-  * Creates personalized marketing campaigns
-  * Average Salary: ₹5-12 lakhs/year
-
-* **Business Analyst**
-  * Employs AI for market prediction
-  * Automates data processing and visualization
-  * Generates insights from complex datasets
-  * Average Salary: ₹6-15 lakhs/year
-
-### 🎨 Creative Fields
-* **Graphic Designer**
-  * Uses AI for initial concept generation
-  * Creates variations with image generation tools
-  * Automates repetitive design tasks
-  * Average Salary: ₹4-10 lakhs/year
-
-* **Content Creator**
-  * Employs AI for script writing assistance
-  * Edits videos with AI-powered tools
-  * Creates custom graphics and animations
-  * Average Salary: ₹3-20 lakhs/year (highly variable)
-
-### 💻 Technology
-* **UX/UI Designer**
-  * Uses AI to analyze user behavior
-  * Tests interface designs with AI feedback
-  * Generates wireframes and prototypes
-  * Average Salary: ₹6-18 lakhs/year
-
-* **Software Developer**
-  * Uses AI coding assistants
-  * Implements AI features in applications
-  * Automates testing and optimization
-  * Average Salary: ₹5-25 lakhs/year
-
-### 📚 Education & Research
-* **Research Assistant**
-  * Uses AI for literature reviews
-  * Analyzes research data
-  * Generates visualizations and reports
-  * Average Salary: ₹3-8 lakhs/year
-
-* **Educational Content Developer**
-  * Creates personalized learning materials
-  * Develops interactive educational experiences
-  * Uses AI for assessment and feedback
-  * Average Salary: ₹4-12 lakhs/year
-
-## Emerging AI-Specific Roles
-
-### 🤖 Specialized Positions
-* **Prompt Engineer**
-  * Crafts effective instructions for AI systems
-  * Optimizes AI outputs for specific purposes
-  * Requires understanding of AI capabilities and limitations
-  * Average Salary: ₹8-20 lakhs/year
-
-* **AI Ethics Specialist**
-  * Evaluates AI systems for bias and fairness
-  * Ensures responsible AI implementation
-  * Develops guidelines for AI use
-  * Average Salary: ₹10-18 lakhs/year
-
-* **AI Content Curator**
-  * Verifies AI-generated content quality
-  * Ensures brand consistency across AI outputs
-  * Trains AI systems with feedback
-  * Average Salary: ₹6-15 lakhs/year
-
-## Preparing for AI-Enhanced Careers
-
-### 🎯 Skills to Develop
-* **Critical Thinking**: Evaluate AI outputs
-* **Prompt Crafting**: Give effective instructions to AI
-* **AI Literacy**: Understand capabilities and limitations
-* **Adaptability**: Learn new AI tools quickly
-* **Human-AI Collaboration**: Know when to use AI vs. human skills
-
-### 📚 Recommended Learning Path
-1. Master general-purpose AI tools (ChatGPT, Midjourney)
-2. Learn industry-specific AI applications
-3. Practice combining AI tools with traditional methods
-4. Develop portfolios showcasing AI-enhanced work
-5. Stay updated with AI developments in your field
-
-## The Human Advantage
-
-Despite advances in AI, these uniquely human skills remain valuable:
-
-* **Emotional Intelligence**: Understanding nuanced human needs
-* **Creative Direction**: Providing vision and purpose
-* **Ethical Judgment**: Making value-based decisions
-* **Interdisciplinary Thinking**: Connecting across domains
-* **Complex Problem Solving**: Addressing novel challenges
-
-AI tools are most powerful when combined with human expertise and judgment. The most successful professionals will be those who learn to collaborate effectively with AI rather than compete against it.`
-        },
-        {
-          title: 'Freelancing with AI',
-          lesson_order: 2,
-          content: `# Freelancing with AI
-
-AI tools have transformed freelancing, creating new opportunities for students to earn while studying. By leveraging AI effectively, you can offer competitive services even with limited experience.
-
-## AI-Enhanced Freelance Services
-
-### ✍️ Writing & Content Creation
-* **Blog Writing**
-  * Use AI to research topics and outline articles
-  * Generate first drafts and refine with your expertise
-  * Tools: ChatGPT, Jasper, Copy.ai
-  * Potential earnings: ₹1-3 per word
-
-* **Social Media Management**
-  * Create content calendars with AI suggestions
-  * Generate caption variations and hashtag sets
-  * Schedule posts and analyze performance
-  * Tools: Hootsuite + ChatGPT, Later + AI
-  * Potential earnings: ₹5,000-15,000/month per client
-
-### 🎨 Design & Creative Services
-* **Graphic Design**
-  * Generate initial concepts with AI
-  * Customize and refine designs for clients
-  * Create multiple variations quickly
-  * Tools: Canva Pro, Leonardo AI, Midjourney
-  * Potential earnings: ₹1,000-5,000 per design
-
-* **Video Editing**
-  * Automate transcription and caption generation
-  * Use AI to enhance video quality
-  * Create custom thumbnails and graphics
-  * Tools: Descript, Runway ML, CapCut
-  * Potential earnings: ₹3,000-10,000 per minute of final video
-
-### 💻 Technical Services
-* **Web Development**
-  * Generate code snippets and troubleshoot with AI
-  * Create designs from text descriptions
-  * Optimize site performance automatically
-  * Tools: GitHub Copilot, V0.dev, Builder.io
-  * Potential earnings: ₹15,000-50,000 per basic website
-
-* **Data Analysis**
-  * Clean and organize data automatically
-  * Generate visualizations and insights
-  * Create comprehensive reports
-  * Tools: Excel + ChatGPT, Python + AI libraries
-  * Potential earnings: ₹8,000-25,000 per project
-
-## Getting Started as an AI-Powered Freelancer
-
-### 🚀 Building Your Foundation
-1. **Choose Your Niche**
-   * Select services that match your interests
-   * Focus on areas where AI gives significant leverage
-   * Consider market demand and competition
-
-2. **Develop Your Toolkit**
-   * Master 2-3 core AI tools for your niche
-   * Develop custom workflows and prompts
-   * Set up templates for common requests
-
-3. **Create Your Portfolio**
-   * Develop sample projects showcasing your capabilities
-   * Clearly explain your process (including AI use)
-   * Highlight the value you add beyond AI alone
-
-### 📈 Finding Clients
-
-#### Online Platforms
-* **General Freelancing Sites**
-  * Fiverr, Upwork, Freelancer
-  * Start with competitive rates to build reviews
-  * Highlight your AI efficiency in your profile
-
-* **Specialized Platforms**
-  * 99designs for design work
-  * Contently for writing
-  * Toptal for premium technical services
-
-#### Direct Outreach
-* **Local Businesses**
-  * Offer AI-enhanced services to small businesses
-  * Show how you can solve specific problems
-  * Provide free samples to demonstrate value
-
-* **Student Organizations**
-  * Help campus groups with content and design
-  * Build portfolio and referrals
-  * Network with future entrepreneurs
-
-## Ethical Considerations
-
-### 🔍 Transparency
-* Be upfront with clients about AI use
-* Explain your value-add beyond the AI tools
-* Set realistic expectations about capabilities
-
-### ⚖️ Quality Control
-* Always review and refine AI outputs
-* Develop systems to ensure accuracy
-* Take responsibility for the final product
-
-### 🏆 Continuous Improvement
-* Keep learning both AI and traditional skills
-* Stay updated on new AI tools in your field
-* Develop unique approaches that AI alone can't match
-
-## Student-Specific Advantages
-
-* **Flexible Hours**: Work around your class schedule
-* **Low Startup Costs**: Most AI tools have free/affordable tiers
-* **Quick Skill Development**: Overcome experience gaps faster
-* **Portfolio Building**: Create professional-quality work early in your career
-
-Freelancing with AI gives students a unique opportunity to earn income while building marketable skills. The key is finding the right balance where AI handles repetitive tasks while you contribute creativity, critical thinking, and client understanding.`
-        },
-        {
-          title: 'Building Your Own AI Portfolio',
-          lesson_order: 3,
-          content: `# Building Your Own AI Portfolio
-
-Creating a portfolio that showcases your AI skills can significantly enhance your job prospects. This lesson will guide you through creating an impressive AI portfolio while still a student.
-
-## Why Build an AI Portfolio?
-
-### 🚀 Key Benefits
-* **Demonstrates Practical Skills**: Shows you can apply AI tools to real problems
-* **Bypasses Experience Requirements**: Helps overcome "no experience" barriers
-* **Shows Initiative**: Proves self-direction and continuous learning
-* **Creates Talking Points**: Gives concrete examples for interviews
-* **Builds Confidence**: Develops your ability to use AI in professional contexts
-
-## Essential Components of an AI Portfolio
-
-### 📁 Portfolio Structure
-* **Personal Profile**: Brief introduction and AI skill summary
-* **Project Showcases**: 3-5 detailed project examples
-* **Skills Section**: AI tools and techniques you've mastered
-* **Learning Journey**: Shows growth and continuing education
-* **Contact Information**: Professional email and relevant profiles
-
-### 🏗️ Platform Options
-* **Personal Website**: Most professional, complete control
-  * Tools: WordPress, Wix, Notion
-* **GitHub Repository**: Great for technical projects
-* **Behance/Dribbble**: Ideal for design-focused AI work
-* **LinkedIn Featured Section**: Easiest starting point
-
-## Creating Compelling AI Projects
-
-### 💡 Project Types by Field
-
-#### Business/Marketing Students
-* **AI Marketing Campaign**: Create content, visuals, and strategy
-* **Market Analysis Dashboard**: Use AI to analyze trends and competitors
-* **Customer Segmentation Model**: Apply AI to categorize audiences
-
-#### Design/Arts Students
-* **AI-Assisted Brand Package**: Logos, materials, style guides
-* **Concept Art Portfolio**: Show AI ideation and refinement process
-* **Generative Art Collection**: Curated AI art with your direction
-
-#### Technical Students
-* **AI-Powered Web App**: Simple application using AI APIs
-* **Data Analysis Project**: Clean, analyze, and visualize real data
-* **Automation Tool**: Create useful scripts with AI assistance
-
-#### Liberal Arts Students
-* **Research Summary Tool**: AI-assisted literature review
-* **Interactive Educational Content**: Engaging learning materials
-* **Digital Storytelling Project**: Narrative with AI-enhanced elements
-
-### 🔍 What to Include for Each Project
-
-1. **Problem Statement**: What issue were you addressing?
-2. **Approach**: Which AI tools did you use and why?
-3. **Process Documentation**: Show your workflow and iterations
-4. **Results**: Final outcomes and their effectiveness
-5. **Reflection**: Lessons learned and future improvements
-6. **Ethical Considerations**: How you addressed potential AI biases or issues
-
-## Showcasing AI Skills Effectively
-
-### 🌟 Best Practices
-* **Show Before/After**: Demonstrate your added value beyond the AI
-* **Explain Your Prompts**: Share innovative ways you directed AI tools
-* **Highlight Efficiency**: Note time saved using AI methods
-* **Document Iterations**: Show how you refined initial AI outputs
-* **Include Metrics**: Quantify improvements where possible
-
-### 🎯 Common Mistakes to Avoid
-* **Overstating AI's Role**: Be honest about what you contributed
-* **Generic Examples**: Avoid basic ChatGPT conversations or standard Midjourney images
-* **Neglecting Ethics**: Always address responsible AI use
-* **Poor Organization**: Make navigation and understanding easy
-* **Technical Overload**: Balance technical details with accessible explanations
-
-## Practical Portfolio Project Examples
-
-### 🔬 Example 1: Content Optimization System
-* **Concept**: Create a system that improves existing content
-* **Tools**: ChatGPT, Grammarly, Hemingway Editor
-* **Showcase**: Take 3 sample articles, show before/after versions
-* **Metrics**: Readability scores, engagement predictions
-
-### 🎨 Example 2: Multi-Platform Campaign
-* **Concept**: Develop a campaign for a fictional product
-* **Tools**: Canva AI, DALL-E, Descript
-* **Showcase**: Social posts, video ad, website mockup
-* **Process**: Show prompt evolution and design iterations
-
-### 📊 Example 3: Data Storytelling Project
-* **Concept**: Transform complex data into an engaging narrative
-* **Tools**: Python + AI libraries, visualization tools
-* **Showcase**: Interactive dashboard or presentation
-* **Value**: Demonstrate both analytical and communication skills
-
-## Next Steps: Leveraging Your Portfolio
-
-* 💼 **Feature projects on LinkedIn** and other professional profiles
-* 🔄 **Update regularly** with new tools and techniques
-* 🗣️ **Practice discussing** your process for interviews
-* 🌐 **Network with others** building similar portfolios
-* 📚 **Continue learning** and adding advanced projects
-
-Remember that a strong AI portfolio demonstrates not just tool familiarity, but thoughtful application, ethical awareness, and the ability to enhance AI outputs with your unique human perspective and domain knowledge.`
-        },
-        {
-          title: 'Building Your Own AI Portfolio',
-          lesson_order: 4,
-          content: `# Building Your Own AI Portfolio
-
-Creating a portfolio that showcases your AI skills can significantly enhance your job prospects. This lesson will guide you through creating an impressive AI portfolio while still a student.
-
-## Why Build an AI Portfolio?
-
-### 🚀 Key Benefits
-* **Demonstrates Practical Skills**: Shows you can apply AI tools to real problems
-* **Bypasses Experience Requirements**: Helps overcome "no experience" barriers
-* **Shows Initiative**: Proves self-direction and continuous learning
-* **Creates Talking Points**: Gives concrete examples for interviews
-* **Builds Confidence**: Develops your ability to use AI in professional contexts
-
-## Essential Components of an AI Portfolio
-
-### 📁 Portfolio Structure
-* **Personal Profile**: Brief introduction and AI skill summary
-* **Project Showcases**: 3-5 detailed project examples
-* **Skills Section**: AI tools and techniques you've mastered
-* **Learning Journey**: Shows growth and continuing education
-* **Contact Information**: Professional email and relevant profiles
-
-### 🏗️ Platform Options
-* **Personal Website**: Most professional, complete control
-  * Tools: WordPress, Wix, Notion
-* **GitHub Repository**: Great for technical projects
-* **Behance/Dribbble**: Ideal for design-focused AI work
-* **LinkedIn Featured Section**: Easiest starting point
-
-## Creating Compelling AI Projects
-
-### 💡 Project Types by Field
-
-#### Business/Marketing Students
-* **AI Marketing Campaign**: Create content, visuals, and strategy
-* **Market Analysis Dashboard**: Use AI to analyze trends and competitors
-* **Customer Segmentation Model**: Apply AI to categorize audiences
-
-#### Design/Arts Students
-* **AI-Assisted Brand Package**: Logos, materials, style guides
-* **Concept Art Portfolio**: Show AI ideation and refinement process
-* **Generative Art Collection**: Curated AI art with your direction
-
-#### Technical Students
-* **AI-Powered Web App**: Simple application using AI APIs
-* **Data Analysis Project**: Clean, analyze, and visualize real data
-* **Automation Tool**: Create useful scripts with AI assistance
-
-#### Liberal Arts Students
-* **Research Summary Tool**: AI-assisted literature review
-* **Interactive Educational Content**: Engaging learning materials
-* **Digital Storytelling Project**: Narrative with AI-enhanced elements
-
-### 🔍 What to Include for Each Project
-
-1. **Problem Statement**: What issue were you addressing?
-2. **Approach**: Which AI tools did you use and why?
-3. **Process Documentation**: Show your workflow and iterations
-4. **Results**: Final outcomes and their effectiveness
-5. **Reflection**: Lessons learned and future improvements
-6. **Ethical Considerations**: How you addressed potential AI biases or issues
-
-## Showcasing AI Skills Effectively
-
-### 🌟 Best Practices
-* **Show Before/After**: Demonstrate your added value beyond the AI
-* **Explain Your Prompts**: Share innovative ways you directed AI tools
-* **Highlight Efficiency**: Note time saved using AI methods
-* **Document Iterations**: Show how you refined initial AI outputs
-* **Include Metrics**: Quantify improvements where possible
-
-### 🎯 Common Mistakes to Avoid
-* **Overstating AI's Role**: Be honest about what you contributed
-* **Generic Examples**: Avoid basic ChatGPT conversations or standard Midjourney images
-* **Neglecting Ethics**: Always address responsible AI use
-* **Poor Organization**: Make navigation and understanding easy
-* **Technical Overload**: Balance technical details with accessible explanations
-
-## Practical Portfolio Project Examples
-
-### 🔬 Example 1: Content Optimization System
-* **Concept**: Create a system that improves existing content
-* **Tools**: ChatGPT, Grammarly, Hemingway Editor
-* **Showcase**: Take 3 sample articles, show before/after versions
-* **Metrics**: Readability scores, engagement predictions
-
-### 🎨 Example 2: Multi-Platform Campaign
-* **Concept**: Develop a campaign for a fictional product
-* **Tools**: Canva AI, DALL-E, Descript
-* **Showcase**: Social posts, video ad, website mockup
-* **Process**: Show prompt evolution and design iterations
-
-### 📊 Example 3: Data Storytelling Project
-* **Concept**: Transform complex data into an engaging narrative
-* **Tools**: Python + AI libraries, visualization tools
-* **Showcase**: Interactive dashboard or presentation
-* **Value**: Demonstrate both analytical and communication skills
-
-## Next Steps: Leveraging Your Portfolio
-
-* 💼 **Feature projects on LinkedIn** and other professional profiles
-* 🔄 **Update regularly** with new tools and techniques
-* 🗣️ **Practice discussing** your process for interviews
-* 🌐 **Network with others** building similar portfolios
-* 📚 **Continue learning** and adding advanced projects
-
-Remember that a strong AI portfolio demonstrates not just tool familiarity, but thoughtful application, ethical awareness, and the ability to enhance AI outputs with your unique human perspective and domain knowledge.`
-        }
-      ]
-    }
-  ]
+import { supabase } from "@/integrations/supabase/client";
+
+type LessonData = {
+  title: string;
+  content: string;
+  lesson_order: number;
 };
 
-const stockMarketCourseData = {
-  title: 'Introduction to Stock Investment',
-  price: 1000,
-  description: 'Learn the basics of stock market investing with a practical, beginner-friendly approach designed for Indian students.',
-  referral_reward: 500,
-  modules: [
-    {
-      title: 'Basics of Investing',
-      module_order: 1,
-      description: 'Understand the fundamentals of investing and why it matters for your financial future.',
-      lessons: [
-        {
-          title: 'What is the Stock Market?',
-          lesson_order: 1,
-          content: `# What is the Stock Market?
-
-The stock market is a place where shares of publicly listed companies are bought and sold. Think of it as a marketplace, but instead of buying fruits or clothes, you're buying small pieces (shares) of companies.
-
-## Key Concepts
-
-### 💼 Shares/Stocks
-* A share represents partial ownership in a company
-* When you buy a share, you become a part-owner (shareholder)
-* Example: If a company has 1000 shares and you buy 10, you own 1% of the company
-
-### 🏢 Stock Exchanges
-* Organized marketplaces where stocks are traded
-* In India, the main exchanges are:
-  * **NSE (National Stock Exchange)**: India's largest exchange
-  * **BSE (Bombay Stock Exchange)**: Asia's oldest stock exchange
-
-### 📈 How Stock Prices Work
-* Prices fluctuate based on supply and demand
-* If more people want to buy than sell, the price rises
-* If more people want to sell than buy, the price falls
-* Stock prices reflect investor expectations about a company's future
-
-## How the Stock Market Functions
-
-### Trading Hours
-* Indian stock markets operate Monday to Friday
-* Regular trading hours: 9:15 AM to 3:30 PM
-* Pre-market session: 9:00 AM to 9:15 AM
-* Closed on specified market holidays
-
-### Market Participants
-* **Individual Investors**: People like you investing their own money
-* **Institutional Investors**: Large entities like mutual funds, insurance companies
-* **Market Makers**: Provide liquidity by continuously buying and selling
-* **Brokers**: Facilitate trades between buyers and sellers
-
-## Types of Stock Markets
-
-### Primary Market
-* Where new securities are issued for the first time
-* Companies raise capital through IPOs (Initial Public Offerings)
-* Example: When Zomato first offered shares to the public in 2021
-
-### Secondary Market
-* Where existing securities are bought and sold
-* What most people refer to as "the stock market"
-* Example: Buying Reliance shares from another investor through your broker
-
-## Why the Stock Market Matters
-
-* **Capital Formation**: Helps companies raise money for growth
-* **Wealth Creation**: Allows average people to participate in economic growth
-* **Economic Indicator**: Often reflects the health of the economy
-* **Investment Avenue**: Provides potentially higher returns than traditional savings
-
-## Getting Started with the Stock Market
-
-As a beginner, you should:
-
-1. **Learn the basics** (which you're doing now!)
-2. **Understand your risk tolerance**
-3. **Set clear financial goals**
-4. **Start with a small amount** you can afford to lose
-5. **Consider long-term investing** rather than short-term trading
-
-> "The stock market is a device for transferring money from the impatient to the patient." - Warren Buffett
-
-Remember, the stock market involves risk, but with proper knowledge and a strategic approach, it can be a powerful tool for building wealth over time.`
-        },
-        {
-          title: 'Why Should Students Invest Early?',
-          lesson_order: 2,
-          content: `# Why Should Students Invest Early?
-
-Starting your investment journey while still a student might seem premature, but it's one of the smartest financial decisions you can make. Here's why beginning early gives you a significant advantage.
-
-## The Power of Compounding
-
-### 🔄 What is Compounding?
-* Earning returns not just on your initial investment, but also on the returns you've already earned
-* Often described as "interest on interest" or "returns on returns"
-* The most powerful force in investing
-
-### 📊 The Compounding Advantage
-Let's look at two scenarios:
-
-**Scenario 1: Riya starts at age 20**
-* Invests ₹5,000 per year from age 20-30 (10 years)
-* Total invested: ₹50,000
-* Stops investing but lets the money grow until age 60
-* At 12% average returns: ~₹57 lakhs at age 60
-
-**Scenario 2: Amit starts at age 30**
-* Invests ₹5,000 per year from age 30-60 (30 years)
-* Total invested: ₹1,50,000 (3 times what Riya invested)
-* At 12% average returns: ~₹35 lakhs at age 60
-
-Despite investing three times more money, Amit ends up with less than Riya because she had an extra 10 years of compound growth!
-
-## Student-Specific Advantages
-
-### ⏳ Time Horizon
-* Longer time to ride out market fluctuations
-* Can take more calculated risks for potentially higher returns
-* More time to recover from investment mistakes
-
-### 🧠 Learning Opportunity
-* Develop financial literacy early
-* Learn from smaller mistakes when the stakes are lower
-* Build confidence through experience
-* Apply theoretical knowledge from courses in real-world scenarios
-
-### 💰 Lower Financial Commitments
-* Typically fewer major expenses (mortgage, children, etc.)
-* Can start with smaller amounts
-* Less pressure for immediate returns
-
-## Practical Benefits for Students
-
-### 🎓 Fund Further Education
-* Save for master's degrees or professional courses
-* Reduce dependence on education loans
-* Finance study abroad opportunities
-
-### 🚀 Seed Capital for Ventures
-* Build a fund for future entrepreneurial projects
-* Have capital ready for post-graduation opportunities
-* Less reliance on external funding for startups
-
-### 🛡️ Emergency Fund
-* Create a financial safety net
-* Develop financial independence
-* Handle unexpected expenses without debt
-
-## How to Start as a Student
-
-### 🏁 Begin With Minimal Investment
-* Start with as little as ₹500 per month
-* Use apps that allow fractional investing
-* Focus on consistent contributions over amount
-
-### 📚 Education First
-* Invest time in learning before investing money
-* Use free resources: books, YouTube, investment blogs
-* Join investment clubs in your college
-
-### 🎯 Set Clear Goals
-* Define what you're saving for
-* Set realistic timeframes
-* Track progress regularly
-
-## Overcoming Student Challenges
-
-### 💸 Limited Income
-* **Solution**: Start with micro-investments (as low as ₹100)
-* **Strategy**: Allocate a percentage of scholarship/stipend/pocket money
-
-### 🤔 Limited Knowledge
-* **Solution**: Begin with index funds or ETFs (Exchange Traded Funds)
-* **Strategy**: Learn while your investments grow safely
-
-### 🕰️ Time Constraints
-* **Solution**: Set up automatic investments (SIPs)
-* **Strategy**: Review performance monthly rather than daily
-
-## Starting Points for Student Investors
-
-1. **Set up a Demat account** with student-friendly brokers like Zerodha, Groww, or Upstox
-2. **Start with an index fund** (like Nifty 50 or Sensex)
-3. **Establish a regular investment schedule**, even if the amount is small
-4. **Reinvest any returns** rather than withdrawing them
-5. **Keep learning** about different investment strategies
-
-Remember: The goal isn't to get rich quickly. It's to build good financial habits, learn through practice, and harness the power of time for long-term wealth creation.`
-        },
-        {
-          title: 'Common Myths About Investing',
-          lesson_order: 3,
-          content: `# Common Myths About Investing
-
-Many students avoid investing because of misconceptions and myths. Let's debunk some of the most common misunderstandings that might be holding you back.
-
-## Myth 1: "You Need a Lot of Money to Start Investing"
-
-### ❌ The Myth
-* Investing is only for the wealthy
-* You need lakhs of rupees to begin
-* Small investments aren't worth making
-
-### ✅ The Reality
-* You can start investing with as little as ₹100
-* Many platforms offer zero minimum investment
-* Fractional shares allow you to buy portions of expensive stocks
-* Systematic Investment Plans (SIPs) accept monthly investments of ₹500
-
-### 💡 Student Strategy
-Start with small, regular investments through SIPs in mutual funds or use micro-investing apps that round up your everyday purchases.
-
-## Myth 2: "Investing is Just Like Gambling"
-
-### ❌ The Myth
-* Stock market success is purely luck
-* It's impossible to predict what will happen
-* Most people lose money in the markets
-
-### ✅ The Reality
-* While short-term movements can be unpredictable, long-term market trends have historically been upward
-* Research and analysis can significantly improve your chances of success
-* Diversification reduces risk
-* Long-term investing is substantially different from gambling
-
-### 💡 Student Strategy
-Focus on learning fundamental analysis and invest for the long term rather than trying to make quick profits through trading.
-
-## Myth 3: "You Need to Be a Finance Expert"
-
-### ❌ The Myth
-* You need complex financial knowledge
-* Only commerce/finance students can invest successfully
-* You must understand advanced charts and terminology
-
-### ✅ The Reality
-* Basic financial literacy is sufficient to start
-* Many successful investors began with minimal knowledge
-* Index funds require almost no expertise to invest in
-* Learning can happen gradually as you invest
-
-### 💡 Student Strategy
-Begin with simple, passive investments like index funds while gradually building your knowledge through books, courses, and practice.
-
-## Myth 4: "Market Timing is Essential"
-
-### ❌ The Myth
-* You must buy at the lowest point and sell at the highest
-* You should wait for the "perfect time" to invest
-* Successful investors can predict market movements
-
-### ✅ The Reality
-* Even professional investors can't consistently time the market
-* Time in the market beats timing the market
-* Regular, consistent investing (like monthly SIPs) often performs better than trying to time entries and exits
-
-### 💡 Student Strategy
-Use rupee-cost averaging by investing a fixed amount regularly, regardless of market conditions.
-
-## Myth 5: "Young People Should Only Focus on Saving, Not Investing"
-
-### ❌ The Myth
-* Students should only save money in fixed deposits or savings accounts
-* Investing is for later stages of life
-* It's better to be "safe" with your money when young
-
-### ✅ The Reality
-* Inflation erodes the value of money kept only in savings
-* Youth provides the advantage of time for compounding
-* Young investors can take calculated risks that older investors can't
-
-### 💡 Student Strategy
-Divide your money between safe savings (for short-term needs) and investments (for long-term growth).
-
-## Myth 6: "You Need to Check Your Investments Daily"
-
-### ❌ The Myth
-* Successful investing requires constant monitoring
-* You should react to every market movement
-* Daily attention is needed to prevent losses
-
-### ✅ The Reality
-* Over-monitoring often leads to emotional decisions
-* Long-term investors can check quarterly or even annually
-* Automating investments reduces the need for frequent attention
-
-### 💡 Student Strategy
-Set up automatic investments and limit yourself to checking performance once a month to avoid stress and impulsive decisions.
-
-## Myth 7: "Investment Returns Should Be Quick"
-
-### ❌ The Myth
-* Good investments double your money quickly
-* If you're not seeing profits in months, it's failing
-* Successful investors get rich overnight
-
-### ✅ The Reality
-* Compounding works over years and decades, not days and weeks
-* Sustainable returns typically develop over longer timeframes
-* Get-rich-quick expectations lead to risky behaviors
-
-### 💡 Student Strategy
-Set realistic expectations with 5+ year time horizons for equity investments. Track progress against long-term goals, not short-term fluctuations.
-
-## Myth 8: "College Students Have Nothing to Gain from Investing Now"
-
-### ❌ The Myth
-* Better to wait until you have a full-time job
-* Student investments are too small to matter
-* Learning to invest is a waste of time during studies
-
-### ✅ The Reality
-* Habits formed now carry forward
-* Small early investments can grow significantly
-* Learning investment skills as a student provides a lifetime advantage
-
-### 💡 Student Strategy
-View your early investments as both financial assets and educational experiences that will benefit you throughout your life.
-
-Remember: The best investment you can make as a student is in your financial education. By starting early and learning from small investments, you're developing skills that will compound in value throughout your lifetime.`
-        }
-      ]
-    },
-    {
-      title: 'Understanding Stocks',
-      module_order: 2,
-      description: 'Learn about different types of stocks and how to analyze them effectively.',
-      lessons: [
-        {
-          title: 'Types of Stocks (Blue-chip, Penny Stocks, etc.)',
-          lesson_order: 1,
-          content: `# Types of Stocks
-
-Not all stocks are created equal. Different types of stocks have varying characteristics, risk profiles, and potential returns. Understanding these differences is crucial for building a balanced portfolio.
-
-## Classification by Company Size
-
-### 🏢 Large-Cap Stocks
-* **Market Capitalization**: Usually above ₹20,000 crore
-* **Characteristics**: 
-  * Well-established companies with long track records
-  * Generally more stable and less volatile
-  * Often pay regular dividends
-* **Examples**: Reliance Industries, TCS, HDFC Bank, Infosys
-* **Risk Level**: Lower relative risk
-* **Student Insight**: Good foundation for beginning investors
-
-### 🏬 Mid-Cap Stocks
-* **Market Capitalization**: Typically between ₹5,000 crore and ₹20,000 crore
-* **Characteristics**:
-  * Growing companies with established business models
-  * More growth potential than large-caps
-  * Moderate volatility
-* **Examples**: Federal Bank, Voltas, MRF, Jubilant FoodWorks
-* **Risk Level**: Moderate risk
-* **Student Insight**: Good for balancing growth and stability
-
-### 🏪 Small-Cap Stocks
-* **Market Capitalization**: Usually below ₹5,000 crore
-* **Characteristics**:
-  * Smaller companies, often in early growth stages
-  * Higher growth potential
-  * More volatile price movements
-* **Examples**: Majesco, KEI Industries, Sonata Software
-* **Risk Level**: Higher risk
-* **Student Insight**: Small allocations can boost portfolio returns
-
-## Classification by Investment Style
-
-### 💎 Blue-Chip Stocks
-* **Definition**: Shares of nationally recognized, well-established companies
-* **Characteristics**:
-  * Strong balance sheets
-  * History of stable earnings
-  * Often market leaders in their sectors
-  * Usually pay dividends
-* **Examples**: Hindustan Unilever, Asian Paints, ITC
-* **Risk Level**: Lower risk
-* **Student Insight**: Good core holdings for long-term portfolios
-
-### 🌱 Growth Stocks
-* **Definition**: Companies expected to grow faster than average
-* **Characteristics**:
-  * Reinvest earnings rather than pay dividends
-  * Higher price-to-earnings ratios
-  * Often in innovative or expanding industries
-* **Examples**: Avenue Supermarts (D-Mart), Tata Elxsi
-* **Risk Level**: Moderate to high risk
-* **Student Insight**: Good for long time horizons (5+ years)
-
-### 💰 Value Stocks
-* **Definition**: Companies trading below their intrinsic value
-* **Characteristics**:
-  * Lower price-to-earnings ratios
-  * May be temporarily out of favor
-  * Often pay dividends
-* **Examples**: Power Grid Corporation, Coal India
-* **Risk Level**: Moderate risk
-* **Student Insight**: Requires patience and research
-
-### 💸 Income/Dividend Stocks
-* **Definition**: Companies that regularly distribute earnings to shareholders
-* **Characteristics**:
-  * Stable earnings
-  * Mature business models
-  * Regular dividend payments
-* **Examples**: ITC, Coal India, Power Grid
-* **Risk Level**: Lower to moderate risk
-* **Student Insight**: Creates passive income stream
-
-## Specialized Categories
-
-### 🪙 Penny Stocks
-* **Definition**: Very low-priced stocks, often under ₹10
-* **Characteristics**:
-  * Extremely volatile
-  * Often small, unproven companies
-  * Limited information available
-  * Low liquidity
-* **Examples**: Various small companies on BSE/NSE
-* **Risk Level**: Very high risk
-* **Student Insight**: Best avoided by beginners; more speculation than investment
-
-### 🧱 Defensive Stocks
-* **Definition**: Stocks that provide consistent dividends and stable earnings
-* **Characteristics**:
-  * Less affected by economic downturns
-  * Often in essential industries (consumer staples, utilities)
-  * Lower volatility
-* **Examples**: Hindustan Unilever, Nestle India, NTPC
-* **Risk Level**: Lower risk
-* **Student Insight**: Good for portfolio stability
-
-### 🔄 Cyclical Stocks
-* **Definition**: Companies whose performance follows economic cycles
-* **Characteristics**:
-  * Perform well in economic booms, poorly during downturns
-  * Often in discretionary spending sectors
-  * More volatile
-* **Examples**: Maruti Suzuki, Tata Motors, JSW Steel
-* **Risk Level**: Moderate to high risk
-* **Student Insight**: Requires understanding economic indicators
-
-### 🌍 ESG Stocks
-* **Definition**: Companies with strong Environmental, Social, and Governance practices
-* **Characteristics**:
-  * Focus on sustainability and ethical operations
-  * Growing investor interest, especially among younger generations
-  * Potentially lower long-term risks
-* **Examples**: Tata Power (renewable focus), Infosys (governance)
-* **Risk Level**: Varies
-* **Student Insight**: Aligns investments with personal values
-
-## Student Guide to Stock Selection
-
-As a student investor, consider:
-
-1. **Start with blue-chips or large-caps** for stability
-2. **Add growth stocks** gradually as you learn more
-3. **Consider index funds** that give exposure to multiple stock types
-4. **Avoid penny stocks** until you have more experience
-5. **Research thoroughly** before investing in smaller companies
-6. **Diversify across different types** to balance your portfolio
-
-Remember that each stock type has its place in a portfolio, and the right mix depends on your financial goals, time horizon, and risk tolerance.`
-        },
-        {
-          title: 'How to Read a Stock Chart',
-          lesson_order: 2,
-          content: `# How to Read a Stock Chart
-
-Stock charts may look intimidating at first, but they're valuable tools that tell you a stock's price history and help predict future movements. Learning to read charts is an essential skill for any investor.
-
-## Basic Chart Types
-
-### 📊 Line Chart
-* **What It Shows**: Closing prices connected by a line
-* **Best For**: 
-  * Getting a quick overview of price trends
-  * Seeing the big picture without distractions
-* **Limitations**: 
-  * Doesn't show intraday highs, lows, or opening prices
-  * Misses volatility details
-
-### 📈 Bar Chart
-* **What It Shows**: 
-  * Opening price (left horizontal line)
-  * Closing price (right horizontal line)
-  * High and low prices (vertical bar)
-* **Best For**:
-  * More detailed price information
-  * Understanding daily trading ranges
-
-### 🕯️ Candlestick Chart
-* **What It Shows**:
-  * Body: Range between opening and closing prices
-  * Green/white body: Closing price higher than opening
-  * Red/black body: Closing price lower than opening
-  * Wicks/shadows: High and low prices
-* **Best For**:
-  * Visual price patterns
-  * Detailed understanding of price action
-  * Identifying market sentiment
-* **Student Tip**: Most popular chart type among active investors
-
-## Key Elements of Stock Charts
-
-### ⏱️ Time Frames
-* **Intraday**: Shows price movements within a single day
-* **Daily**: Each candlestick/bar represents one trading day
-* **Weekly/Monthly**: Each candlestick/bar represents a week or month
-* **Student Tip**: Longer time frames show more reliable trends
-
-### 💹 Price Scale
-* **Linear Scale**: Equal vertical distances represent equal price changes
-* **Logarithmic Scale**: Equal vertical distances represent equal percentage changes
-* **Student Tip**: Log scale is better for long-term analysis
-
-### 📉 Volume
-* **What It Shows**: Number of shares traded during each period
-* **Interpretation**:
-  * High volume with price increase = strong buying interest
-  * High volume with price decrease = strong selling pressure
-  * Low volume = lack of conviction in price movement
-* **Student Tip**: Volume confirms the strength of a trend
-
-## Common Chart Patterns
-
-### ⤴️ Uptrend
-* **Characteristics**: Series of higher highs and higher lows
-* **What It Means**: Buyers are in control; price is likely to continue rising
-* **Example**: ![Uptrend Pattern](https://example.com/uptrend.png) *(Note: Image would show a line trending upward)*
-
-### ⤵️ Downtrend
-* **Characteristics**: Series of lower highs and lower lows
-* **What It Means**: Sellers are in control; price is likely to continue falling
-* **Example**: ![Downtrend Pattern](https://example.com/downtrend.png) *(Note: Image would show a line trending downward)*
-
-### ↔️ Consolidation/Sideways
-* **Characteristics**: Price moves sideways in a range
-* **What It Means**: Equilibrium between buyers and sellers
-* **Example**: ![Consolidation Pattern](https://example.com/consolidation.png) *(Note: Image would show a horizontal trading range)*
-
-### 🔄 Reversal Patterns
-* **Head and Shoulders**: Signals potential downtrend after an uptrend
-* **Double Top/Bottom**: Indicates potential reversal of current trend
-* **Student Tip**: These patterns need confirmation with increased volume
-
-## Important Technical Indicators
-
-### 📏 Moving Averages
-* **Definition**: Average price over a specific period
-* **Common Types**: 
-  * 50-day moving average (short-term trend)
-  * 200-day moving average (long-term trend)
-* **Interpretation**: 
-  * Price above moving average = bullish
-  * Price below moving average = bearish
-  * Moving average crossovers can signal trend changes
-
-### 📏 Relative Strength Index (RSI)
-* **Definition**: Momentum indicator that measures speed and change of price movements
-* **Scale**: 0 to 100
-* **Interpretation**:
-  * Above 70 = potentially overbought (overvalued)
-  * Below 30 = potentially oversold (undervalued)
-* **Student Tip**: Good for identifying potential reversal points
-
-### 📏 MACD (Moving Average Convergence Divergence)
-* **Definition**: Trend-following momentum indicator
-* **Components**:
-  * MACD line (difference between two moving averages)
-  * Signal line (moving average of MACD line)
-  * Histogram (difference between MACD and signal line)
-* **Interpretation**: 
-  * MACD crosses above signal line = bullish
-  * MACD crosses below signal line = bearish
-
-## How to Analyze a Chart: Step-by-Step Process
-
-1. **Identify the overall trend** (up, down, or sideways)
-2. **Check the time frame** (are you looking at days, months, or years?)
-3. **Note key support and resistance levels** (price points where stock repeatedly stops)
-4. **Look at volume** to confirm price movements
-5. **Check relevant indicators** (moving averages, RSI, etc.)
-6. **Identify any chart patterns** forming
-
-## Chart Reading Tips for Students
-
-* **Start simple** with line charts and basic trends
-* **Use free resources** like TradingView, Yahoo Finance, or Zerodha Kite
-* **Practice identifying patterns** on historical charts
-* **Compare different time frames** to get a complete picture
-* **Don't make decisions based on charts alone** – combine with fundamental analysis
-* **Remember that patterns don't guarantee future results**
-
-## Common Chart Reading Mistakes
-
-* ❌ **Seeing patterns where none exist** (random movements)
-* ❌ **Ignoring the broader market trend**
-* ❌ **Over-analyzing short-term fluctuations**
-* ❌ **Not confirming patterns with volume**
-* ❌ **Making decisions based on a single indicator**
-
-Remember: Chart reading is both an art and a science. With practice, you'll develop an intuition for interpreting price movements, but always combine technical analysis with fundamental research for the best results.`
-        },
-        {
-          title: 'What Influences Stock Prices?',
-          lesson_order: 3,
-          content: `# What Influences Stock Prices?
-
-Stock prices move up and down due to a complex interplay of factors. Understanding these influences helps you make more informed investment decisions and better interpret market movements.
-
-## Fundamental Factors
-
-### 📋 Company Performance
-* **Earnings Reports**
-  * Quarterly and annual profit/loss statements
-  * Higher-than-expected earnings often boost stock prices
-  * Missed expectations can cause significant drops
-  * Example: When TCS reports quarterly earnings above analyst estimates, its stock typically rises
-
-* **Revenue Growth**
-  * Year-over-year sales increases
-  * Expanding market share
-  * New customer acquisition
-
-* **Profit Margins**
-  * How efficiently the company converts revenue to profit
-  * Expanding margins suggest improving business operations
-  * Contracting margins may signal increasing costs or competition
-
-### 📢 Company Announcements
-* **New Products or Services**
-  * Can signal future revenue growth
-  * Example: Apple stock often rises after new iPhone announcements
-
-* **Mergers and Acquisitions**
-  * Can create synergies or open new markets
-  * Example: Tata Motors stock jumped after acquiring Jaguar Land Rover
-
-* **Management Changes**
-  * New CEO or leadership team
-  * Example: Infosys stock fluctuated during leadership transitions
-
-* **Legal Issues**
-  * Lawsuits, regulatory problems, or compliance failures
-  * Example: Pharmaceutical companies' stocks often drop when facing patent challenges
-
-## Economic Factors
-
-### 📈 Economic Indicators
-* **GDP Growth**
-  * Strong economic growth generally supports higher stock prices
-  * Recession fears can trigger market-wide declines
-
-* **Inflation**
-  * Moderate inflation (2-4%) is typically acceptable
-  * High inflation reduces purchasing power and often leads to higher interest rates
-  * Example: When inflation data is higher than expected, stock markets often decline
-
-* **Employment Data**
-  * Job creation and unemployment rates
-  * Strong job market indicates healthy economy
-  * Example: Positive employment reports generally boost market confidence
-
-### 💰 Interest Rates
-* **RBI Policy Rates**
-  * Higher rates make borrowing more expensive for companies
-  * Lower rates encourage borrowing and expansion
-  * Example: When RBI cuts repo rates, banks and financial stocks often react immediately
-
-* **Bond Yields**
-  * Competing investment option to stocks
-  * Rising yields may make bonds more attractive than stocks
-  * Example: When 10-year government bond yields rise significantly, dividend stocks often decline
-
-### 💱 Currency Values
-* **Rupee Strength/Weakness**
-  * Impacts importers and exporters differently
-  * Weak rupee helps IT services and pharmaceutical exporters
-  * Example: When the rupee weakens against the dollar, TCS and Infosys often benefit
-
-## Market Sentiment Factors
-
-### 🧠 Investor Psychology
-* **Fear and Greed**
-  * Emotional reactions often drive short-term price movements
-  * Market extremes often signal potential reversals
-
-* **Market Sentiment Indicators**
-  * VIX (Volatility Index) - measures market fear
-  * Put/Call Ratio - measures bearish vs. bullish options activity
-  * Example: When VIX spikes dramatically, it often signals excessive fear
-
-### 📰 News and Media
-* **Financial News Coverage**
-  * Media reporting can amplify market moves
-  * Breaking news can cause rapid price changes
-
-* **Social Media Influence**
-  * Growing impact of Twitter, Reddit, and other platforms
-  * Example: Certain stocks have seen dramatic moves based on social media attention
-
-### 🔮 Market Expectations
-* **Analyst Recommendations**
-  * Upgrades/downgrades can move prices
-  * Price targets influence perception
-
-* **Forward Guidance**
-  * Future outlook provided by companies
-  * Can be more important than current results
-  * Example: A company reporting good earnings but lowering future guidance often sees stock price decline
-
-## Technical Factors
-
-### 📊 Trading Patterns
-* **Support and Resistance Levels**
-  * Price points where stocks historically reverse direction
-  * Example: A stock repeatedly bouncing up from a certain price level (support)
-
-* **Trading Volume**
-  * Number of shares changing hands
-  * High volume moves more likely to be sustained
-  * Low volume moves more likely to reverse
-
-* **Short Interest**
-  * Number of shares sold short
-  * High short interest can lead to "short squeezes" (rapid upward price movements)
-
-### 🔄 Market Mechanics
-* **Index Inclusion/Exclusion**
-  * Addition to major indices forces index funds to buy
-  * Example: When a stock joins Nifty 50, it typically sees increased buying
-
-* **Options Expiration**
-  * Monthly expiration of options contracts can cause volatility
-  * Example: Stock prices sometimes pin to popular option strike prices on expiration days
-
-* **Fund Flows**
-  * Institutional buying/selling
-  * Example: Foreign institutional investors withdrawing funds can pressure the entire market
-
-## Global Factors
-
-### 🌍 International Events
-* **Global Economic Conditions**
-  * Interconnected markets affect each other
-  * Example: US recession fears impact Indian stocks
-
-* **Geopolitical Events**
-  * Wars, trade disputes, sanctions
-  * Example: India-China border tensions affecting certain sectors
-
-* **Natural Disasters**
-  * Disruption to supply chains and operations
-  * Example: Impact of COVID-19 pandemic on global markets
-
-### 🛢️ Commodity Prices
-* **Oil Prices**
-  * Impact transportation, petrochemicals, and energy sectors
-  * Example: Rising crude oil prices affect airline and paint company stocks negatively
-
-* **Metal Prices**
-  * Steel, aluminum, copper prices affect manufacturing
-  * Example: Rising steel prices impact automakers' costs and margins
-
-## Student Investor Strategy
-
-Given these many influences, here's how to approach stock price movements:
-
-1. **Focus on the factors you can analyze** (company fundamentals are most reliable)
-2. **Recognize short-term noise vs. long-term signals**
-3. **Diversify to reduce impact of sector-specific factors**
-4. **Follow economic indicators** to understand broader market direction
-5. **Be aware of your own psychology** and avoid emotional decisions
-6. **Remember that not all influences are equally important** for every stock
-
-Understanding these factors will help you make sense of price movements and avoid panicking during market volatility. With experience, you'll learn which factors matter most for specific stocks and sectors.`
-        }
-      ]
-    },
-    {
-      title: 'Getting Started',
-      module_order: 3,
-      description: 'Learn the practical steps to begin your investment journey including setting up accounts and making your first investment.',
-      lessons: [
-        {
-          title: 'How to Open a Demat Account',
-          lesson_order: 1,
-          content: `# How to Open a Demat Account
-
-A Demat (Dematerialized) account is essential for stock market investing in India. It holds your shares in electronic form, eliminating the need for physical share certificates. This lesson guides you through the process of opening a Demat account as a student.
-
-## What You'll Need Before Starting
-
-### 📋 Essential Documents
-* **PAN Card** (Mandatory)
-* **Aadhaar Card** (For online verification)
-* **Valid mobile number** (Linked to Aadhaar for OTP)
-* **Active email address**
-* **Passport-sized photographs** (Digital format for online applications)
-* **Bank account details** (Statement or canceled cheque)
-* **Income proof** (Optional for students - parent's income can be used)
-
-### 💰 Account Types & Costs
-* **3-in-1 Account**: Combines Demat, Trading, and Bank account
-* **Opening Costs**: ₹0-500 (Many brokers now offer zero opening charges)
-* **Annual Maintenance Charge (AMC)**: ₹0-500 (Varies by broker)
-* **Student Tip**: Look for brokers offering AMC waivers for the first year or with student-specific packages
-
-## Step-by-Step Process
-
-### 🔍 Step 1: Choose the Right Broker
-Compare these popular options for students:
-
-| Broker | Opening Fee | AMC | Min. Balance | Student Features |
-|--------|-------------|-----|--------------|-----------------|
-| Zerodha | ₹0 | ₹300 | None | Simple interface, educational resources |
-| Groww | ₹0 | ₹0 | None | User-friendly app, zero AMC |
-| Upstox | ₹0 | ₹150 | None | Low brokerage fees |
-| Angel One | ₹0 | ₹0-750 | None | Educational webinars |
-
-**Factors to Consider:**
-* Ease of use (important for beginners)
-* Customer service quality
-* Educational resources
-* Mobile app reviews
-* Brokerage fees for different types of trades
-
-### 📱 Step 2: Complete the Application
-Most brokers now offer a fully digital process:
-
-**Online Application:**
-1. Visit the broker's website or download their app
-2. Click on "Open an Account" or similar option
-3. Enter your mobile number and email address
-4. Create a password for your account
-5. Enter your PAN card details for verification
-
-**KYC Process:**
-1. Fill in your personal details (name, address, date of birth)
-2. Enter your bank account information
-3. Upload required documents:
-   * PAN card
-   * Aadhaar card
-   * Photograph
-   * Signature (can be captured via app)
-   * Income proof (if required)
-
-### ✅ Step 3: Verify Your Identity
-Modern brokers offer multiple verification methods:
-
-**Aadhaar-Based eKYC:**
-* Complete verification through OTP sent to Aadhaar-linked mobile
-* Quick and paperless process
-
-**Video KYC:**
-* Brief video call with broker representative
-* Show your original ID documents during the call
-* Answer a few verification questions
-
-**In-Person Verification:**
-* Schedule an appointment with a broker representative
-* They'll visit your location for document verification
-* Sign physical forms (less common now)
-
-### 📄 Step 4: Sign the Agreement
-* Review the account opening form and agreement
-* Understand the brokerage charges and fee structure
-* Complete e-sign process using Aadhaar OTP or other digital signature
-* Accept terms and conditions
-
-### 🔑 Step 5: Set Up Access
-* Create login credentials for trading platform
-* Download the mobile app
-* Set up two-factor authentication for security
-* Configure alerts and notifications
-
-### 💸 Step 6: Fund Your Account
-* Link your bank account (if not already done)
-* Transfer initial funds (start with a small amount)
-* Verify that the transfer was successful
-
-## Student-Specific Considerations
-
-### 🏫 Using Parents' Support
-* If you're under 18, accounts must be opened in a parent/guardian's name
-* If you're 18+, you can open your own account but might need financial support
-* Consider a joint account with a parent for guidance and oversight
-* Clearly communicate your investment intentions with supportive parents
-
-### 💰 Managing Limited Funds
-* Start with small, regular investments rather than a large lump sum
-* Consider zero-brokerage platforms to minimize costs
-* Look for brokers offering fractional shares or small minimum investments
-* Focus on learning rather than making quick returns
-
-## Common Mistakes to Avoid
-
-* ❌ **Choosing a broker based solely on lowest fees** (customer service and platform quality matter)
-* ❌ **Providing incorrect information** during the KYC process
-* ❌ **Rushing through the agreement** without understanding the charges
-* ❌ **Opening multiple Demat accounts** unnecessarily (increases maintenance costs)
-* ❌ **Delaying account activation** by not completing all steps promptly
-
-## After Your Account is Active
-
-1. **Explore the platform** before making any trades
-2. **Use virtual trading** (paper trading) features if available
-3. **Set up a watchlist** of stocks you're interested in
-4. **Start with small investments** in well-established companies or index funds
-5. **Track your investments** regularly but not obsessively
-
-> "The Demat account is your gateway to the stock market. Take time to set it up properly and understand its features before diving into investments."
-
-Remember that opening a Demat account is just the first step. The real journey begins with learning, researching, and making informed investment decisions.`
-        },
-        {
-          title: 'Picking Your First Stock',
-          lesson_order: 2,
-          content: `# Picking Your First Stock
-
-Selecting your first stock is an important milestone in your investment journey. This process should be thoughtful, research-based, and aligned with your investment goals.
-
-## Before You Start: Set the Right Foundation
-
-### 🎯 Define Your Investment Goals
-* **Time Horizon**: How long do you plan to hold your investment?
-  * Short-term (less than 1 year)
-  * Medium-term (1-5 years)
-  * Long-term (5+ years)
-* **Purpose**: What are you investing for?
-  * Education
-  * Emergency fund
-  * Future startup capital
-  * Wealth building
-
-### 🧮 Understand Your Risk Tolerance
-* **Conservative**: Prefer stability and safety over high returns
-* **Moderate**: Balance between growth and stability
-* **Aggressive**: Comfortable with volatility for higher potential returns
-* **Student Tip**: As a beginner, start more conservative while you learn
-
-## Research Approach: First Stock Selection
-
-### 🔍 Start with What You Know
-* **Personal Interests**: Industries you understand or follow
-* **Products You Use**: Companies whose products you regularly consume
-* **Services You Value**: Businesses you personally find valuable
-* **Example**: If you're a tech-savvy student who uses PhonePe regularly, you might research Walmart (majority owner of PhonePe)
-
-### 📚 Research Framework: The 4M Method
-
-#### 1️⃣ Meaning (The Business)
-* **What does the company do?** Explain its business model in simple terms
-* **How does it make money?** Understand revenue streams
-* **Who are its customers?** Consumer, business, or government
-* **Example Questions**:
-  * "Can I explain what this company does to a friend?"
-  * "Will people need this product/service 5-10 years from now?"
-
-#### 2️⃣ Moat (Competitive Advantage)
-* **What makes this company special?** Look for sustainable advantages:
-  * Brand power (Tata, Reliance)
-  * Network effects (payment apps, social platforms)
-  * Switching costs (enterprise software)
-  * Cost advantages (scale, proprietary technology)
-* **Example Questions**:
-  * "Why would customers choose this company over competitors?"
-  * "What prevents new companies from taking its market share?"
-
-#### 3️⃣ Management (Leadership Quality)
-* **Who runs the company?** Research the CEO and key executives
-* **Track record?** Look for history of good decisions
-* **Integrity?** Check for past controversies or ethical issues
-* **Example Questions**:
-  * "Has the management delivered on past promises?"
-  * "Do they have a clear vision for the company's future?"
-
-#### 4️⃣ Margin of Safety (Valuation)
-* **Is the price reasonable?** Basic valuation metrics:
-  * Price-to-Earnings (P/E) ratio: Lower is potentially better value
-  * Price-to-Book (P/B) ratio: Compare to industry average
-  * Debt-to-Equity: Lower generally means less financial risk
-* **Example Questions**:
-  * "How does the valuation compare to similar companies?"
-  * "Am I paying a fair price for the company's earnings?"
-
-## Practical Stock Selection Process
-
-### 🏆 Step 1: Create a Shortlist
-* Start with 5-10 companies that interest you
-* Focus on established businesses for your first stock
-* Consider blue-chip companies or market leaders
-
-**Student-Friendly Sectors to Explore:**
-* **Consumer Goods**: Companies making products you use daily
-* **Technology**: Services and products with growing relevance
-* **Financial Services**: Banks and payment platforms
-
-### 📊 Step 2: Basic Analysis
-For each company on your shortlist, check:
-
-* **Financial Health**:
-  * Consistent revenue growth (at least 3 years)
-  * Positive profit trends
-  * Manageable debt levels
-
-* **Business Quality**:
-  * Market leadership position
-  * Growing industry
-  * Sustainable business model
-
-* **Key Metrics** (available on financial websites):
-  * Return on Equity (ROE): Higher is better (15%+ is excellent)
-  * Profit Margin: Higher is better
-  * Current Ratio: Above 1.5 indicates good liquidity
-
-### 📰 Step 3: Stay Informed
-* Read recent news about the company
-* Check the latest quarterly results
-* Understand industry trends and challenges
-* Look for upcoming catalysts (new products, expansion plans)
-
-### ⚖️ Step 4: Final Evaluation
-Compare your top candidates and ask:
-
-* "Which company do I understand best?"
-* "Which has the most sustainable competitive advantage?"
-* "Which offers the best value at current price?"
-* "Which aligns best with my investment goals and timeline?"
-
-## Student-Focused Stock Considerations
-
-### 💡 Benefits of Starting with Large, Stable Companies
-* Lower volatility helps you learn without extreme stress
-* More information and research available
-* Higher likelihood of long-term survival
-* Examples: HDFC Bank, TCS, Hindustan Unilever
-
-### 🌱 Alternative: Start with an Index Fund
-* Provides instant diversification across many stocks
-* Lower risk than individual stocks
-* Learn the market before stock picking
-* Examples: UTI Nifty Index Fund, HDFC Sensex Fund
-
-## Common First-Stock Mistakes to Avoid
-
-* ❌ **Buying on hot tips** without doing your own research
-* ❌ **Focusing only on stock price** rather than company value
-* ❌ **Neglecting to check valuation** metrics
-* ❌ **Getting emotionally attached** to a company or product
-* ❌ **Investing too much** of your capital in one stock
-* ❌ **Expecting immediate profits** (patience is essential)
-
-## After Buying Your First Stock
-
-* **Document your investment thesis**: Write down why you bought the stock
-* **Set price alerts**: Not for daily checking, but to notify of significant movements
-* **Plan your review schedule**: Quarterly is often sufficient for beginners
-* **Track company news**: Set up Google Alerts for important developments
-* **Learn from the experience**: Whether it performs well or poorly, there's a lesson
-
-Remember that your first stock investment is as much about learning the process as it is about returns. The knowledge and experience you gain will be valuable throughout your investing journey, regardless of how this particular stock performs.`
-        },
-        {
-          title: 'How Much Money Should You Start With?',
-          lesson_order: 3,
-          content: `# How Much Money Should You Start With?
-
-One of the most common questions new investors ask is: "How much money should I invest to begin with?" This is especially relevant for students who typically have limited funds. This lesson will help you determine the right starting amount for your situation.
-
-## Breaking Down the Myths
-
-### ❌ Myth: "You need lakhs of rupees to start investing"
-**Reality**: You can start with as little as ₹500 in many mutual funds or even less with certain stocks.
-
-### ❌ Myth: "Small investments aren't worth the effort"
-**Reality**: Small, consistent investments can grow significantly over time through compounding.
-
-### ❌ Myth: "More money means better returns"
-**Reality**: Returns are percentage-based; strategy and time in the market matter more than initial amount.
-
-## Determining Your Starting Amount
-
-### 🔍 Key Factors to Consider
-
-#### 1️⃣ Financial Situation
-* **Emergency Fund**: Do you have 3-6 months of expenses saved?
-* **Essential Expenses**: Are your basic needs covered?
-* **Debt**: Do you have high-interest debt that should be paid first?
-
-#### 2️⃣ Investment Goals
-* **Short-term** (1-3 years): Higher starting amount might be needed
-* **Long-term** (10+ years): Even small amounts can grow significantly
-* **Regular income**: Focus on dividend-paying investments
-
-#### 3️⃣ Risk Tolerance
-* **Conservative**: Might prefer starting with more money in safer investments
-* **Aggressive**: Might be comfortable starting with smaller amounts in growth-focused investments
-
-#### 4️⃣ Time Commitment
-* **Active investor**: May benefit from a larger starting amount
-* **Passive investor**: Can start small with automated investments
-
-## Practical Starting Amounts for Students
-
-### 🌱 The Minimum Approach: ₹500-1,000 per month
-* **Best for**: Complete beginners, students with limited income
-* **Investment options**:
-  * Systematic Investment Plans (SIPs) in mutual funds
-  * Fractional shares or very low-priced stocks
-  * Auto-invest apps with small minimums
-* **Benefits**:
-  * Low risk if mistakes are made
-  * Creates investing habit without financial strain
-  * Allows learning the process with minimal pressure
-
-### 🌿 The Balanced Approach: ₹1,000-5,000 per month
-* **Best for**: Students with part-time income or scholarship/stipend
-* **Investment options**:
-  * Mix of 2-3 mutual funds (index, large-cap, sector-specific)
-  * A few carefully selected blue-chip stocks
-  * Small allocation to slightly higher risk mid-cap stocks
-* **Benefits**:
-  * Enables meaningful diversification
-  * Provides practical experience with different investment types
-  * Balance between learning and potential returns
-
-### 🌲 The Advanced Approach: ₹5,000+ per month
-* **Best for**: Students with significant savings or regular income
-* **Investment options**:
-  * Broader portfolio of stocks across market caps
-  * Sector-specific investments based on research
-  * More specialized mutual funds or ETFs
-* **Benefits**:
-  * More significant learning opportunities
-  * Potential for more meaningful returns
-  * Ability to try different strategies
-
-## One-Time Investment vs. Regular Investing
-
-### 💰 Lump Sum Approach
-* **Pros**:
-  * Full exposure to potential market gains
-  * Lower transaction costs
-  * Simpler to manage
-* **Cons**:
-  * Higher timing risk (what if market drops right after investing?)
-  * Psychological pressure to "get it right"
-  * Harder to average out market fluctuations
-
-### 📈 Systematic Investment Plan (SIP) Approach
-* **Pros**:
-  * Rupee-cost averaging (buying more shares when prices are low)
-  * Builds disciplined investing habit
-  * Reduces impact of market volatility
-* **Cons**:
-  * May miss out on full gains in strongly rising markets
-  * More transactions to track
+type ModuleData = {
+  title: string;
+  description: string;
+  module_order: number;
+  lessons: LessonData[];
+};
+
+type CourseData = {
+  title: string;
+  price: number;
+  referral_reward: number;
+  description: string;
+  modules: ModuleData[];
+};
+
+// Check if a course with the given title already exists
+const courseExists = async (title: string): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from("courses")
+    .select("id")
+    .eq("title", title)
+    .single();
   
-### 🎯 Student Recommendation
-For most students, starting with a small monthly SIP is ideal:
-* Begin with whatever amount you can consistently invest (even ₹500)
-* Increase the amount gradually as your income grows
-* Focus on learning the process rather than immediate gains
-
-## Practical Investment Allocation Examples
-
-### 📊 Example 1: Student with ₹1,000 monthly
-* ₹500 in a Nifty 50 index fund
-* ₹500 in a large-cap stock of a company you understand well
-
-### 📊 Example 2: Student with ₹3,000 monthly
-* ₹1,500 in a Nifty 50 index fund
-* ₹1,000 in 1-2 blue-chip stocks
-* ₹500 in a sector fund aligned with your interests/expertise
-
-### 📊 Example 3: Student with ₹5,000 monthly
-* ₹2,000 in index funds (Nifty + Next 50)
-* ₹2,000 in 2-3 carefully selected stocks
-* ₹1,000 in a sector or thematic fund
-
-## Psychological Aspects of Starting Amount
-
-### 🧠 Impact of Loss
-* Starting with too much can lead to panic if markets drop
-* Begin with an amount you can emotionally handle losing 30-40% of (temporarily)
-* Ask yourself: "If this investment dropped by half tomorrow, would I panic?"
-
-### 🔄 Learning Value
-* Early investing is primarily about education
-* The lessons learned are often worth more than the actual returns
-* View initial investments as "tuition" for real-world financial education
-
-## Growth Potential of Small Investments
-
-| Monthly Investment | After 10 Years (12% return) | After 20 Years (12% return) | After 30 Years (12% return) |
-|-------------------|----------------------------|----------------------------|----------------------------|
-| ₹500               | ₹1.17 lakhs                | ₹4.99 lakhs                | ₹17.37 lakhs               |
-| ₹1,000             | ₹2.33 lakhs                | ₹9.97 lakhs                | ₹34.73 lakhs               |
-| ₹3,000             | ₹6.99 lakhs                | ₹29.92 lakhs               | ₹1.04 crore                |
-| ₹5,000             | ₹11.65 lakhs               | ₹49.86 lakhs               | ₹1.74 crore                |
-
-> **Note**: These are projected figures based on historical average returns. Actual returns may vary.
-
-## Final Recommendations for Students
-
-1. **Start now, start small**: The amount matters less than getting started
-2. **Prioritize learning**: Focus on understanding the process
-3. **Consistency over amount**: Regular small investments beat sporadic large ones
-4. **Increase gradually**: Raise your investment amount as your income grows
-5. **Balance risk and learning**: Allocate a small portion to more educational investments
-
-Remember: The greatest advantage you have as a student investor is time. Even small amounts invested now can grow significantly over decades, and the knowledge you gain is invaluable.`
-        }
-      ]
-    },
-    {
-      title: 'Smart Investment Strategies',
-      module_order: 4,
-      description: 'Discover proven approaches to building and managing your investment portfolio for long-term success.',
-      lessons: [
-        {
-          title: 'Diversification and Risk',
-          lesson_order: 1,
-          content: `# Diversification and Risk
-
-Diversification is one of the most powerful risk management strategies available to investors. Often described as "not putting all your eggs in one basket," proper diversification helps protect your investments against significant losses while still allowing for growth.
-
-## Understanding Investment Risk
-
-### 🎯 Types of Risk in Stock Investing
-
-#### 1️⃣ Company-Specific Risk
-* **Definition**: Risk factors that affect only one company
-* **Examples**: 
-  * Management errors
-  * Product failures
-  * Accounting scandals
-  * Labor disputes
-* **Can be reduced by**: Diversifying across multiple companies
-
-#### 2️⃣ Industry/Sector Risk
-* **Definition**: Risk factors that affect an entire industry
-* **Examples**: 
-  * Regulatory changes
-  * Technological disruption
-  * Changing consumer preferences
-* **Can be reduced by**: Diversifying across multiple sectors
-
-#### 3️⃣ Market Risk
-* **Definition**: Risk factors that affect the entire market
-* **Examples**: 
-  * Economic recessions
-  * Interest rate changes
-  * Political instability
-* **Can be reduced by**: Diversifying across asset classes and time
-
-#### 4️⃣ Geographic Risk
-* **Definition**: Risk factors that affect a specific country or region
-* **Examples**: 
-  * Currency fluctuations
-  * Political changes
-  * Natural disasters
-* **Can be reduced by**: International diversification
-
-## The Power of Diversification
-
-### 📊 How Diversification Works
-* **Risk Reduction**: Losses in one investment can be offset by gains in another
-* **Smoothing Returns**: Less volatility in overall portfolio value
-* **Protection Against Unknowns**: Guards against unforeseen events affecting single investments
-* **Exposure to Opportunities**: Positions you to benefit from growth in different areas
-
-### 📈 The Mathematics of Diversification
-* Research shows that portfolio risk decreases significantly as you add uncorrelated assets
-* The most significant risk reduction comes from the first 15-25 stocks
-* Beyond 30 stocks, additional diversification benefits diminish
-* Correlation matters more than quantity (adding similar stocks provides less benefit)
-
-## Practical Diversification Strategies for Students
-
-### 🔄 Diversification by Asset Class
-
-| Asset Class | Risk Level | Purpose in Portfolio | Student-Friendly Options |
-|-------------|------------|----------------------|-------------------------|
-| Stocks | High | Growth | Individual stocks, equity mutual funds |
-| Bonds | Low-Medium | Stability, Income | Debt mutual funds |
-| Cash | Very Low | Liquidity, Safety | Savings account, liquid funds |
-| Gold | Medium | Inflation hedge | Gold ETFs, gold mutual funds |
-| Real Estate | Medium-High | Growth, Income | REITs (Real Estate Investment Trusts) |
-
-**Student Strategy**: Start with a higher allocation to stocks (for growth) while adding small positions in safer assets for stability.
-
-### 🏭 Diversification Within Stocks
-
-#### By Market Capitalization
-* **Large-cap**: Stability and moderate growth
-* **Mid-cap**: Balance of growth and stability
-* **Small-cap**: Higher growth potential with higher risk
-
-**Student Portfolio Example (90,000):**
-* ₹45,000 in large-cap stocks/funds (50%)
-* ₹27,000 in mid-cap stocks/funds (30%)
-* ₹18,000 in small-cap stocks/funds (20%)
-
-#### By Sector
-* Avoid over-concentration in a single industry
-* Consider exposure to:
-  * Financial services
-  * Information technology
-  * Consumer goods
-  * Healthcare
-  * Manufacturing
-  * Energy
-
-**Student Portfolio Example:**
-* Limit any single sector to 20-25% maximum
-* Ensure exposure to at least 4-5 different sectors
-* Include both cyclical and defensive sectors
-
-#### By Investment Style
-* **Growth**: Companies expected to grow faster than average
-* **Value**: Companies trading below their intrinsic value
-* **Dividend**: Companies that pay regular dividends
-
-**Student Strategy**: Balance between growth stocks (for capital appreciation) and some value or dividend stocks (for stability).
-
-### 🌏 Geographic Diversification
-* Don't limit investments to only one country
-* Options for international exposure:
-  * International mutual funds
-  * ETFs tracking global indices
-  * ADRs (American Depositary Receipts) of foreign companies
-
-**Student-Friendly Approach**: Start with 10-15% allocation to international investments through mutual funds or ETFs that focus on global markets.
-
-## Implementing Diversification with Limited Funds
-
-### 💡 Smart Strategies for Students
-
-#### 1️⃣ Use Mutual Funds and ETFs
-* Single mutual fund can provide exposure to hundreds of stocks
-* Index funds offer broad market exposure at low cost
-* Sector ETFs allow targeted industry exposure
-
-**Example**: A Nifty 50 index fund instantly diversifies across India's 50 largest companies spanning multiple sectors.
-
-#### 2️⃣ Build Gradually
-* Start with broad-market index funds
-* Add individual stocks over time as funds permit
-* Expand to different asset classes as portfolio grows
-
-**Example Timeline**:
-* Month 1-3: Start with a Nifty index fund
-* Month 4-6: Add a mid-cap fund
-* Month 7-12: Add 1-2 individual stocks in different sectors
-* Year 2: Consider adding a debt fund component
-
-#### 3️⃣ Use Zero-Fee Platforms
-* Minimize transaction costs when building diversified portfolios
-* Look for platforms offering free mutual fund investments
-* Consider brokers with no account maintenance fees
-
-#### 4️⃣ Consider Fractional Shares
-* Buy portions of expensive stocks
-* Create a diversified portfolio even with small amounts
-* Some new-age broking platforms offer this feature
-
-## Common Diversification Mistakes
-
-### ❌ Over-Diversification
-* Too many similar investments
-* So many holdings that you can't track them
-* Diminishing returns on diversification beyond 25-30 stocks
-
-### ❌ False Diversification
-* Owning multiple funds with overlapping holdings
-* Investing in different companies within the same sector
-* Only diversifying by company but not by sector or asset class
-
-### ❌ Ignoring Correlations
-* Not considering how investments move in relation to each other
-* True diversification requires assets that don't always move together
-* Example: Tech stocks often move in similar patterns
-
-### ❌ Abandoning Diversification in Bull Markets
-* Getting tempted to concentrate in "hot" sectors during market uptrends
-* Forgetting that market sentiment can change quickly
-* Diversification is most valuable when it seems least necessary
-
-## Measuring Risk and Diversification
-
-### 📏 Key Metrics to Track
-* **Beta**: Measures volatility compared to the market (Beta < 1 = less volatile)
-* **Standard Deviation**: Measures the total volatility of your portfolio
-* **Sharpe Ratio**: Measures risk-adjusted returns
-* **Correlation**: Measures how investments move in relation to each other
-
-**Student Approach**: Most portfolio trackers and mutual fund fact sheets provide these metrics. Review them quarterly to ensure proper diversification.
-
-## Rebalancing Your Diversified Portfolio
-
-* **When**: Review quarterly, rebalance annually or when allocations drift by more than 5-10%
-* **How**: Sell portions of over-performing assets, buy more of under-performing assets
-* **Why**: Maintains your risk profile and enforces "buy low, sell high" discipline
-
-**Student Strategy**: Set calendar reminders to review your allocations, but avoid over-trading.
-
-Remember: Diversification doesn't guarantee profits or prevent all losses, but it's one of the most effective tools for managing risk while pursuing returns. For students starting with limited capital, focus on achieving reasonable diversification through low-cost index funds before adding individual stock positions.`
-        },
-        {
-          title: 'Long-term vs Short-term Investing',
-          lesson_order: 2,
-          content: `# Long-term vs Short-term Investing
-
-Choosing between long-term and short-term investment approaches is one of the most fundamental decisions for any investor. Each strategy has distinct characteristics, advantages, and challenges, particularly for student investors.
-
-## Defining the Time Horizons
-
-### ⏱️ Short-Term Investing
-* **Duration**: Less than 1-2 years
-* **Focus**: Price movements, market timing, trading
-* **Goal**: Quick profits from market inefficiencies or fluctuations
-* **Examples**: Day trading, swing trading, momentum investing
-
-### ⏳ Medium-Term Investing
-* **Duration**: 2-5 years
-* **Focus**: Company growth prospects and reasonable valuations
-* **Goal**: Capital appreciation with some consideration for fundamentals
-* **Examples**: Buying growth stocks for a few years, sector rotation strategies
-
-### 🕰️ Long-Term Investing
-* **Duration**: 5+ years (often 10+ years)
-* **Focus**: Company fundamentals, competitive advantages, industry trends
-* **Goal**: Wealth building through compounding and business growth
-* **Examples**: Buy-and-hold strategy, value investing, dividend growth investing
-
-## Comparing the Approaches
-
-### 📊 Performance Characteristics
-
-| Factor | Short-Term | Long-Term |
-|--------|------------|-----------|
-| Return Potential | Variable, can be high or negative | Historically consistent positive returns |
-| Risk Level | Higher due to market timing needs | Lower due to time smoothing volatility |
-| Tax Efficiency | Less efficient (higher turnover) | More efficient (lower turnover) |
-| Time Commitment | Intensive, often daily monitoring | Minimal, periodic review sufficient |
-| Knowledge Required | Technical analysis, chart patterns | Business fundamentals, industry trends |
-| Transaction Costs | Higher due to frequent trading | Lower due to infrequent trading |
-| Stress Level | Typically higher | Typically lower |
-
-### 📈 Historical Performance Context
-* **Short-term**: Market timing success rate is statistically poor
-* **Long-term**: Indian stock market (Sensex) has delivered approximately:
-  * ~12-15% average annual return over 20+ year periods
-  * Positive returns in ~75% of individual years
-  * Positive returns in ~95% of 10-year periods
-
-## The Student Investor's Perspective
-
-### 🎓 Advantages of Long-Term Investing for Students
-
-#### 1️⃣ Time Advantage
-* **Youth Premium**: More time for compounding to work
-* **Recovery Buffer**: More time to recover from mistakes or market downturns
-* **Example**: ₹10,000 invested at age 20 becomes ~₹1.8 lakhs at age 50 (10% return)
-
-#### 2️⃣ Lower Time Commitment
-* Compatible with busy academic schedules
-* No need for constant monitoring
-* More time to focus on studies and skill development
-
-#### 3️⃣ Lower Stress
-* Less pressure to make perfect timing decisions
-* Reduced anxiety during market volatility
-* Better sleep during market corrections
-
-#### 4️⃣ Lower Knowledge Barrier
-* Easier to identify quality businesses than predict short-term movements
-* Focus on basic business principles rather than complex technical analysis
-* Allows learning through the investment journey
-
-### 🏃 Short-Term Approaches: Challenges for Students
-
-#### 1️⃣ Capital Limitations
-* Limited capital means smaller absolute returns
-* Transaction costs eat larger percentage of smaller portfolios
-* Limited diversification increases risk
-
-#### 2️⃣ Time Constraints
-* Academic responsibilities limit market monitoring time
-* Exam periods may coincide with critical market movements
-* Research time is limited by coursework
-
-#### 3️⃣ Experience Gap
-* Limited market experience increases mistakes
-* Psychological challenges of rapid decision-making
-* Learning curve for technical analysis is steep
-
-#### 4️⃣ Emotional Management
-* Short-term price movements trigger stronger emotions
-* Academic stress compounds trading stress
-* Fear and greed more impactful with limited experience
-
-## Practical Investment Strategies by Time Horizon
-
-### 🌱 Long-Term Strategies for Students
-
-#### 1️⃣ Index Investing
-* **Approach**: Regular investments in broad market indices
-* **Implementation**: SIPs in Nifty 50 or Sensex index funds
-* **Advantage**: Automatic diversification, very low effort
-* **Student Example**: ₹1,000 monthly in a Nifty 50 index fund through college years
-
-#### 2️⃣ Quality Growth Investing
-* **Approach**: Buying excellent businesses at reasonable prices
-* **Implementation**: Identifying companies with sustainable advantages and holding for years
-* **Advantage**: Potential for market-beating returns with moderate effort
-* **Student Example**: Investing in established leaders like HDFC Bank, TCS, or Asian Paints with 5-10 year perspective
-
-#### 3️⃣ Dividend Growth Investing
-* **Approach**: Focus on companies with growing dividend payments
-* **Implementation**: Build portfolio of dividend payers with history of increases
-* **Advantage**: Growing passive income stream, lower volatility
-* **Student Example**: Starting with 2-3 dividend aristocrats and reinvesting dividends
-
-### 🔄 Medium-Term Strategies for Balance
-
-#### 1️⃣ Core-Satellite Approach
-* **Approach**: Combine passive long-term core with active medium-term satellite positions
-* **Implementation**: 70-80% in index funds, 20-30% in tactical positions
-* **Advantage**: Balance of stability and higher return potential
-* **Student Example**: Core index fund with 2-3 sector or thematic plays based on research
-
-#### 2️⃣ Systematic Profit Booking
-* **Approach**: Long-term investment with disciplined partial exits
-* **Implementation**: Sell small portions when targets are reached, maintain core position
-* **Advantage**: Captures gains while keeping long-term exposure
-* **Student Example**: Booking 20% of position when stock rises 50%, reinvesting elsewhere
-
-### ⚡ Short-Term Approaches (If You Must)
-
-#### 1️⃣ Paper Trading First
-* **Approach**: Practice short-term strategies without real money
-* **Implementation**: Use simulator apps or spreadsheets to track hypothetical trades
-* **Advantage**: Risk-free learning experience
-* **Student Example**: Paper trading for 6 months before committing real money
-
-#### 2️⃣ Limited Capital Allocation
-* **Approach**: Restrict short-term trading to small percentage of portfolio
-* **Implementation**: 80-90% long-term, 10-20% maximum for short-term trading
-* **Advantage**: Limits damage from inevitable mistakes
-* **Student Example**: ₹20,000 in long-term investments, maximum ₹5,000 for trading
-
-## Hybrid Approach: Best of Both Worlds
-
-### 🧩 The Student Investor's Balanced Strategy
-
-#### 1️⃣ Foundation: Long-Term Core
-* 70-80% of portfolio in long-term investments
-* Focus on index funds and quality companies
-* Regular contributions regardless of market conditions
-* Annual or bi-annual review
-
-#### 2️⃣ Education: Medium-Term Tactical
-* 20-30% in medium-term opportunities
-* Research-based selections in promising sectors
-* Review quarterly
-* Learning laboratory for investment skills
-
-#### 3️⃣ Optional: Short-Term Experiments
-* Maximum 5-10% for short-term approaches
-* Strict rules and capital preservation focus
-* Clear journal of decisions and outcomes
-* Treated as educational expense rather than core strategy
-
-## Making Your Choice: Decision Framework
-
-### 🧠 Self-Assessment Questions
-1. **Time available**: How many hours weekly can you dedicate to investments?
-2. **Knowledge level**: How well do you understand business fundamentals vs. technical analysis?
-3. **Emotional temperament**: How do you react to losses and market volatility?
-4. **Financial goals**: What are you investing for and when will you need the money?
-5. **Interest level**: Do you find business analysis or market movements more interesting?
-
-### 📋 Sample Decision Matrix
-Score each factor from 1 (favors short-term) to 5 (favors long-term):
-* Very limited time available: 5 points
-* Limited investment knowledge: 5 points
-* Emotional during market drops: 5 points
-* Goals are 10+ years away: 5 points
-* Prefer business understanding to charts: 5 points
-
-**Total score interpretation**:
-* 20-25: Strong case for long-term approach
-* 15-20: Long-term core with some medium-term positions
-* 10-15: Balanced approach
-* 5-10: Consider more short-term focus with strict risk management
-
-## Key Takeaways for Students
-
-1. **Leverage your time advantage**: Your greatest asset as a student investor is time for compounding
-2. **Match strategy to reality**: Be honest about your time, knowledge, and emotional temperament
-3. **Education first**: Prioritize learning over quick returns in your early investment journey
-4. **Start with the long view**: Build a strong foundation of long-term investments first
-5. **Journal everything**: Document your decisions to build self-awareness and improve over time
-
-Remember that successful investors often evolve their approaches over time. Many successful professional investors started with long-term approaches while building knowledge, then incorporated other strategies as their expertise grew. The key is to start with an approach that matches your current situation and resources, while continuing to learn and adapt.`
-        },
-        {
-          title: 'Using News & Trends for Smart Decisions',
-          lesson_order: 3,
-          content: `# Using News & Trends for Smart Decisions
-
-In today's information-rich world, news and market trends significantly influence investment outcomes. Learning how to properly interpret information can give student investors an edge, while misinterpreting news can lead to costly mistakes.
-
-## The News-Investment Relationship
-
-### 📰 How News Affects Markets
-* **Short-term impact**: News often causes immediate price movements
-* **Medium-term reassessment**: Markets digest information over days/weeks
-* **Long-term fundamentals**: Eventually, company performance matters more than news cycles
-
-### 📊 Types of Market-Moving News
-
-| News Type | Impact Level | Examples | Response Strategy |
-|-----------|--------------|----------|-------------------|
-| Company-Specific | High for specific stocks | Earnings reports, CEO changes, product launches | Analyze impact on business fundamentals |
-| Industry/Sector | Moderate for related stocks | Regulatory changes, technological breakthroughs | Evaluate competitive positions within sector |
-| Macroeconomic | Broad market impact | Interest rate changes, GDP data, inflation | Understand effects on different asset classes |
-| Geopolitical | Variable, often sentiment-driven | Elections, trade disputes, conflicts | Avoid emotional reactions, focus on actual business impact |
-
-## Smart News Consumption Framework
-
-### 🔍 Step 1: Filter & Focus
-* **Identify reliable sources**:
-  * Financial newspapers (Economic Times, Financial Express, Business Standard)
-  * Business news channels (CNBC, ET Now)
-  * Company investor relations pages
-  * SEBI/NSE/BSE official communications
-  * Respected financial blogs/newsletters
-
-* **Create a focused information diet**:
-  * Follow industries you understand or invest in
-  * Track 5-10 companies deeply rather than 50 superficially
-  * Set up custom alerts for significant news only
-  * Limit consumption of general market commentary
-
-### 🧩 Step 2: Analyze & Contextualize
-* **Breaking down company news**:
-  * Is this a one-time event or pattern change?
-  * Does it affect the competitive position?
-  * Will it impact long-term earnings capability?
-  * Does it change your original investment thesis?
-
-* **Evaluating economic news**:
-  * Which sectors benefit/suffer from this development?
-  * Is this already priced into the market?
-  * Is this part of a broader trend or isolated?
-  * What's the historical market response to similar news?
-
-### 🎯 Step 3: Action Framework
-* **No action required**: Most news doesn't warrant portfolio changes
-* **Watch & research**: Add to monitoring list without immediate action
-* **Minor adjustment**: Small position sizing change if fundamentals shift
-* **Major adjustment**: Significant position change only if investment thesis breaks
-
-## Common News Reaction Mistakes
-
-### ❌ Overreaction to Short-Term News
-* **Example**: Panic selling after a single bad earnings report
-* **Better approach**: Evaluate whether short-term issue affects long-term outlook
-
-### ❌ Recency Bias
-* **Example**: Giving too much weight to latest news vs historical patterns
-* **Better approach**: Put new information in context of longer trends
-
-### ❌ Confirmation Bias
-* **Example**: Only acknowledging news that supports your existing view
-* **Better approach**: Actively seek contrary perspectives
-
-### ❌ Noise vs. Signal Confusion
-* **Example**: Reacting to daily market commentary without substance
-* **Better approach**: Focus on material developments that affect fundamentals
-
-## Student-Specific News Analysis Strategies
-
-### 📱 Efficient Information Gathering
-* **Stock tracking apps with news integration**:
-  * Tickers/Watchlists with news feeds
-  * Push notifications for major developments only
-  * Examples: ET Markets, Moneycontrol, Tickertape
-
-* **Curated news services**:
-  * Morning Brew, Finshots (financial news summaries)
-  * Industry-specific newsletters
-  * Twitter lists of reliable financial commentators
-
-* **Time-efficient habits**:
-  * 15-minute morning news review
-  * Weekend deep-dive on portfolio companies
-  * Quarterly earnings focus
-
-### 💡 Applying Academic Skills
-* **Research methods** from academics apply to investment research:
-  * Primary vs secondary sources
-  * Data verification
-  * Multiple source triangulation
-  * Critical analysis
-
-* **Subject knowledge connections**:
-  * Engineering students: Evaluate technical innovations
-  * Business students: Analyze business models and competition
-  * Science students: Assess research developments
-  * Humanities students: Identify social trends and consumer behavior
-
-## Interpreting Different Types of Market Information
-
-### 📈 Financial Data & Reports
-
-#### Earnings Announcements
-* **Key metrics to focus on**:
-  * Revenue growth (year-over-year)
-  * Profit margins trend
-  * Guidance for upcoming quarters
-  * Management commentary on challenges/opportunities
-
-* **Student approach**:
-  * Compare results to expectations
-  * Focus on operational trends over minor misses/beats
-  * Listen to conference calls when possible (or read transcripts)
-
-#### Economic Indicators
-* **Important indicators for beginners**:
-  * GDP growth rate
-  * Inflation (CPI/WPI)
-  * Interest rate decisions
-  * Manufacturing/Services PMI
-
-* **Student approach**:
-  * Understand which sectors benefit from different economic environments
-  * Focus on trends rather than individual data points
-  * Learn correlation between indicators and market sectors
-
-### 🌊 Trend Analysis
-
-#### Identifying Meaningful Trends
-* **Industry disruption**: New technologies changing business landscape
-* **Consumer behavior shifts**: Changing preferences and habits
-* **Regulatory environment**: Government policy direction
-* **ESG factors**: Environmental, social, governance momentum
-
-#### Student Framework for Trend Evaluation
-1. **Durability**: Is this a lasting change or temporary fad?
-2. **Penetration**: What percentage of the market will this trend affect?
-3. **Timing**: Early stage or mature trend?
-4. **Winners/Losers**: Which companies are positioned to benefit/suffer?
-
-## Practical News Analysis Exercise
-
-### 🧪 Four-Question Method
-For any significant news item, ask:
-
-1. **Relevance**: "Does this actually matter to my investments?"
-2. **Timeframe**: "Is this a short-term noise or long-term signal?"
-3. **Priced In**: "Has the market already reacted to this information?"
-4. **Action Required**: "Should I do something or simply note this?"
-
-### 📝 Decision Journal
-* **Create a simple template**:
-  * Date and news summary
-  * Your analysis and expectations
-  * Decision made (including decision to take no action)
-  * Results tracking (revisit after 1/3/6 months)
-
-* **Benefits for students**:
-  * Creates learning feedback loop
-  * Improves decision quality over time
-  * Reduces emotional reactions
-  * Builds analytical skills
-
-## Case Studies: News Interpretation Examples
-
-### 📱 Case 1: RBI Interest Rate Hike
-* **News**: Reserve Bank increases interest rates by 0.50%
-* **Typical reaction**: "Sell everything! Market will crash!"
-* **Smart analysis**:
-  * Banking sector may see margin improvements
-  * High-debt companies may face challenges
-  * Consumer discretionary might see slower demand
-  * Long-term business fundamentals largely unchanged
-* **Appropriate response**: Minor portfolio adjustments, not wholesale changes
-
-### 🏭 Case 2: New Competitor Enters Market
-* **News**: International player enters Indian e-commerce space
-* **Typical reaction**: "Sell all related companies immediately!"
-* **Smart analysis**:
-  * Market big enough for multiple players?
-  * Incumbent advantages (distribution, brand loyalty)?
-  * Timeline for meaningful competition?
-  * History of similar entries in other markets?
-* **Appropriate response**: Deeper research before any major decisions
-
-## Special Considerations for Today's Information Environment
-
-### 🔥 Social Media & Investment Forums
-* **Potential benefits**:
-  * Early awareness of trends
-  * Diverse perspectives
-  * Community knowledge
-
-* **Major risks**:
-  * Echo chambers reinforcing biases
-  * Manipulation and pump-and-dump schemes
-  * Emotional contagion during market stress
-
-* **Student guidelines**:
-  * Use as idea generation, not decision-making tool
-  * Verify all information independently
-  * Be extra skeptical of "urgent" opportunities
-  * Avoid FOMO-driven decisions (Fear Of Missing Out)
-
-### 🤖 Algorithm-Generated Content
-* Increasing financial content is AI-generated
-* Verify sources and look for human expert analysis
-* Be cautious of content optimized for engagement rather than accuracy
-
-## Building Your News Interpretation Skills
-
-### 📚 Continuous Learning Resources
-* **Books**: "The Psychology of Money" (Morgan Housel), "One Up On Wall Street" (Peter Lynch)
-* **Courses**: Financial literacy MOOCs, value investing courses
-* **Podcasts**: "We Study Billionaires," "Masters in Business"
-* **Simulations**: Practice news-based decisions in paper trading accounts
-
-### 🔄 Progressive Skill Building
-1. Start with interpreting company-specific news on 1-2 stocks you understand
-2. Expand to sector-wide news analysis
-3. Gradually incorporate macroeconomic news interpretation
-4. Develop your own news response framework
-
-Remember that successful investors are information processors, not information collectors. The goal isn't to consume more news but to better interpret the news you do consume. For student investors, developing this skill early provides a lifetime advantage in making rational, evidence-based investment decisions.`
-        }
-      ]
-    }
-  ]
+  if (error && error.code !== "PGRST116") {
+    console.error("Error checking if course exists:", error);
+    return false;
+  }
+  
+  return !!data;
 };
 
-// Check if courses exist and create them if they don't
-export const initializeAppData = async (userId?: string) => {
+// Check if any courses exist in the database
+const anyCourseExists = async (): Promise<boolean> => {
+  const { count, error } = await supabase
+    .from("courses")
+    .select("*", { count: "exact", head: true });
+  
+  if (error) {
+    console.error("Error checking if any courses exist:", error);
+    return false;
+  }
+  
+  return count !== null && count > 0;
+};
+
+// Create a course with modules and lessons
+const createCourse = async (course: CourseData): Promise<string | null> => {
   try {
-    console.log('Checking if courses exist...');
+    // 1. Create the course
+    const { data: courseData, error: courseError } = await supabase
+      .from("courses")
+      .insert({
+        title: course.title,
+        price: course.price,
+        referral_reward: course.referral_reward,
+        description: course.description
+      })
+      .select()
+      .single();
     
-    // Check if courses already exist
-    const { data: existingCourses, error: fetchError } = await supabase
-      .from('courses')
-      .select('id, title');
+    if (courseError) {
+      console.error("Error creating course:", courseError);
+      return null;
+    }
+    
+    const courseId = courseData.id;
+    console.log(`Created course: ${course.title} with ID: ${courseId}`);
+    
+    // 2. Create modules for the course
+    for (const module of course.modules) {
+      const { data: moduleData, error: moduleError } = await supabase
+        .from("course_modules")
+        .insert({
+          course_id: courseId,
+          title: module.title,
+          description: module.description,
+          module_order: module.module_order,
+          content: module.description // Using description as content as well
+        })
+        .select()
+        .single();
       
-    if (fetchError) throw fetchError;
+      if (moduleError) {
+        console.error(`Error creating module ${module.title}:`, moduleError);
+        continue;
+      }
+      
+      const moduleId = moduleData.id;
+      console.log(`Created module: ${module.title} with ID: ${moduleId}`);
+      
+      // 3. Create lessons for the module
+      for (const lesson of module.lessons) {
+        const { error: lessonError } = await supabase
+          .from("lessons")
+          .insert({
+            module_id: moduleId,
+            title: lesson.title,
+            content: lesson.content,
+            lesson_order: lesson.lesson_order
+          });
+        
+        if (lessonError) {
+          console.error(`Error creating lesson ${lesson.title}:`, lessonError);
+        } else {
+          console.log(`Created lesson: ${lesson.title}`);
+        }
+      }
+    }
     
-    // If courses already exist, no need to create them again
-    if (existingCourses && existingCourses.length > 0) {
-      console.log('Courses already exist, skipping creation.');
+    return courseId;
+  } catch (err) {
+    console.error("Error in createCourse:", err);
+    return null;
+  }
+};
+
+// Main function to initialize app data
+export const initializeAppData = async (): Promise<void> => {
+  try {
+    // Check if courses already exist
+    const coursesExist = await anyCourseExists();
+    
+    if (coursesExist) {
+      console.log("Courses already exist, skipping initialization");
       return;
     }
     
-    console.log('No courses found. Creating courses...');
+    console.log("No courses found, initializing app data...");
     
-    // Create first course
-    const { data: aiCourse, error: aiCourseError } = await supabase
-      .from('courses')
-      .insert([
+    // Create AI Tools course
+    const aiToolsCourse: CourseData = {
+      title: "AI Tools for Students",
+      price: 500,
+      referral_reward: 250,
+      description: "Learn how to use AI tools to boost your productivity and creativity as a student.",
+      modules: [
         {
-          title: aiCourseData.title,
-          price: aiCourseData.price,
-          description: aiCourseData.description,
-          referral_reward: aiCourseData.referral_reward
-        }
-      ])
-      .select();
-      
-    if (aiCourseError) throw aiCourseError;
-    console.log('Created AI course:', aiCourse);
-    
-    // Create second course
-    const { data: stockCourse, error: stockCourseError } = await supabase
-      .from('courses')
-      .insert([
-        {
-          title: stockMarketCourseData.title,
-          price: stockMarketCourseData.price,
-          description: stockMarketCourseData.description,
-          referral_reward: stockMarketCourseData.referral_reward
-        }
-      ])
-      .select();
-      
-    if (stockCourseError) throw stockCourseError;
-    console.log('Created Stock Market course:', stockCourse);
-    
-    // Create modules and lessons for AI course
-    if (aiCourse && aiCourse.length > 0) {
-      const aiCourseId = aiCourse[0].id;
-      
-      for (const module of aiCourseData.modules) {
-        // Create module
-        const { data: createdModule, error: moduleError } = await supabase
-          .from('course_modules')
-          .insert([
+          title: "Introduction to AI Tools",
+          description: "Learn the basics of AI tools and why they are important for students.",
+          module_order: 1,
+          lessons: [
             {
-              course_id: aiCourseId,
-              title: module.title,
-              description: module.description,
-              module_order: module.module_order,
-              content: ''
+              title: "What are AI Tools?",
+              content: `# What are AI Tools?
+
+📱 **AI tools** are computer programs that use artificial intelligence to help you complete tasks faster and better.
+
+## How AI Tools Work
+
+AI tools work by:
+
+1. **Learning patterns** from huge amounts of data
+2. **Making predictions** or decisions based on what they've learned
+3. **Automating tasks** that would take humans much longer to do
+
+## Examples of AI Tools for Students
+
+- **ChatGPT**: Helps with writing, answering questions, and explaining concepts
+- **Notion AI**: Makes note-taking and organizing information easier
+- **Grammarly**: Checks your writing for mistakes and suggests improvements
+- **Canva AI**: Helps design presentations and graphics quickly
+
+## Why AI Tools Matter
+
+AI tools are like having a personal assistant that can help with your studies 24/7. They can:
+
+- Save you time on repetitive tasks
+- Help you understand difficult concepts
+- Improve the quality of your work
+- Let you focus on the more important parts of learning
+
+💡 **Important**: AI tools are helpers, not replacements for your own thinking! They work best when you use your own knowledge and creativity along with them.`,
+              lesson_order: 1
+            },
+            {
+              title: "Why AI is Important for Students",
+              content: `# Why AI is Important for Students
+
+🎓 As a student in today's world, understanding and using AI tools gives you a significant advantage.
+
+## The Changing Educational Landscape
+
+The way we learn is changing rapidly because of technology:
+
+- **Information overload**: There's more content to learn than ever before
+- **Skill requirements**: Jobs now demand both traditional and digital skills
+- **Competitive environment**: Standing out requires more than just good grades
+
+## Benefits of AI for Students
+
+### 1. Personalized Learning
+- AI can adapt to your learning pace and style
+- Get explanations tailored to your level of understanding
+- Practice exactly what you need to improve on
+
+### 2. Time Management
+- Automate routine tasks (summarizing, organizing notes)
+- Focus your time on deeper learning and creative thinking
+- Complete assignments more efficiently
+
+### 3. Access to Resources
+- Get instant answers to questions at any time
+- Access explanations even when teachers aren't available
+- Find learning materials suited to your specific needs
+
+### 4. Future-Proofing Your Career
+- Most future jobs will require AI literacy
+- Early exposure gives you a head start
+- Understanding AI helps you adapt to changing job markets
+
+## Real-Life Student Success Stories
+
+> "I used ChatGPT to help brainstorm my project ideas and improved my grades from B to A"
+> 
+> "AI tools helped me manage my time better during exams by organizing my study schedule"
+> 
+> "I learned how to prompt AI effectively and now I can get much better results for my research papers"
+
+⚠️ **Remember**: AI tools should support your learning, not replace it. Critical thinking remains essential!`,
+              lesson_order: 2
             }
-          ])
-          .select();
-          
-        if (moduleError) throw moduleError;
-        console.log(`Created module: ${module.title}`);
-        
-        if (createdModule && createdModule.length > 0) {
-          const moduleId = createdModule[0].id;
-          
-          // Update module with lessons as content
-          for (const lesson of module.lessons) {
-            // Create user progress records if there's a user provided
-            if (userId) {
-              await supabase
-                .from('user_progress')
-                .insert([
-                  {
-                    user_id: userId,
-                    module_id: moduleId,
-                    completed: false
-                  }
-                ]);
+          ]
+        },
+        {
+          title: "AI for Productivity",
+          description: "Discover how AI can help you with research, note-taking, and writing.",
+          module_order: 2,
+          lessons: [
+            {
+              title: "Using ChatGPT for Research & Learning",
+              content: `# Using ChatGPT for Research & Learning
+
+🔍 ChatGPT can transform how you research topics and learn new concepts.
+
+## What is ChatGPT?
+
+ChatGPT is an AI assistant created by OpenAI that can:
+- Have conversations on almost any topic
+- Explain complex concepts in simple terms
+- Help you brainstorm and develop ideas
+- Create summaries and outlines
+
+## Effective Research Techniques with ChatGPT
+
+### 1. Ask Clear, Specific Questions
+**Less effective**: "Tell me about photosynthesis"
+**More effective**: "Explain the light-dependent reactions of photosynthesis in simple terms"
+
+### 2. Use the Socratic Method
+Ask a series of follow-up questions to dig deeper:
+1. Start with a broad question
+2. Ask for clarification on specific points
+3. Request examples or analogies
+4. Challenge the explanation to test understanding
+
+### 3. Request Different Perspectives
+- "Can you explain this topic from another viewpoint?"
+- "What are some criticisms of this theory?"
+- "How would different experts approach this problem?"
+
+## Study Strategies with ChatGPT
+
+### 1. Create Custom Study Guides
+```
+Create a study guide for [topic] covering:
+- Key concepts
+- Important formulas
+- Common misconceptions
+- Practice questions with solutions
+```
+
+### 2. Test Your Understanding
+- Ask ChatGPT to quiz you on a topic
+- Request explanations for why your answers are right or wrong
+- Have it create practice problems at different difficulty levels
+
+### 3. Simplify Complex Material
+- Ask for explanations "as if I'm 10 years old"
+- Request metaphors or analogies to understand difficult concepts
+- Break down complicated processes step by step
+
+## Important Limitations
+
+⚠️ **Always verify information** from ChatGPT with reliable sources
+⚠️ ChatGPT may occasionally provide incorrect information
+⚠️ It has limited knowledge of events after its training cutoff date
+
+💡 **Pro Tip**: Keep a log of your best prompts for different types of academic tasks!`,
+              lesson_order: 1
+            },
+            {
+              title: "Using Notion AI for Note-taking & Planning",
+              content: `# Using Notion AI for Note-taking & Planning
+
+📝 Notion AI combines the power of a versatile note-taking app with AI assistance to transform how you organize your studies.
+
+## What is Notion AI?
+
+Notion is a productivity tool that lets you create:
+- Notes and documents
+- Databases and tables
+- To-do lists and task trackers
+- Wikis and knowledge bases
+
+Notion AI adds artificial intelligence capabilities directly into this system.
+
+## Setting Up Your Notion Student System
+
+### 1. Create a Dashboard
+Start with a simple dashboard containing:
+- Current classes/subjects
+- Upcoming assignments
+- Weekly schedule
+- Goals tracker
+
+### 2. Build Subject Databases
+For each subject, create a database with:
+- Lecture notes
+- Reading notes
+- Assignments
+- Resources
+- Practice problems
+
+## Using Notion AI for Better Notes
+
+### 1. Summarizing Content
+After taking detailed notes in class:
+- Highlight the section
+- Use "/AI Summarize" command
+- Review and edit the summary
+- Create bullet-point key takeaways
+
+### 2. Expanding on Ideas
+When you have a basic concept but need more detail:
+- Write down the core idea
+- Use "/AI Help me finish writing this"
+- Specify the tone and depth you want
+
+### 3. Creating Study Materials
+- Transform lecture notes into flashcards
+- Generate practice questions
+- Create concept maps by asking AI to identify connections
+
+## Planning and Task Management
+
+### 1. Smart To-Do Lists
+Use Notion AI to:
+- Break down large assignments into manageable steps
+- Suggest realistic timeframes for tasks
+- Prioritize your work based on deadlines and importance
+
+### 2. Time Blocking Templates
+- Create time block templates for different types of days
+- Ask AI to suggest optimal study schedules
+- Generate daily routines that balance work and breaks
+
+### 3. Progress Tracking
+- Build habit trackers for consistent study
+- Create reflection templates for weekly review
+- Use AI to analyze your productivity patterns
+
+## Tips for Notion AI Success
+
+💡 **Consistency is key**: Update your system regularly
+💡 **Start simple**: Begin with basic templates and expand
+💡 **Personalize**: Adapt examples to your specific needs
+💡 **Regularly review**: Refine your system as you learn what works
+
+⚠️ **Remember**: The best system is one you'll actually use!`,
+              lesson_order: 2
+            },
+            {
+              title: "Grammarly & Quillbot for Writing Help",
+              content: `# Grammarly & Quillbot for Writing Help
+
+✏️ These AI writing assistants can significantly improve your academic writing quality and efficiency.
+
+## Grammarly: Your Writing Coach
+
+### What Grammarly Does
+Grammarly is an AI-powered writing assistant that helps with:
+- Grammar and spelling corrections
+- Punctuation and sentence structure
+- Tone adjustments
+- Clarity and conciseness
+- Plagiarism detection (Premium)
+
+### How to Use Grammarly Effectively
+
+#### 1. Set Up Your Goals
+Before checking a document, configure:
+- Audience (professors, peers, general)
+- Formality level
+- Domain (academic, general)
+- Intent (inform, describe, convince)
+
+#### 2. Beyond Basic Corrections
+Look for:
+- **Clarity suggestions**: Making your writing more understandable
+- **Engagement tips**: Avoiding repetitive or dull language
+- **Delivery adjustments**: Ensuring appropriate tone
+- **Full-sentence rewrites**: Alternative ways to express ideas
+
+#### 3. Grammarly for Different Assignment Types
+- **Essays**: Focus on clarity, coherence, and academic tone
+- **Research papers**: Check for formal language and precise vocabulary
+- **Emails to professors**: Ensure professional but friendly tone
+- **Creative writing**: Balance correctness with stylistic choices
+
+## Quillbot: Paraphrasing and Rewriting
+
+### What Quillbot Does
+Quillbot specializes in:
+- Paraphrasing text while preserving meaning
+- Offering multiple rewriting styles
+- Summarizing long content
+- Simplifying complex text
+- Expanding brief notes into full sentences
+
+### Using Quillbot Wisely
+
+#### 1. Paraphrasing Modes
+Choose the right mode for your needs:
+- **Standard**: Balanced changes while preserving meaning
+- **Fluency**: Focuses on natural-sounding language
+- **Formal**: Academic and professional language
+- **Simple**: Makes complex content easier to understand
+- **Creative**: More extensive rewrites (use cautiously)
+
+#### 2. Smart Research Techniques
+- Paste complex explanations to get simplified versions
+- Rewrite to ensure you truly understand the content
+- Compare original text with paraphrased version to check meaning preservation
+
+#### 3. Avoiding Plagiarism
+- Use Quillbot to understand concepts in your own words
+- Always cite sources when paraphrasing ideas from others
+- Don't rely solely on AI—add your own analysis and thoughts
+
+## Best Practices for Both Tools
+
+### Do:
+✅ Review all AI suggestions before accepting
+✅ Learn from corrections to improve your writing
+✅ Use them as learning tools, not just quick fixes
+✅ Maintain your unique voice and ideas
+
+### Don't:
+❌ Accept all suggestions without thinking
+❌ Use them to write entire assignments for you
+❌ Forget to proofread the final result yourself
+
+💡 **Pro Tip**: Use Grammarly first for corrections, then Quillbot for paraphrasing if needed, then Grammarly again to check the final result.`,
+              lesson_order: 3
             }
-            
-            // Add lesson content to module
-            await supabase
-              .from('course_modules')
-              .update({ content: lesson.content })
-              .eq('id', moduleId);
-              
-            console.log(`Added content to module: ${module.title}`);
-          }
+          ]
+        },
+        {
+          title: "AI for Creativity",
+          description: "Learn how to use AI tools for design, images, video, and music creation.",
+          module_order: 3,
+          lessons: [
+            {
+              title: "Using Canva AI for Design",
+              content: `# Using Canva AI for Design
+
+🎨 Canva AI transforms how students create visual content—making professional-quality design accessible to everyone.
+
+## What is Canva AI?
+
+Canva is a graphic design platform that now includes powerful AI features:
+- Text-to-image generation
+- Magic Design (instant layouts)
+- Magic Write (text generation)
+- Magic Edit (image manipulation)
+- Background remover
+- Style applicator
+
+## Getting Started with Canva AI
+
+### 1. Setting Up Your Account
+- Sign up for a free account (student email may give you premium features)
+- Explore the dashboard and templates
+- Enable the "Magic" features in your account settings
+
+### 2. Understanding the Canvas
+- Templates vs. blank designs
+- Element library
+- Text and font options
+- Upload section for your own images
+
+## Essential Canva AI Features for Students
+
+### 1. Magic Design
+Perfect for creating quick, professional presentations:
+1. Enter your topic
+2. Select the type of design (presentation, poster, social media)
+3. Choose a style that matches your project
+4. Customize colors and imagery to your preference
+
+### 2. Magic Write
+Helps generate text content for your designs:
+- Product descriptions
+- Headlines and titles
+- Brief explanations
+- Bulleted lists
+
+### 3. Text to Image
+Create custom images for your projects:
+- Describe what you want ("A 3D render of quantum computing principles")
+- Specify style ("in a minimalist style with blue and purple colors")
+- Generate multiple options
+- Fine-tune with additional prompts
+
+## Project Examples with Canva AI
+
+### Academic Presentations
+1. Choose a presentation template
+2. Use Magic Write to generate outline points
+3. Use Text to Image for conceptual illustrations
+4. Apply consistent styling with Brand Kit
+
+### Study Materials
+1. Create flashcard templates
+2. Generate concept diagrams with Text to Image
+3. Use Magic Design for visual summaries
+4. Export as PDFs for printing or sharing
+
+### Project Posters
+1. Start with a poster template
+2. Generate a striking main image with Text to Image
+3. Use Magic Write for concise descriptions
+4. Export in high resolution for printing
+
+## Tips for Better Canva AI Results
+
+### For Text Generation:
+- Be specific about tone and purpose
+- Edit generated text to add your personal insights
+- Use as starting points, not final content
+
+### For Image Creation:
+- Use detailed descriptions including style, colors, and mood
+- Try variations of the same prompt
+- Combine AI-generated elements with stock photos for unique results
+
+### For Presentations:
+- Maintain consistent visual language
+- Focus on one key point per slide
+- Use AI to create visual metaphors for complex concepts
+
+💡 **Pro Tip**: Save your best AI-generated designs as templates for future projects!`,
+              lesson_order: 1
+            },
+            {
+              title: "Using Leonardo AI for Images",
+              content: `# Using Leonardo AI for Images
+
+🖼️ Leonardo AI is a powerful tool that lets students create professional-quality images from text descriptions—no artistic skills required.
+
+## What is Leonardo AI?
+
+Leonardo AI is a text-to-image generation platform that:
+- Creates detailed images from written descriptions
+- Offers various artistic styles and models
+- Allows image modifications and variations
+- Provides resolution upscaling
+- Enables inpainting and outpainting features
+
+## Getting Started with Leonardo AI
+
+### 1. Creating Your Account
+- Sign up for a free account (you get limited free generations)
+- Explore the gallery for inspiration
+- Familiarize yourself with the generation interface
+
+### 2. Understanding Prompt Engineering
+The quality of your image depends on your prompt:
+- Be specific about what you want to see
+- Include details about style, lighting, and composition
+- Use artistic references when helpful
+
+## Key Features for Student Projects
+
+### 1. Text to Image Generation
+Perfect for creating:
+- Illustrations for presentations
+- Visual metaphors for complex concepts
+- Custom imagery for assignments
+- Graphics for research posters
+
+**Basic Prompt Format:**
+```
+[Subject] in the style of [art style], [additional details], [lighting], [composition]
+```
+
+**Example:**
+```
+A detailed cross-section of a plant cell, digital illustration, educational style, soft lighting, blue background, labeled parts, high detail
+```
+
+### 2. Image Variations
+When you have an image that's close but not perfect:
+1. Upload or select your starting image
+2. Choose the variation strength (how different it will be)
+3. Adjust the prompt to focus on what you want to change
+4. Generate multiple variations
+
+### 3. Resolution Enhancement
+For presentation-quality images:
+1. Generate your base image
+2. Use the upscaling feature
+3. Apply enhancement filters if needed
+
+## Project Applications for Students
+
+### 1. Science and Medicine
+- Anatomical illustrations
+- Visualizations of scientific processes
+- Microorganism illustrations
+- Chemical reaction demonstrations
+
+### 2. History and Social Studies
+- Historical scene recreations
+- Cultural artifact visualizations
+- Map overlays and geographical features
+- Timeline event illustrations
+
+### 3. Literature and Arts
+- Book scene visualizations
+- Character portraits
+- Setting illustrations
+- Conceptual representations of themes
+
+### 4. Business and Economics
+- Process flow visualizations
+- Data representation concepts
+- Marketing material mockups
+- Brand concept illustrations
+
+## Advanced Techniques
+
+### 1. Negative Prompting
+Specify what you DON'T want in the image:
+```
+A neuron network diagram, scientific illustration
+Negative prompt: blurry, text, watermarks, low quality, distorted
+```
+
+### 2. Style Mixing
+Combine different artistic influences:
+```
+A sustainable city of the future, combining architectural blueprints with watercolor painting style, detailed, top-down view
+```
+
+### 3. Reference Images
+Use the "image to image" feature to guide generation based on a reference.
+
+## Ethical Considerations
+
+⚠️ **Important guidelines:**
+- Don't create or pass off AI images as your own photographs
+- Cite AI as a tool when submitting academic work
+- Respect copyright when using reference images
+- Be aware of potential biases in AI-generated imagery
+
+💡 **Pro Tip**: Save your best prompts in a document for reuse and refinement!`,
+              lesson_order: 2
+            },
+            {
+              title: "Using Descript for Video Editing",
+              content: `# Using Descript for Video Editing
+
+🎬 Descript revolutionizes video editing for students by making it as simple as editing a text document—with powerful AI assistance.
+
+## What is Descript?
+
+Descript is an all-in-one audio/video editor with unique AI features:
+- Text-based video editing (edit video by editing the transcript)
+- Overdub (AI voice cloning for corrections)
+- Studio Sound (automatic audio enhancement)
+- Green screen and background removal
+- Filler word removal ("um", "uh", etc.)
+- Screen recording with transcription
+
+## Setting Up Descript for Academic Projects
+
+### 1. Creating Your Account
+- Sign up for a free account (limited features)
+- Student discounts available for paid plans
+- Download the desktop application
+- Connect your microphone and camera
+
+### 2. Understanding the Interface
+- Projects panel (manage all your videos)
+- Media library (store and organize assets)
+- Script editor (where text meets video)
+- Timeline (traditional video editing view)
+- Export options (various formats and qualities)
+
+## Key Features for Student Video Projects
+
+### 1. Transcription-Based Editing
+Perfect for course presentations and tutorials:
+1. Record or import your video
+2. Wait for automatic transcription
+3. Edit the text document to cut mistakes
+4. Words are deleted from the video automatically
+5. No need for complex timeline editing
+
+### 2. Overdub (AI Voice)
+For fixing audio mistakes without re-recording:
+1. Create an Overdub voice (ethical consent required)
+2. Highlight text you want to change
+3. Type new text
+4. AI generates your voice saying the new words
+
+### 3. Studio Sound
+Instantly improve audio quality:
+- Remove background noise
+- Enhance voice clarity
+- Balance audio levels
+- Make recordings sound professional
+
+### 4. Screen Recording
+Ideal for tutorials and demonstrations:
+1. Select screen capture area
+2. Choose to include webcam (optional)
+3. Record with automatic transcription
+4. Edit out mistakes immediately after
+
+## Project Applications for Students
+
+### 1. Course Presentations
+- Record once, edit easily
+- Remove all mistakes and hesitations
+- Add titles and captions from the transcript
+- Incorporate visual aids seamlessly
+
+### 2. Research Presentations
+- Create professional-quality research summaries
+- Include data visualizations and slides
+- Edit complex explanations without re-recording
+- Add citations as text overlays
+
+### 3. Group Projects
+- Each member can record their part separately
+- Combine recordings with consistent audio quality
+- Edit collaboratively using shared projects
+- Maintain consistent pacing and tone
+
+### 4. Language Learning
+- Record pronunciation practice
+- Compare your audio to reference materials
+- Create flashcard videos with proper pronunciation
+- Document your improvement over time
+
+## Advanced Techniques
+
+### 1. Composition Templates
+Save time with reusable layouts:
+1. Create a standard intro/outro
+2. Save camera positions and backgrounds
+3. Apply consistent text styles
+4. Reuse across multiple videos
+
+### 2. Multilingual Projects
+Create content in multiple languages:
+- Translate transcripts
+- Create overdub versions in different languages
+- Add subtitles from transcripts
+- Export separate versions
+
+### 3. Engaging Elements
+Make videos more interesting:
+- Add automatic transitions between sections
+- Use script-based markers for emphasis
+- Create zooms and highlights tied to specific words
+- Add timed reactions and callouts
+
+## Tips for Success
+
+💡 **Script preparation**: Outline your content before recording
+💡 **Quiet environment**: Even with Studio Sound, start with good audio
+💡 **Regular saving**: Enable auto-save for project protection
+💡 **Export options**: Use "Draft" quality for feedback, "High" for final versions
+
+⚠️ **Note**: Free accounts have limitations on Overdub and export options. Consider the education discount for longer projects.`,
+              lesson_order: 3
+            },
+            {
+              title: "Using Soundraw for Music Generation",
+              content: `# Using Soundraw for Music Generation
+
+🎵 Soundraw lets students create custom, copyright-free music for their projects without any musical experience required.
+
+## What is Soundraw?
+
+Soundraw is an AI music generation platform that allows you to:
+- Create original music tracks based on your specifications
+- Customize genre, mood, length, and instruments
+- Export high-quality audio for your projects
+- Use music without copyright restrictions
+- Adjust tracks to match your video timing
+
+## Getting Started with Soundraw
+
+### 1. Setting Up Your Account
+- Create a free account (limited exports)
+- Student plans available at discounted rates
+- No software download required—works in browser
+- Familiarize yourself with the interface
+
+### 2. Understanding the Creation Process
+- Genre and mood selection
+- Track duration and structure
+- Instrument selection and emphasis
+- Intensity mapping across timeline
+
+## Creating Your First Track
+
+### 1. Defining Your Music Needs
+Ask yourself:
+- What emotion should the music convey?
+- How long does the track need to be?
+- Which instruments would fit your project?
+- Does the energy need to vary throughout?
+
+### 2. Step-by-Step Creation
+1. Select a genre (Lo-Fi, Cinematic, Pop, etc.)
+2. Choose a mood (Inspiring, Relaxed, Energetic, etc.)
+3. Set track length (match to your video if applicable)
+4. Adjust energy levels for different sections
+5. Select featured instruments
+6. Generate multiple options
+7. Fine-tune your favorite version
+8. Export in appropriate format
+
+## Project Applications for Students
+
+### 1. Video Projects
+- Custom background music for presentations
+- Theme music for YouTube educational channels
+- Soundtrack for short films and animations
+- Mood-appropriate music for documentary-style projects
+
+### 2. Multimedia Presentations
+- Opening and closing themes
+- Transition music between sections
+- Background ambience for spoken presentations
+- Emotional underlining for impactful moments
+
+### 3. Podcast Production
+- Intro and outro music
+- Segment transition sounds
+- Background tracks for different topics
+- Mood music for storytelling sections
+
+### 4. Interactive Projects
+- Background music for websites
+- App sound design
+- Game music for student-developed projects
+- Interactive presentation soundtracks
+
+## Advanced Techniques
+
+### 1. Synchronized Music Creation
+Match music to your visual content:
+1. Identify key moments in your video
+2. Create markers at these timestamps
+3. Adjust energy levels to match visual intensity
+4. Ensure musical transitions align with scene changes
+
+### 2. Layered Audio Design
+Combine multiple Soundraw tracks:
+- Create ambient background layer
+- Add rhythmic middle layer
+- Include melodic top layer
+- Mix in external sound effects if needed
+
+### 3. Emotion Mapping
+Design music to enhance emotional journey:
+- Chart the emotional arc of your content
+- Create music that reinforces these emotions
+- Use intensity changes to signal important points
+- Consider silence as a powerful tool
+
+## Tips for Effective Music Usage
+
+### Do:
+✅ Match music energy to content pacing
+✅ Consider volume levels carefully (background vs. foreground)
+✅ Use different tracks for different sections
+✅ Leave space for narration and important sounds
+
+### Don't:
+❌ Use music that competes with spoken content
+❌ Choose distracting melodies for informational content
+❌ Overuse dramatic music in academic presentations
+❌ Make sudden jarring music changes
+
+## Technical Considerations
+
+- **Export formats**: WAV for highest quality, MP3 for smaller files
+- **Mixing levels**: Ensure music sits below speech in the mix (-15dB)
+- **Fade points**: Always add fades to prevent abrupt starts/stops
+- **Project storage**: Save your Soundraw projects for future adjustments
+
+💡 **Pro Tip**: Create a personal library of generated tracks categorized by mood for quick access in future projects!`,
+              lesson_order: 4
+            }
+          ]
+        },
+        {
+          title: "Career & Future with AI",
+          description: "Explore how AI skills can enhance your career prospects and future opportunities.",
+          module_order: 4,
+          lessons: [
+            {
+              title: "Jobs that Use AI Tools",
+              content: `# Jobs that Use AI Tools
+
+💼 Understanding how different careers use AI tools can help you prepare for future job markets and develop relevant skills.
+
+## AI Tools Across Industries
+
+### Digital Marketing
+**AI tools used:**
+- Content generation tools (Copy.ai, Jasper)
+- Social media schedulers with AI features
+- Analytics platforms with predictive features
+- Image generation for campaigns
+
+**Example tasks:**
+- Creating multiple versions of ad copy
+- Personalizing email marketing campaigns
+- Predicting campaign performance
+- Generating visual content quickly
+
+### Software Development
+**AI tools used:**
+- GitHub Copilot for code generation
+- Tabnine for code completion
+- AI testing tools
+- Automated documentation generators
+
+**Example tasks:**
+- Suggesting code solutions
+- Debugging assistance
+- Automating repetitive coding tasks
+- Creating API documentation
+
+### Data Analysis
+**AI tools used:**
+- Automated data cleaning tools
+- Predictive analytics platforms
+- Natural language BI tools
+- Visualization assistants
+
+**Example tasks:**
+- Identifying patterns in large datasets
+- Creating predictive models
+- Generating reports from data
+- Translating data queries from plain English
+
+### Healthcare
+**AI tools used:**
+- Diagnostic assistance tools
+- Medical image analysis
+- Patient data management systems
+- Treatment recommendation tools
+
+**Example tasks:**
+- Analyzing medical images for anomalies
+- Predicting patient risks
+- Managing treatment schedules
+- Research literature analysis
+
+## Emerging AI-Enhanced Careers
+
+### AI Prompt Engineer
+**Job description:** Creating, refining, and optimizing prompts for AI systems to generate specific, high-quality outputs.
+
+**Skills needed:**
+- Understanding AI capabilities and limitations
+- Clear and precise communication
+- Domain expertise in application area
+- Testing and iteration methodology
+
+### Content Creator with AI
+**Job description:** Using AI tools to enhance creative output across writing, design, and multimedia.
+
+**Skills needed:**
+- Strong creative direction
+- Understanding of AI content tools
+- Editing and refinement abilities
+- Original concept development
+
+### AI Implementation Specialist
+**Job description:** Helping businesses integrate AI tools into their existing workflows and processes.
+
+**Skills needed:**
+- Change management
+- Understanding of business processes
+- Technical implementation knowledge
+- Training and support capabilities
+
+### AI Ethics Consultant
+**Job description:** Advising on responsible AI use, bias mitigation, and ethical implications.
+
+**Skills needed:**
+- Ethics and philosophy background
+- Understanding of AI technology
+- Policy development experience
+- Communication and advocacy skills
+
+## How to Prepare for AI-Enhanced Jobs
+
+### 1. Develop a "Complementary Skill Set"
+Focus on skills that work alongside AI:
+- Critical thinking and evaluation
+- Creative direction and oversight
+- Emotional intelligence and interpersonal skills
+- Strategic thinking and planning
+
+### 2. Learn to Collaborate with AI
+Understand how to:
+- Provide effective instructions to AI systems
+- Evaluate and improve AI outputs
+- Know when to use AI and when not to
+- Integrate AI into your workflow efficiently
+
+### 3. Stay Current on AI Developments
+- Follow AI news and research
+- Experiment with new tools as they emerge
+- Join communities discussing AI applications
+- Take courses on AI fundamentals
+
+## AI Skills on Your Resume
+
+### Highlight:
+- Specific AI tools you've mastered
+- Results achieved using AI collaboration
+- Efficiency improvements demonstrated
+- Creative applications you've developed
+
+### Example Resume Points:
+- "Increased content production by 75% using AI writing assistants while maintaining brand voice"
+- "Developed custom prompt templates for team use, improving AI output quality by 40%"
+- "Created AI-assisted data analysis workflow that reduced reporting time from 3 days to 4 hours"
+
+💡 **Pro Tip**: Create a portfolio that shows both your AI-assisted work AND your unique contributions that AI couldn't provide.`,
+              lesson_order: 1
+            },
+            {
+              title: "Freelancing with AI",
+              content: `# Freelancing with AI
+
+💻 AI tools can transform freelancing by expanding your capabilities, increasing your productivity, and helping you offer more competitive services.
+
+## Getting Started with AI-Enhanced Freelancing
+
+### Identifying Your AI Advantage
+Ask yourself:
+1. Which repetitive tasks take up most of your time?
+2. What services could you offer if certain tasks were automated?
+3. Which skills complement AI capabilities in your field?
+4. How can AI help you scale your freelance business?
+
+### Setting Up Your AI Toolkit
+Every freelancer needs:
+- Content generation tools (ChatGPT, Copy.ai)
+- Visual creation tools (Canva AI, Leonardo AI)
+- Client management with AI features
+- Field-specific AI tools for your specialty
+
+## AI-Enhanced Freelance Services
+
+### Writing & Content Creation
+**Services you can offer:**
+- Blog post creation and optimization
+- Social media content packages
+- Email newsletter campaigns
+- eBook and guide development
+
+**How AI helps:**
+- Generate content outlines
+- Create first drafts quickly
+- Suggest headlines and hooks
+- Repurpose content across formats
+
+### Design & Visual Content
+**Services you can offer:**
+- Brand identity packages
+- Social media graphics bundles
+- Presentation design
+- Basic animation and video editing
+
+**How AI helps:**
+- Generate initial design concepts
+- Create variations quickly
+- Enhance stock photos
+- Automate repetitive design tasks
+
+### Virtual Assistance
+**Services you can offer:**
+- Email and communication management
+- Calendar organization and scheduling
+- Research and data collection
+- Basic customer service
+
+**How AI helps:**
+- Draft email responses
+- Summarize long documents
+- Extract key information from sources
+- Create organized research reports
+
+### Marketing Services
+**Services you can offer:**
+- SEO optimization
+- Content marketing strategies
+- Market research and analysis
+- Ad copy and campaign creation
+
+**How AI helps:**
+- Generate keyword recommendations
+- Create multiple ad variations
+- Analyze competitor content
+- Draft marketing plans
+
+## Setting the Right Prices
+
+### Value-Based Pricing Strategy
+When using AI tools:
+1. Price based on the value delivered, not time spent
+2. Focus on outcomes and results for clients
+3. Consider offering tiered packages with different levels of service
+4. Don't compete solely on price—emphasize quality and expertise
+
+### Sample Pricing Approaches:
+- **Project-based:** Flat fee based on deliverable value
+- **Retainer model:** Monthly fee for ongoing services
+- **Hybrid approach:** Base fee plus performance bonuses
+- **Productized services:** Standardized offerings with set prices
+
+## Managing Client Expectations
+
+### What to Disclose About AI Use
+Be transparent about:
+- When and how you use AI tools
+- Your role in directing and editing AI output
+- How AI enhances (not replaces) your expertise
+- Quality control processes you implement
+
+### Addressing Client Concerns
+Common questions and how to respond:
+- **"Is this just AI-generated?"** — Explain your creative direction and editing process
+- **"Why hire you if AI can do it?"** — Highlight your expertise in guiding the AI and ensuring quality
+- **"Is this original work?"** — Explain how you ensure originality and perform checks
+
+## Scaling Your AI-Enhanced Freelance Business
+
+### 1. Create Reusable Systems
+Develop:
+- Custom prompt templates for different projects
+- Quality control checklists
+- Client onboarding processes with AI assistance
+- Standardized workflows for common tasks
+
+### 2. Productize Your Services
+Package your expertise into:
+- Digital products with AI components
+- Online courses teaching your AI methods
+- Templates and guides for clients
+- Subscription services for ongoing work
+
+### 3. Build a Specialized Niche
+Position yourself as:
+- An expert in a specific industry using AI
+- A problem solver for particular challenges
+- The bridge between AI capabilities and human needs
+- A consultant who helps others implement AI tools
+
+## Ethical Considerations
+
+### Do:
+✅ Be transparent about AI use when relevant
+✅ Maintain quality control over all deliverables
+✅ Continuously learn and improve your prompting skills
+✅ Add unique value beyond what AI alone provides
+
+### Don't:
+❌ Misrepresent AI work as entirely manual
+❌ Deliver raw AI outputs without review
+❌ Neglect to check for accuracy and originality
+❌ Undervalue your expertise in directing the AI
+
+💡 **Pro Tip**: Document your AI processes and workflows to create consistency and save time on future projects!`,
+              lesson_order: 2
+            },
+            {
+              title: "Building Your Own AI Portfolio",
+              content: `# Building Your Own AI Portfolio
+
+🚀 Creating a portfolio that showcases your AI skills can significantly boost your career opportunities and demonstrate your future-ready capabilities.
+
+## Understanding the AI Portfolio
+
+### What Makes an AI Portfolio Different
+An effective AI portfolio should showcase:
+- Your ability to direct AI tools effectively
+- How you solve problems using AI
+- Your understanding of AI capabilities and limitations
+- Your unique value beyond what AI alone provides
+
+### Types of AI Portfolios
+Depending on your goals:
+1. **Skills showcase**: Demonstrating various AI tools you can use
+2. **Results-focused**: Highlighting outcomes achieved with AI
+3. **Process-oriented**: Showing your workflow and methodology
+4. **Solution-based**: Presenting problems you've solved using AI
+
+## Essential Elements of Your AI Portfolio
+
+### 1. Case Studies
+For each project, include:
+- The original challenge or goal
+- Your approach and AI tools used
+- Your role vs. the AI's contribution
+- Before-and-after results
+- Lessons learned and improvements made
+
+### 2. Process Documentation
+Show your workflow:
+- Initial prompts and directions given to AI
+- Iterations and refinements
+- Editing and quality control steps
+- Final polishing and human touches
+
+### 3. Skill Demonstration
+Highlight your abilities in:
+- Prompt engineering (crafting effective instructions)
+- Output evaluation and refinement
+- Combining multiple AI tools in a workflow
+- Adapting AI capabilities to specific needs
+
+### 4. Continuous Learning Evidence
+Demonstrate your growth:
+- New AI tools you've mastered
+- Improvements in your prompting techniques
+- Classes, certifications, or training completed
+- Experimentation with emerging AI capabilities
+
+## Building Your First AI Projects
+
+### 1. Personal Enhancement Projects
+Start with projects improving your own work:
+- Create a blog with AI-assisted content
+- Develop a personal website with AI design elements
+- Build a productivity system using AI tools
+- Create a social media content calendar with AI
+
+### 2. Fictional Client Work
+Create sample projects for imaginary clients:
+- Branding package for a startup
+- Marketing campaign for a product
+- Content strategy for a blog
+- Design system for an app
+
+### 3. Real-World Problem Solving
+Address actual challenges:
+- Improve a local business's online presence
+- Create educational materials for a community organization
+- Develop resources for fellow students
+- Solve a common problem in your field
+
+### 4. AI Tool Comparisons
+Conduct and document experiments:
+- Compare different AI writing tools on the same brief
+- Test various image generation tools for specific uses
+- Evaluate chatbots for customer service scenarios
+- Assess productivity gains across different AI assistants
+
+## Presenting Your AI Portfolio
+
+### 1. Portfolio Website
+Create a dedicated site with:
+- Clear organization by project type
+- Detailed case studies
+- Before-and-after examples
+- Your methodology and process
+
+### 2. Documentation Formats
+Effective ways to showcase your work:
+- Screen recordings of your AI workflow
+- Side-by-side comparisons
+- Process diagrams and flowcharts
+- Written explanations of your approach
+
+### 3. Demonstrating Value
+Highlight metrics such as:
+- Time saved using AI methods
+- Quality improvements achieved
+- Cost reductions demonstrated
+- New capabilities enabled by AI
+
+## Ethical Considerations for Your Portfolio
+
+### Transparency
+- Clearly state when and how AI was used
+- Don't misrepresent AI-generated work as entirely manual
+- Give proper credit to the specific AI tools used
+- Explain your role in the creative process
+
+### Originality
+- Focus on your unique contributions and direction
+- Demonstrate how you refined and improved AI outputs
+- Show your problem-solving approach, not just results
+- Highlight your expertise in guiding the AI effectively
+
+## Leveraging Your Portfolio
+
+### For Job Applications:
+- Reference specific portfolio projects in cover letters
+- Prepare to discuss your AI workflow in interviews
+- Show how your AI skills address employer needs
+- Highlight transferable skills across different tools
+
+### For Freelancing:
+- Share relevant case studies with potential clients
+- Create comparison examples for common client requests
+- Demonstrate your quality control process
+- Explain how AI helps you deliver better results faster
+
+💡 **Pro Tip**: Keep updating your portfolio with new AI tools and techniques as they emerge—this field moves quickly!`,
+              lesson_order: 3
+            }
+          ]
         }
-      }
+      ]
+    };
+    
+    // Create Stock Market course
+    const stockMarketCourse: CourseData = {
+      title: "Introduction to Stock Investment",
+      price: 1000,
+      referral_reward: 500,
+      description: "Learn the basics of stock market investing with practical strategies for students.",
+      modules: [
+        {
+          title: "Basics of Investing",
+          description: "Understand the fundamentals of investing and why starting early matters.",
+          module_order: 1,
+          lessons: [
+            {
+              title: "What is the Stock Market?",
+              content: `# What is the Stock Market?
+
+💹 The stock market is a place where people can buy and sell ownership shares in companies.
+
+## The Stock Market Explained Simply
+
+The stock market is like a big marketplace where instead of buying fruits or clothes, people buy and sell small pieces of companies called "shares" or "stocks."
+
+When you own a share of a company, you actually own a small part of that business. If the company does well and makes money, your shares usually become more valuable. If the company struggles, your shares might lose value.
+
+## How the Stock Market Works
+
+### 1. Companies Need Money to Grow
+- To expand their business
+- To develop new products
+- To hire more employees
+- To build new facilities
+
+### 2. Companies "Go Public" to Raise Money
+- They divide ownership into many small shares
+- They sell these shares to investors through an Initial Public Offering (IPO)
+- The company gets money to grow
+- Investors get ownership stakes in the company
+
+### 3. Shares Are Traded on Stock Exchanges
+Popular stock exchanges include:
+- National Stock Exchange (NSE) in India
+- Bombay Stock Exchange (BSE) in India
+- New York Stock Exchange (NYSE) in the US
+- NASDAQ in the US
+
+### 4. Share Prices Change Based on:
+- Company performance
+- Industry trends
+- Economic factors
+- Investor sentiment
+- Supply and demand for shares
+
+## Stock Market Participants
+
+### Individual Investors
+Regular people like you who buy shares hoping they'll increase in value
+
+### Institutional Investors
+Large organizations that manage money for others:
+- Mutual funds
+- Pension funds
+- Insurance companies
+- Banks
+
+### Brokers
+People or companies that help you buy and sell shares for a fee
+
+### Regulators
+Government organizations that create and enforce rules:
+- Securities and Exchange Board of India (SEBI) in India
+- Securities and Exchange Commission (SEC) in the US
+
+## Why the Stock Market Matters
+
+### For Companies:
+- Access to capital for growth
+- Increased visibility and credibility
+- Ability to attract top talent through stock options
+
+### For Investors:
+- Opportunity to grow wealth over time
+- Chance to earn more than savings accounts
+- Way to own part of successful companies
+- Protection against inflation
+
+### For the Economy:
+- Helps companies create jobs
+- Encourages innovation and growth
+- Allows everyday people to benefit from economic growth
+
+## Key Concepts to Understand
+
+### Bull Market vs. Bear Market
+- **Bull Market**: Prices are rising, optimism is high
+- **Bear Market**: Prices are falling, pessimism is high
+
+### Index
+A group of stocks that represents a section of the market:
+- NIFTY 50 (tracks 50 large Indian companies)
+- SENSEX (tracks 30 large companies on BSE)
+- S&P 500 (tracks 500 large US companies)
+
+### Volatility
+How much and how quickly stock prices move up and down
+
+📝 **Remember**: The stock market involves risk—prices can go up AND down. Never invest money you can't afford to lose!`,
+              lesson_order: 1
+            },
+            {
+              title: "Why Should Students Invest Early?",
+              content: `# Why Should Students Invest Early?
+
+⏰ Starting your investment journey as a student—even with small amounts—can give you enormous advantages over time.
+
+## The Power of Starting Early
+
+### Time is Your Greatest Advantage
+When you're young, you have a resource that no amount of money can buy: time.
+
+Take a look at these examples of how Rs. 10,000 grows at 12% average annual returns:
+- Starting at age 20: Rs. 10,000 becomes **Rs. 9,30,509** by age 55
+- Starting at age 30: Rs. 10,000 becomes **Rs. 2,89,002** by age 55
+- Starting at age 40: Rs. 10,000 becomes **Rs. 89,542** by age 55
+
+This huge difference happens because of compound interest—what Einstein allegedly called "the eighth wonder of the world."
+
+## What is Compound Interest?
+
+Compound interest means earning interest on your interest. It creates a snowball effect where your money grows faster and faster over time.
+
+### Compound Interest Example:
+If you invest Rs. 5,000 and earn 10% per year:
+- Year 1: Rs. 5,000 + Rs. 500 (10%) = Rs. 5,500
+- Year 2: Rs. 5,500 + Rs. 550 (10%) = Rs. 6,050
+- Year 3: Rs. 6,050 + Rs. 605 (10%) = Rs. 6,655
+- Year 10: Rs. 12,969
+- Year 30: Rs. 87,247
+
+Notice how the amount you earn each year keeps getting bigger!
+
+## Student-Specific Advantages
+
+### 1. Longer Recovery Time
+You can afford to take some risks because you have decades to recover from any losses.
+
+### 2. Learning Opportunity
+Starting now gives you more time to:
+- Learn from mistakes when the stakes are lower
+- Understand how markets work through experience
+- Develop good financial habits early
+
+### 3. Lower Financial Obligations
+Most students have:
+- No mortgage payments
+- No children to support
+- Fewer bills than they will later in life
+
+This means even small savings can go toward investments.
+
+### 4. Building a Financial Foundation
+By starting early, you're setting yourself up for:
+- Less financial stress in the future
+- More options and opportunities later in life
+- Potential financial independence at a younger age
+- Ability to take career risks later with a financial safety net
+
+## How to Start as a Student (Even with Limited Funds)
+
+### 1. Start Super Small
+Even Rs. 500 per month can grow significantly over time.
+
+### 2. Use Technology
+Apps and platforms make it easy to start with minimal amounts:
+- Zerodha Coin
+- Groww
+- ET Money
+- Other micro-investment apps
+
+### 3. Automate Your Investments
+Set up automatic transfers on scholarship/stipend days.
+
+### 4. Invest Rather than Speculate
+Focus on long-term growth, not get-rich-quick schemes.
+
+## Real Examples of Student Investors
+
+> "I started investing Rs. 1,000 per month from my scholarship money when I was 19. By graduation, I had built a portfolio worth Rs. 75,000, which continues to grow."
+
+> "Instead of spending my internship salary on new gadgets, I invested 70% of it in index funds. Three years later, it's already grown by 30%."
+
+## The Psychological Advantage
+
+Starting early also helps you:
+- Get comfortable with market fluctuations
+- Develop patience as an investor
+- Build confidence in your financial decisions
+- Create a positive relationship with money
+
+## Action Steps for Students
+
+1. Open a demat account (many have zero balance requirements for students)
+2. Start with an index fund or ETF (less research required)
+3. Set up a small recurring investment
+4. Learn continuously about investing
+5. Gradually increase your contributions as your income grows
+
+💡 **Remember**: The goal isn't to get rich overnight but to build wealth steadily over time. The earlier you plant the seed, the bigger the tree will grow!`,
+              lesson_order: 2
+            },
+            {
+              title: "Common Myths About Investing",
+              content: `# Common Myths About Investing
+
+🔍 Let's debunk some widespread misconceptions that might be keeping you from starting your investment journey.
+
+## Myth #1: "You Need Lots of Money to Start Investing"
+
+### The Reality:
+You can start investing with as little as Rs. 100-500 in India.
+
+### How to Invest with Limited Funds:
+- **Systematic Investment Plans (SIPs)**: Start with Rs. 500 monthly
+- **Fractional shares**: Own portions of expensive stocks
+- **Index funds**: Get diversified exposure with minimal investment
+- **Direct stock purchase**: Some stocks trade for under Rs. 50
+
+> "I started investing with just Rs. 500 per month from my pocket money. After three years in college, I had built a habit and a growing portfolio."
+
+## Myth #2: "Investing is Like Gambling"
+
+### The Reality:
+Investing and gambling are fundamentally different:
+
+| Gambling | Long-Term Investing |
+|----------|---------------------|
+| Based on luck | Based on research and fundamentals |
+| House has edge | Markets historically trend upward |
+| Zero-sum game | Value creation over time |
+| Short-term focus | Long-term perspective |
+| Usually loses value | Historically gains value |
+
+### Responsible Investing Approach:
+- Research before investing
+- Diversify across different investments
+- Focus on long-term growth
+- Invest regularly regardless of market conditions
+
+## Myth #3: "You Need to be a Financial Expert"
+
+### The Reality:
+You don't need advanced degrees or complex formulas to be a successful investor.
+
+### Simple Starting Strategies:
+- **Index funds**: Track the market automatically
+- **SIP in diversified mutual funds**: Professional management
+- **ETFs**: Trade like stocks but offer diversification
+- **Robo-advisors**: Automated investment management
+
+### Basic Knowledge is Sufficient:
+- Understanding compound interest
+- Knowing the difference between stocks, bonds, and funds
+- Learning to control emotions during market swings
+- Following a consistent investment plan
+
+## Myth #4: "It's Better to Wait for the 'Right Time'"
+
+### The Reality:
+Market timing rarely works even for professionals.
+
+### Why "Time in the Market" Beats "Timing the Market":
+- Missing just the 10 best days in the market can dramatically reduce returns
+- Markets are unpredictable in the short term
+- Regular investing removes the pressure of timing decisions
+- Cost averaging reduces the impact of market volatility
+
+**Example:** Rs. 10,000 invested in Nifty 50 for 10 years:
+- Staying fully invested: ~Rs. 25,000
+- Missing 10 best days: ~Rs. 15,000
+- Missing 20 best days: ~Rs. 10,000 (no gain)
+
+## Myth #5: "Young People Should Focus on Making Money First"
+
+### The Reality:
+Starting small early is much more powerful than waiting until you have "enough" money.
+
+### The Math:
+- Rs. 1,000/month from age 20-30 (just 10 years) and then stopping
+- Rs. 1,000/month from age 30-60 (30 years)
+
+**Result at age 60 (assuming 10% returns):**
+- Early investor (total invested: Rs. 1.2 lakhs): ~Rs. 22 lakhs
+- Later investor (total invested: Rs. 3.6 lakhs): ~Rs. 20 lakhs
+
+The early investor puts in 1/3 of the money but ends up with more!
+
+## Myth #6: "Stock Market is Only for Rich People"
+
+### The Reality:
+The market is more accessible than ever to people of all income levels.
+
+### Democratization of Investing:
+- Zero-fee trading platforms
+- No minimum balance requirements
+- Fractional share investing
+- Mobile investing apps
+- Educational resources freely available online
+
+## Myth #7: "I'll Lose All My Money in a Market Crash"
+
+### The Reality:
+Market crashes are temporary if you're properly diversified and have a long-term perspective.
+
+### Historical Perspective:
+Every major market crash has been followed by recovery and new highs:
+- 2008 Global Financial Crisis: Markets recovered within 4 years
+- 2020 COVID Crash: Markets recovered within months
+- 2000 Dot-com Bubble: Markets recovered within 7 years
+
+### Protection Strategies:
+- Diversification across different types of investments
+- Gradual entry into markets through SIPs
+- Investing only money you won't need soon
+- Having an emergency fund before investing
+
+💡 **Pro Tip:** The best approach for students is often the simplest one: start with an index fund SIP, contribute regularly, ignore short-term market noise, and focus on your studies while your money works for you.`,
+              lesson_order: 3
+            }
+          ]
+        },
+        {
+          title: "Understanding Stocks",
+          description: "Learn about different types of stocks and factors that influence stock prices.",
+          module_order: 2,
+          lessons: [
+            {
+              title: "Types of Stocks (Blue-chip, Penny Stocks, etc.)",
+              content: `# Types of Stocks (Blue-chip, Penny Stocks, etc.)
+
+🧩 Stocks come in many varieties, each with different characteristics, risks, and potential rewards.
+
+## Blue-chip Stocks
+
+### What They Are:
+Shares of large, well-established, financially stable companies with excellent reputations.
+
+### Characteristics:
+- Long operating history (often decades)
+- Market leaders in their industry
+- Consistent dividend payments
+- Strong balance sheets
+- Less volatile than the overall market
+
+### Examples in India:
+- Reliance Industries
+- HDFC Bank
+- Tata Consultancy Services (TCS)
+- Infosys
+- ITC
+
+### Best For:
+- Beginners
+- Long-term investors
+- Lower-risk portfolios
+- Dividend income seekers
+
+## Growth Stocks
+
+### What They Are:
+Shares of companies expected to grow at an above-average rate compared to other companies.
+
+### Characteristics:
+- Rapidly increasing revenue and earnings
+- Often reinvest profits (don't pay dividends)
+- Higher price-to-earnings ratios
+- Can be more volatile
+- Often in technology, healthcare, or emerging industries
+
+### Examples in India:
+- Avenue Supermarts (D-Mart)
+- Dixon Technologies
+- Tata Elxsi
+- Laurus Labs
+
+### Best For:
+- Investors seeking capital appreciation
+- Those with longer time horizons
+- Moderate risk tolerance
+- Portfolios not focused on current income
+
+## Value Stocks
+
+### What They Are:
+Shares of companies that appear to be undervalued based on fundamental analysis.
+
+### Characteristics:
+- Lower price-to-earnings ratios
+- Higher dividend yields
+- Price below book value
+- Solid fundamentals despite being out of favor
+- Often in traditional industries
+
+### Examples in India:
+- Coal India
+- ONGC
+- Power Grid Corporation
+- Some PSU banks
+
+### Best For:
+- Patient investors
+- Contrarian strategists
+- Income-focused portfolios
+- Those who can withstand short-term volatility
+
+## Penny Stocks
+
+### What They Are:
+Shares of very small companies that trade at low prices per share (typically below Rs. 10).
+
+### Characteristics:
+- Extremely volatile
+- Limited company history
+- Often lack transparency
+- Minimal analyst coverage
+- High risk of manipulation
+- Potential for large percentage gains (and losses)
+
+### Best For:
+- Experienced investors only
+- Those who can afford to lose their entire investment
+- People who can do extensive research
+- Traders with high risk tolerance
+
+⚠️ **Warning**: Most beginning investors should AVOID penny stocks entirely.
+
+## Dividend Stocks
+
+### What They Are:
+Shares of companies that pay out regular dividends to shareholders.
+
+### Characteristics:
+- Regular income payments
+- Often mature, profitable companies
+- Generally more stable
+- Lower growth potential
+- Popular in certain sectors (utilities, consumer staples)
+
+### Examples in India:
+- Coal India
+- ITC
+- Power Grid
+- Hindustan Zinc
+
+### Best For:
+- Income-focused investors
+- Retirees or those nearing retirement
+- Lower-risk portfolios
+- Those seeking inflation protection
+
+## Cyclical Stocks
+
+### What They Are:
+Shares of companies whose profits are strongly tied to economic cycles.
+
+### Characteristics:
+- Performance follows economic expansions and contractions
+- More volatile than the overall market
+- Timing is crucial for good returns
+- Often in industries like automobiles, construction, travel
+
+### Examples in India:
+- Tata Motors
+- Larsen & Toubro
+- InterGlobe Aviation (IndiGo)
+- Mahindra & Mahindra
+
+### Best For:
+- Investors who can time economic cycles
+- Those willing to actively manage positions
+- Medium to high risk tolerance
+- People who follow macroeconomic trends
+
+## Defensive Stocks
+
+### What They Are:
+Shares of companies that provide goods/services people need regardless of economic conditions.
+
+### Characteristics:
+- Relatively stable during economic downturns
+- Lower growth during economic booms
+- Often pay dividends
+- Less volatile than the market
+- Common in sectors like healthcare, utilities, consumer staples
+
+### Examples in India:
+- Hindustan Unilever
+- Nestle India
+- Britannia Industries
+- Apollo Hospitals
+
+### Best For:
+- Risk-averse investors
+- Portfolio protection during downturns
+- Those seeking stability
+
+## ESG (Environmental, Social, Governance) Stocks
+
+### What They Are:
+Shares of companies with strong environmental, social responsibility, and corporate governance practices.
+
+### Characteristics:
+- Focus on sustainability and ethical practices
+- Growing investor interest, especially among younger generations
+- Often in renewable energy, clean technology, healthcare
+- May have different risk/return profiles
+
+### Examples in India:
+- Tata Power (renewable energy focus)
+- Tech Mahindra (sustainability initiatives)
+- Dr. Reddy's Laboratories (social initiatives)
+
+### Best For:
+- Values-based investors
+- Those seeking alignment with personal principles
+- Long-term investors
+- Diversification
+
+💡 **Pro Tip for Beginners**: Start with a diversified portfolio containing predominantly blue-chip and large-cap stocks. As you gain experience and knowledge, you can gradually explore other stock types based on your risk tolerance and financial goals.`,
+              lesson_order: 1
+            },
+            {
+              title: "How to Read a Stock Chart",
+              content: `# How to Read a Stock Chart
+
+📊 Stock charts can seem intimidating at first, but understanding them is essential for making informed investment decisions.
+
+## The Basics of Stock Charts
+
+A stock chart is a visual representation of a stock's price movement over time. Think of it as the "heartbeat monitor" of a company's stock.
+
+### Main Components of a Basic Chart:
+
+1. **Price Axis (Y-axis)**
+   - Shows the stock price
+   - Usually on the right or left side
+   - May use logarithmic or arithmetic scale
+
+2. **Time Axis (X-axis)**
+   - Shows the time period
+   - Can range from minutes to years
+   - Common timeframes: 1-day, 1-week, 1-month, 1-year, 5-year
+
+3. **Price Plot**
+   - Line, bar, or candlestick representing price movement
+   - Each point shows the stock price at that moment
+
+4. **Volume Bars**
+   - Displayed at the bottom of most charts
+   - Shows how many shares were traded in each period
+   - Higher bars indicate more trading activity
+
+## Types of Stock Charts
+
+### 1. Line Charts
+**What it shows:** Closing prices connected by a line
+**Best for:** Getting a simple, clean view of price trends
+**When to use:** When you want to see the big picture without details
+
+### 2. Bar Charts
+**What it shows:** Open, high, low, and close prices for each period
+**How to read a bar:**
+- Vertical line shows high and low prices
+- Left horizontal tick shows opening price
+- Right horizontal tick shows closing price
+**Best for:** More detailed analysis than line charts
+
+### 3. Candlestick Charts
+**What it shows:** Open, high, low, and close prices in a visually intuitive format
+**How to read a candlestick:**
+- Green/white candle: Closing price higher than opening (price went up)
+- Red/black candle: Closing price lower than opening (price went down)
+- Body: Range between open and close prices
+- Wicks/shadows: Show the high and low prices
+**Best for:** Detailed price analysis and pattern recognition
+
+## Essential Chart Patterns
+
+### Uptrend
+- Series of higher highs and higher lows
+- Generally bullish signal
+- Example: [ Insert simple uptrend diagram ]
+
+### Downtrend
+- Series of lower highs and lower lows
+- Generally bearish signal
+- Example: [ Insert simple downtrend diagram ]
+
+### Support Level
+- Price level where a stock tends to stop falling
+- Shows where buyers typically step in
+- Often used as a potential buying point
+
+### Resistance Level
+- Price level where a stock tends to stop rising
+- Shows where sellers typically step in
+- Often used as a potential selling point
+
+### Common Candlestick Patterns
+
+**Doji**
+- Open and close prices are virtually the same
+- Indicates indecision in the market
+- Can signal potential reversal
+
+**Hammer**
+- Small body with a long lower shadow
+- Appears in downtrends
+- Potential bullish reversal signal
+
+**Shooting Star**
+- Small body with a long upper shadow
+- Appears in uptrends
+- Potential bearish reversal signal
+
+## Technical Indicators
+
+These mathematical calculations help analyze trends and predict future price movements:
+
+### Moving Averages
+- Line showing average price over a specific period
+- Smooths out price data to show trends
+- Common periods: 50-day, 100-day, 200-day
+- Golden Cross (bullish): Short-term MA crosses above long-term MA
+- Death Cross (bearish): Short-term MA crosses below long-term MA
+
+### Relative Strength Index (RSI)
+- Measures speed and change of price movements
+- Scale of 0 to 100
+- Above 70: Potentially overbought (may fall soon)
+- Below 30: Potentially oversold (may rise soon)
+
+### MACD (Moving Average Convergence Divergence)
+- Shows relationship between two moving averages
+- MACD line: Difference between 12-day and 26-day EMA
+- Signal line: 9-day EMA of MACD line
+- Histogram: Difference between MACD and signal line
+- Crossovers can indicate buy/sell opportunities
+
+## How to Use Charts Effectively
+
+### 1. Start with the Big Picture
+- Look at longer timeframes first (yearly, monthly)
+- Identify the primary trend
+- Then zoom in to shorter timeframes for entry/exit points
+
+### 2. Combine Multiple Timeframes
+- Long-term charts show the trend
+- Intermediate charts show the pullbacks
+- Short-term charts help with timing
+
+### 3. Compare with Benchmarks
+- Look at relevant index charts (NIFTY, SENSEX)
+- Compare with sector performance
+- Understand relative strength/weakness
+
+### 4. Volume Confirmation
+- Price movements with higher volume are more significant
+- Low volume moves may reverse quickly
+- Volume often precedes price movement
+
+## Chart Reading Practice Tips
+
+### 1. Historical Analysis
+- Study past chart patterns and their outcomes
+- Look for patterns that repeat
+- Note which indicators were most reliable
+
+### 2. Paper Trading
+- Practice making decisions based on charts
+- Track your hypothetical trades
+- Review and learn from mistakes
+
+### 3. Start Simple
+- Begin with line charts and basic support/resistance
+- Add more complex indicators gradually
+- Focus on one or two indicators at first
+
+💡 **Pro Tip**: Don't rely solely on charts for investment decisions. Combine technical analysis (charts) with fundamental analysis (company financials, news, industry trends) for a more complete picture.`,
+              lesson_order: 2
+            },
+            {
+              title: "What Influences Stock Prices?",
+              content: `# What Influences Stock Prices?
+
+💰 Stock prices move up and down based on a complex mixture of factors—some logical, some emotional, and some completely unexpected.
+
+## Supply and Demand Basics
+
+At its core, a stock price moves based on:
+- **More buyers than sellers** = price goes up
+- **More sellers than buyers** = price goes down
+
+But what makes people want to buy or sell? Let's explore the key factors.
+
+## Company-Specific Factors
+
+### 1. Financial Performance
+- **Earnings reports**: Quarterly and annual profit announcements
+- **Revenue growth**: Increasing sales year-over-year
+- **Profit margins**: How efficiently the company turns revenue into profit
+- **Cash flow**: Money flowing in and out of the business
+
+> "Earnings are the ultimate driver of stock prices in the long run."
+
+### 2. Company News and Announcements
+- **New products or services**: Potential new revenue streams
+- **Management changes**: New CEO or key executive appointments
+- **Mergers and acquisitions**: Buying other companies or being bought
+- **Partnerships and deals**: New strategic relationships
+- **Legal issues**: Lawsuits, regulatory problems, or settlements
+
+### 3. Future Outlook and Guidance
+- **Company forecasts**: Management's predictions for future performance
+- **Growth plans**: Expansion into new markets or product lines
+- **Restructuring**: Cost-cutting or reorganization plans
+- **Dividend announcements**: Changes to shareholder payments
+
+## Industry and Economic Factors
+
+### 1. Sector Performance
+- **Industry trends**: How similar companies are performing
+- **Disruption**: New technologies changing the industry landscape
+- **Regulatory changes**: New laws or rules affecting the sector
+- **Commodity prices**: Changes in raw material costs
+
+### 2. Economic Indicators
+- **GDP growth**: Overall economic health
+- **Inflation rates**: Rising prices in the economy
+- **Interest rates**: Central bank policies (RBI in India)
+- **Employment data**: Job creation and unemployment figures
+- **Consumer spending**: How much people are buying
+
+### 3. Global Events
+- **Geopolitical developments**: Wars, trade tensions, international relations
+- **Natural disasters**: Earthquakes, floods, pandemics
+- **Oil price movements**: Energy cost impacts across industries
+- **Currency fluctuations**: Changes in exchange rates
+
+## Market Sentiment and Psychology
+
+### 1. Investor Emotions
+- **Fear**: Can cause panic selling and price drops
+- **Greed**: Can cause buying frenzies and price bubbles
+- **FOMO**: Fear Of Missing Out driving purchases
+- **Overconfidence**: Believing you know more than you do
+
+### 2. Market Momentum
+- **Trend following**: Investors buying because prices are rising
+- **Contrarian investing**: Going against the crowd
+- **Short squeezes**: Forced buying by those who bet against stocks
+- **Technical factors**: Chart patterns triggering buying or selling
+
+### 3. Analyst Opinions
+- **Upgrades/downgrades**: Changed recommendations from experts
+- **Price targets**: Analysts' predictions for future stock values
+- **Research reports**: Detailed analysis of companies
+- **Media coverage**: News stories and financial TV discussions
+
+## How These Factors Interact
+
+### Short-term vs. Long-term Influences
+
+**Short-term price movements** (days to weeks) are often driven by:
+- News headlines
+- Analyst upgrades/downgrades
+- Earnings surprises
+- Market sentiment
+- Technical trading
+
+**Long-term price movements** (months to years) are typically driven by:
+- Consistent earnings growth
+- Competitive advantages
+- Management quality
+- Industry position
+- Economic fundamentals
+
+### The Weight of Different Factors
+
+Factors don't influence all stocks equally:
+- **Growth stocks**: More sensitive to future expectations and interest rates
+- **Value stocks**: More responsive to current earnings and dividends
+- **Cyclical stocks**: Heavily influenced by economic indicators
+- **Small-cap stocks**: Often more volatile and news-sensitive
+- **Blue-chip stocks**: Generally more stable with less dramatic reactions
+
+## How to Analyze What's Affecting a Stock
+
+### 1. Fundamental Analysis Framework
+Ask these questions:
+- How are the company's earnings trending?
+- How do valuation metrics compare to peers?
+- What's happening in the broader industry?
+- Are there significant upcoming catalysts?
+
+### 2. News Analysis
+- Distinguish between meaningful news and noise
+- Consider if news impacts long-term business value
+- Watch how the stock reacts to different types of news
+
+### 3. Context is Key
+- A 2% move might be normal for one stock but significant for another
+- Same news can affect different companies differently
+- Market environment changes how news is interpreted
+
+## Practical Examples
+
+### Example 1: Interest Rate Increases
+- **Banks**: Often benefit from higher interest margins
+- **Real estate**: May suffer from higher borrowing costs
+- **Growth tech stocks**: Often decline due to future earnings being worth less
+- **Dividend stocks**: May lose appeal compared to safer bonds
+
+### Example 2: New Smartphone Launch
+- **Manufacturer**: Direct revenue impact
+- **Component suppliers**: Increased orders and revenue
+- **Competitors**: Potential market share loss
+- **App developers**: New opportunities or challenges
+
+💡 **Pro Tip**: When a stock moves significantly, always ask "Why?" and try to identify which factor is most responsible. This builds your understanding of cause and effect in the market.`,
+              lesson_order: 3
+            }
+          ]
+        },
+        {
+          title: "Getting Started",
+          description: "Learn practical steps to begin your investment journey.",
+          module_order: 3,
+          lessons: [
+            {
+              title: "How to Open a Demat Account",
+              content: `# How to Open a Demat Account
+
+💼 A demat account is your gateway to stock market investing in India. Here's how to set one up quickly and easily.
+
+## What is a Demat Account?
+
+A demat (dematerialized) account holds your shares and securities in electronic form—similar to how a bank account holds your money.
+
+### Why You Need One:
+- It's required for buying and selling shares in India
+- It eliminates the risks of physical share certificates
+- It makes trading faster and more convenient
+- It provides a single view of all your investments
+
+### Key Components of Stock Market Accounts:
+
+1. **Demat Account**: Where your shares are stored
+2. **Trading Account**: Used to buy and sell securities
+3. **Bank Account**: Linked for money transfers
+
+Most brokers now offer all three as an integrated package.
+
+## Choosing the Right Broker
+
+### Types of Brokers:
+
+#### Discount Brokers
+**Pros:**
+- Lower fees (flat fee per trade, often Rs. 0-20)
+- Good for self-directed investors
+- User-friendly mobile apps
+- No relationship manager
+
+**Examples:**
+- Zerodha
+- Upstox
+- Angel One
+- Groww
+- 5paisa
+
+#### Full-Service Brokers
+**Pros:**
+- Research and advisory services
+- Relationship managers
+- Multiple investment products
+- Physical branches
+
+**Cons:**
+- Higher fees (often percentage-based)
+
+**Examples:**
+- ICICI Direct
+- HDFC Securities
+- Sharekhan
+- Kotak Securities
+
+### Factors to Consider When Choosing:
+- **Brokerage fees**: Compare cost per transaction
+- **Account maintenance charges**: Annual fees
+- **User interface**: Test the app/website
+- **Customer service**: Read reviews
+- **Additional services**: Research, tools, educational resources
+- **Account minimum**: Starting deposit requirements
+
+## Step-by-Step Process to Open a Demat Account
+
+### 1. Choose a Depository Participant (DP)
+In India, there are two depositories:
+- National Securities Depository Limited (NSDL)
+- Central Depository Services Limited (CDSL)
+
+Most popular brokers are registered with both.
+
+### 2. Collect Required Documents
+You'll need:
+- PAN card (mandatory)
+- Aadhaar card
+- Address proof (utility bill, passport, etc.)
+- Identity proof (if different from above)
+- Income proof (optional, for trading limits)
+- Bank statement or canceled cheque
+- Passport-size photographs
+
+### 3. Complete KYC Process
+KYC (Know Your Customer) can be completed in two ways:
+
+**Online Method:**
+1. Visit broker's website or download their app
+2. Select "Open an Account"
+3. Fill in personal details
+4. Upload scanned documents
+5. Complete IPV (In-Person Verification) via video call
+6. Sign digitally using Aadhaar OTP
+
+**Offline Method:**
+1. Download and fill the account opening form
+2. Attach required documents
+3. Submit to the broker's office
+4. Complete IPV in person
+
+### 4. Sign the Agreement
+- Review the broker-client agreement carefully
+- Understand the fee structure and terms
+
+### 5. Complete the Bank Account Linking
+- Provide your bank account details
+- This account will be used for transactions
+
+### 6. Receive Your Account Details
+After approval (usually 1-3 business days), you'll receive:
+- Demat account number (DP ID and Client ID)
+- Trading account ID
+- Login credentials for the trading platform
+
+### 7. Fund Your Account
+- Transfer money from your bank account
+- Most brokers offer instant funding via UPI/net banking
+
+## Costs Involved
+
+### One-Time Charges:
+- Account opening fee (many brokers now offer free opening)
+
+### Recurring Charges:
+- Annual maintenance charges (AMC): Rs. 0-750/year
+- Transaction fees:
+  - Brokerage: Varies by broker
+  - STT (Securities Transaction Tax): 0.1% on buy and sell for delivery
+  - Exchange transaction charges: Small percentage
+  - GST: 18% on brokerage and charges
+  - SEBI charges: Very minimal
+
+## Student-Specific Considerations
+
+### Advantages for Students:
+- Many brokers offer zero or discounted AMC for students
+- Lower minimum deposit requirements with student ID
+- Access to educational resources and demo accounts
+
+### Budget Options:
+- Zerodha: Rs. 0 account opening, Rs. 300/year AMC
+- Groww: Rs. 0 account opening, Rs. 0 AMC for first year
+- Angel One: Offers student discounts on request
+
+## Getting Started After Account Opening
+
+### Immediate Next Steps:
+1. Explore the trading platform
+2. Use the demo/virtual trading feature
+3. Set up watchlists for stocks you're interested in
+4. Start with small investments
+5. Set up regular deposits for disciplined investing
+
+💡 **Pro Tip for Students**: Start with a SIP (Systematic Investment Plan) in an index fund with as little as Rs. 500/month. This builds the investing habit while you learn more about individual stocks.
+
+## Common Questions for New Investors
+
+### How long does it take to open an account?
+With online KYC, as quick as 1-2 days; offline may take 3-7 days.
+
+### Can I have multiple demat accounts?
+Yes, you can open accounts with different brokers.
+
+### What if I move to a different city?
+Demat accounts are accessible online from anywhere in India.
+
+### How secure are demat accounts?
+They're regulated by SEBI and protected by multiple security layers including 2FA.`,
+              lesson_order: 1
+            },
+            {
+              title: "Picking Your First Stock",
+              content: `# Picking Your First Stock
+
+🔎 Selecting your first stock is an exciting milestone in your investment journey. Here's how to make an informed choice that balances opportunity with reasonable risk.
+
+## Start with the Right Approach
+
+Before diving into specific stocks, establish a solid foundation:
+
+### Set Realistic Expectations
+- Your first stock investment is a learning experience
+- Don't expect to get rich quickly
+- Success should be measured by what you learn, not just returns
+
+### Determine Your Investment Amount
+- Only invest money you can afford to lose
+- For students, start with a small amount (Rs. 1,000-5,000)
+- This reduces pressure and emotional decision-making
+
+### Establish a Time Horizon
+- Plan to hold for at least 1-3 years
+- Avoid day trading or short-term speculation
+- Long-term investing reduces risk and pressure
+
+## Step-by-Step Process for Stock Selection
+
+### 1. Start with What You Know
+Look at products, services, and companies you:
+- Use regularly
+- Understand how they make money
+- Have genuine interest in
+- Can explain to someone else
+
+**Examples for Students:**
+- Tech products you use daily
+- Favorite food and beverage brands
+- Retailers you shop with
+- Entertainment services you subscribe to
+
+### 2. Basic Financial Health Check
+Even for beginners, check these fundamentals:
+- **Consistent revenue growth**: Sales increasing year over year
+- **Profitability**: Company makes money (positive earnings)
+- **Manageable debt**: Not excessive compared to industry average
+- **Dividend history**: Record of shareholder payments (if applicable)
+
+### 3. Industry Analysis
+Consider the industry's health and future:
+- Is it growing or shrinking?
+- Is technology disrupting it?
+- Are there regulatory challenges?
+- How cyclical is it?
+
+### 4. Competitive Position
+Evaluate the company's standing:
+- What makes it different from competitors?
+- Does it have a "moat" (sustainable advantage)?
+- Is it a leader or follower in its industry?
+- Does it have loyal customers?
+
+### 5. Quality Management
+Research company leadership:
+- Experience and track record of the CEO
+- Longevity of key executives
+- Clear communication with shareholders
+- Ownership stake in the company
+
+## Beginner-Friendly Stock Categories
+
+### Blue-Chip Companies
+**Why they're good first picks:**
+- Established business models
+- Financial stability
+- Less volatile than smaller companies
+- Often pay dividends
+
+**Indian examples:**
+- HDFC Bank
+- Hindustan Unilever
+- TCS
+- Reliance Industries
+
+### Consumer Companies You Understand
+**Why they're good first picks:**
+- Familiar business models
+- Easy to monitor through personal experience
+- Often stable demand for products
+
+**Indian examples:**
+- Asian Paints
+- Titan Company
+- Nestle India
+- Britannia Industries
+
+### Dividend-Paying Stocks
+**Why they're good first picks:**
+- Regular income supplements growth
+- Generally more stable companies
+- Dividend provides some return even if stock price doesn't increase
+- Management discipline required to maintain dividends
+
+**Indian examples:**
+- ITC
+- Power Grid Corporation
+- Coal India
+- NTPC
+
+## Research Tools for Beginners
+
+### Free Research Sources:
+- **Screener.in**: Financial data and ratios
+- **Trendlyne**: Stock screening and analysis
+- **Tickertape**: User-friendly research platform
+- **MoneyControl**: News and basic analysis
+- **Annual reports**: Company's official communication
+
+### Key Metrics for First-Time Investors:
+- **P/E Ratio**: Price relative to earnings (lower generally means better value)
+- **Debt-to-Equity**: Lower is generally better
+- **Return on Equity**: Higher shows efficient use of capital
+- **Operating Margin**: Higher indicates pricing power
+- **Revenue Growth**: Consistent increases are positive
+
+## Common First-Stock Mistakes to Avoid
+
+### 1. Following Tips Without Research
+- Never buy based solely on someone's recommendation
+- Always do your own basic research
+- Understand why you're buying a particular stock
+
+### 2. Investing Too Much in One Stock
+- Your first stock should be a small portion of your savings
+- Don't concentrate too much in one company
+
+### 3. Expecting Quick Profits
+- Stock investing is a long-term activity
+- Short-term price movements are often random
+- Be prepared for some initial volatility
+
+### 4. Checking Prices Too Frequently
+- Daily price checks can cause anxiety and poor decisions
+- Set a schedule (perhaps weekly or monthly) to review
+
+### 5. Buying What's "Hot" Right Now
+- Trendy stocks often come with inflated prices
+- Yesterday's winners aren't necessarily tomorrow's winners
+
+## A Practical Approach for Students
+
+### Consider the "Start Small, Learn Big" Method:
+1. Begin with Rs. 2,000-5,000 in a well-known company
+2. Document your reasons for choosing the stock
+3. Set up a regular schedule to review company news
+4. Keep a journal of your thoughts and emotions
+5. Add small amounts on a regular basis if possible
+
+## After Buying Your First Stock
+
+### Next Steps:
+1. Set up a simple tracking system
+2. Create price alerts (but don't obsess over daily movements)
+3. Follow company news and quarterly reports
+4. Join online communities to learn from others
+5. Plan your next investment to start building a diversified portfolio
+
+💡 **Pro Tip**: Your first stock purchase is about learning the process as much as making money. Even if the investment doesn't perform well, the knowledge gained will be valuable for your future investment decisions.`,
+              lesson_order: 2
+            },
+            {
+              title: "How Much Money Should You Start With?",
+              content: `# How Much Money Should You Start With?
+
+💸 Finding the right amount to begin investing is one of the most common questions for students and new investors.
+
+## The Minimum to Get Started
+
+### Technical Minimums
+In India, you can start investing in the stock market with very little money:
+- **Stocks**: As low as Rs. 10-20 for some penny stocks
+- **Mutual Funds**: SIPs starting at Rs. 100-500 monthly
+- **ETFs**: One unit cost (varies, but some under Rs. 50)
+- **Demat account**: Many brokers now offer zero balance accounts
+
+### Practical Minimums
+While you *can* start with tiny amounts, a more practical minimum would be:
+- **For direct stocks**: Rs. 2,000-5,000
+- **For mutual funds**: Rs. 500-1,000 monthly SIP
+- **For a diversified portfolio**: Rs. 10,000-15,000
+
+## Factors to Consider When Deciding
+
+### 1. Your Financial Situation
+Start by answering these questions:
+- Do you have an emergency fund? (Create this before investing)
+- What are your regular expenses?
+- Do you have any high-interest debt? (Pay this off first)
+- What is your regular income? (Scholarship, part-time job, allowance)
+
+### 2. Your Investment Goals
+Different goals might require different starting amounts:
+- Learning experience: Can start very small
+- Saving for short-term goals (1-3 years): Moderate amount
+- Long-term wealth building: Regular contributions matter more than initial amount
+
+### 3. Transaction Costs
+Always consider the costs associated with investing:
+- Brokerage fees
+- Account maintenance charges
+- Transaction taxes (STT, etc.)
+- Too small an investment might mean fees eat a large percentage
+
+## Student-Specific Considerations
+
+### Budget Allocation for Student Investors
+If you receive Rs. 5,000 monthly (scholarship/allowance/part-time work):
+
+| Allocation | Example |
+|------------|---------|
+| Emergency Fund | Rs. 1,500 (30%) |
+| Education Expenses | Rs. 2,000 (40%) |
+| Living Expenses | Rs. 1,000 (20%) |
+| Investments | Rs. 500 (10%) |
+
+### Building Up Gradually
+A progressive approach for students:
+
+**Month 1-3**: Learn the basics, open accounts, paper trade
+**Month 4-6**: Start with Rs. 500 monthly in an index fund
+**Month 7-12**: Increase to Rs. 1,000 monthly, consider adding individual stocks
+**Year 2+**: Gradually increase as income grows
+
+## Investment Approaches Based on Starting Amount
+
+### Under Rs. 1,000
+Best options:
+- Index fund SIPs (Rs. 500 monthly)
+- Fractional shares (if your broker offers them)
+- Micro-investing apps
+
+Focus on:
+- Building the habit of regular investing
+- Learning the investing process
+- Understanding market movements
+
+### Rs. 1,000-5,000
+Best options:
+- Mutual fund SIPs across 2-3 funds
+- 1-2 blue-chip stocks
+- ETFs tracking major indices
+
+Focus on:
+- Basic diversification
+- Regular contributions
+- Understanding company financials
+
+### Rs. 5,000-10,000
+Best options:
+- Portfolio of 3-5 stocks
+- Combination of mutual funds and direct stocks
+- Different asset classes (mostly equity with some debt)
+
+Focus on:
+- Sector diversification
+- Risk management
+- Portfolio tracking
+
+### Rs. 10,000+
+Best options:
+- Diversified portfolio of 8-10 stocks
+- Strategic asset allocation
+- Combination of growth and value investments
+
+Focus on:
+- Portfolio construction principles
+- Rebalancing strategies
+- Long-term planning
+
+## The Psychological Aspect
+
+### Finding Your "Sleep Well" Amount
+The ideal starting amount should be:
+- Large enough to feel meaningful and motivate learning
+- Small enough that temporary losses don't cause stress
+- An amount that, if completely lost, wouldn't impact your education or living situation
+
+### The "Coffee Money" Approach
+Consider investing money you might otherwise spend on:
+- Movie tickets
+- Eating out
+- Premium app subscriptions
+- Impulse purchases
+
+Many students find they can redirect Rs. 500-1,000 monthly this way.
+
+## Common Questions from Student Investors
+
+### "I only have Rs. 500. Should I wait until I have more?"
+No! Start now with an index fund SIP. The habit and experience are more valuable than waiting.
+
+### "Should I save up for a larger amount before starting?"
+Generally not advisable. Time in the market beats timing the market. Start small and consistent.
+
+### "What if I make a mistake with my first investment?"
+That's part of learning! Keep your initial amounts small enough that mistakes become affordable lessons.
+
+### "Should I invest a lump sum or monthly amounts?"
+As a student, monthly investments (SIPs) are usually better:
+- Reduces timing risk
+- Builds discipline
+- Matches student cash flow patterns
+
+## Action Steps Based on Your Situation
+
+### If You Have Very Limited Funds:
+1. Open a zero-cost demat account
+2. Start with a Rs. 100-500 monthly SIP in an index fund
+3. Use remaining time to learn and research
+
+### If You Have Some Savings:
+1. Allocate 60-70% to a diversified mutual fund
+2. Use 20-30% for 1-2 blue-chip stocks you understand
+3. Keep 10-20% in cash for future opportunities
+
+### If You Have Regular Income:
+1. Determine a fixed percentage (10-20%) for investing
+2. Set up automatic transfers on income dates
+3. Gradually build a diversified portfolio over time
+
+💡 **Pro Tip**: The amount you start with matters far less than starting early and continuing consistently. A small monthly investment throughout your college years can grow into a significant amount by graduation.`,
+              lesson_order: 3
+            }
+          ]
+        },
+        {
+          title: "Smart Investment Strategies",
+          description: "Learn about diversification, long-term versus short-term investing, and using news and trends for decision-making.",
+          module_order: 4,
+          lessons: [
+            {
+              title: "Diversification and Risk",
+              content: `# Diversification and Risk
+
+🛡️ Diversification is one of the most powerful risk management tools available to investors—especially important for students with limited capital.
+
+## Understanding Investment Risk
+
+Risk in investing refers to the possibility that actual returns will differ from expected returns—including the potential to lose some or all of your investment.
+
+### Types of Risk in Stock Investing
+
+#### 1. Company-Specific Risk
+- Management changes or mistakes
+- Product failures
+- Competition
+- Financial problems
+- Scandals or lawsuits
+
+#### 2. Industry Risk
+- Regulatory changes
+- Technological disruption
+- Changing consumer preferences
+- Commodity price fluctuations
+
+#### 3. Market Risk
+- Overall market downturns
+- Interest rate changes
+- Economic recessions
+- Political events
+- Global crises
+
+#### 4. Inflation Risk
+- Purchasing power of returns decreasing over time
+- Return rates lower than inflation
+
+## What is Diversification?
+
+Diversification means spreading your investments across different assets to reduce risk without significantly reducing potential returns.
+
+> "Don't put all your eggs in one basket."
+
+This simple principle is powerful because:
+- Different investments react differently to the same event
+- Losses in one area may be offset by gains in another
+- It reduces the impact of any single investment failing
+
+## How to Diversify Your Portfolio
+
+### 1. Across Individual Companies
+**Basic level:** Own 10-15 different stocks
+**Benefits:** Reduces company-specific risk
+**Example:** Instead of investing Rs. 10,000 in one company, invest Rs. 1,000 each in 10 companies.
+
+### 2. Across Sectors/Industries
+**Basic level:** Invest in 5-7 different sectors
+**Benefits:** Reduces industry risk
+**Example:** Include companies from technology, finance, healthcare, consumer goods, and utilities.
+
+### 3. Across Market Caps
+**Basic level:** Mix large, mid, and small-cap stocks
+**Benefits:** Different growth and stability profiles
+**Example:** 60% large-cap, 30% mid-cap, 10% small-cap
+
+### 4. Across Asset Classes
+**Basic level:** Include stocks, bonds, and cash equivalents
+**Benefits:** Different asset classes perform differently in various economic conditions
+**Example:** 70% stocks, 20% bonds, 10% cash (for students with long time horizons)
+
+### 5. Across Geographies
+**Basic level:** Include domestic and international investments
+**Benefits:** Reduces country-specific risks
+**Example:** 70% Indian investments, 30% international exposure
+
+## Diversification for Students with Limited Funds
+
+### Option 1: Use Mutual Funds
+- **Index Funds**: One purchase gives exposure to entire markets
+- **Diversified Equity Funds**: Professional managers create diversification
+- **Fund of Funds**: Invest in multiple mutual funds
+
+**Example Strategy:**
+- Nifty 50 Index Fund: Rs. 500/month
+- Flexicap Fund: Rs. 500/month
+- International Fund: Rs. 500/month
+
+### Option 2: ETF-Based Approach
+ETFs (Exchange Traded Funds) trade like stocks but contain diversified holdings
+
+**Example Strategy:**
+- Large-cap ETF (e.g., Nifty BeES): 50%
+- Mid-cap ETF: 30%
+- Gold ETF: 20%
+
+### Option 3: Progressive Diversification
+Start with 1-2 positions and add over time as savings increase
+
+**Example Strategy:**
+- Month 1-3: Index fund only
+- Month 4-6: Add one blue-chip stock
+- Month 7-12: Add one different sector stock
+- Year 2: Add international exposure
+- Continue building positions gradually
+
+## Diversification Mistakes to Avoid
+
+### 1. Over-Diversification
+- Owning too many positions (e.g., 50+ individual stocks)
+- Makes tracking difficult
+- Returns may become average at best
+- May indicate lack of conviction
+
+### 2. False Diversification
+- Owning multiple companies that move identically
+- Example: Five different banks instead of different sectors
+- Correlation matters more than number of positions
+
+### 3. Ignoring Costs
+- Trading costs from frequent rebalancing
+- Fund expenses eroding returns
+- Tax implications of diversification changes
+
+### 4. Diversifying Too Quickly
+- Not researching each position adequately
+- Buying too many positions at once
+- Difficulty tracking and understanding portfolio
+
+## How Much Diversification is Enough?
+
+Research suggests that:
+- Most company-specific risk is eliminated with 15-20 stocks
+- Additional diversification benefits diminish after 25-30 stocks
+- Sector diversification requires at least 5-7 industries
+- Some international exposure provides substantial benefits
+
+## Understanding the Risk-Return Tradeoff
+
+Most investments follow a basic principle: higher potential returns come with higher risk.
+
+| Type of Investment | Potential Return | Risk Level | Diversification Role |
+|-------------------|-----------------|-----------|---------------------|
+| Cash/Fixed Deposits | 3-5% | Very Low | Safety, liquidity |
+| Government Bonds | 5-8% | Low | Income, stability |
+| Large-cap Stocks | 10-12% | Moderate | Core holdings |
+| Mid-cap Stocks | 12-15% | Moderate-High | Growth potential |
+| Small-cap Stocks | 15%+ | High | Aggressive growth |
+| International Stocks | Varies | Moderate-High | Geographic diversification |
+
+## Measuring and Adjusting Risk in Your Portfolio
+
+### 1. Standard Deviation
+- Measures volatility (price swings)
+- Higher standard deviation = more volatile
+- Most mutual fund factsheets include this metric
+
+### 2. Beta
+- Measures sensitivity to market movements
+- Beta > 1: More volatile than market
+- Beta < 1: Less volatile than market
+
+### 3. Drawdown
+- Maximum drop from peak to trough
+- Shows worst-case scenario historically
+
+## Practical Diversification Tips for Students
+
+### 1. Start Simple
+- Begin with index funds or well-diversified mutual funds
+- Add individual positions gradually as you learn more
+- Focus on quality over quantity
+
+### 2. Rebalance Periodically
+- Review portfolio 2-4 times per year
+- Rebalance when allocations drift significantly
+- Use new contributions to rebalance (to avoid selling)
+
+### 3. Diversify Your Information Sources
+- Read various perspectives and opinions
+- Follow analysts with different viewpoints
+- Consider both bullish and bearish cases
+
+💡 **Pro Tip**: As a student investor, your greatest asset is time. Proper diversification combined with a long time horizon allows you to take appropriate risks while protecting your growing portfolio.`,
+              lesson_order: 1
+            },
+            {
+              title: "Long-term vs Short-term Investing",
+              content: `# Long-term vs Short-term Investing
+
+⏰ Understanding the differences between long-term and short-term investing approaches is crucial for developing your personal investment strategy.
+
+## Defining Time Horizons
+
+### Short-term Investing
+- **Timeframe**: Less than 1-2 years
+- **Focus**: Price movements, momentum, timing
+- **Goal**: Quick profits, capital preservation
+
+### Medium-term Investing
+- **Timeframe**: 2-5 years
+- **Focus**: Company growth prospects, valuation
+- **Goal**: Balanced growth, specific financial targets
+
+### Long-term Investing
+- **Timeframe**: 5+ years, often decades
+- **Focus**: Business quality, competitive advantages
+- **Goal**: Wealth building, compound growth
+
+## Comparing the Approaches
+
+| Aspect | Short-term | Long-term |
+|--------|------------|-----------|
+| Research Focus | Charts, momentum, news | Fundamentals, competitive position |
+| Time Commitment | High (frequent monitoring) | Low (occasional review) |
+| Transaction Costs | Higher (more trades) | Lower (fewer trades) |
+| Tax Efficiency | Lower (short-term gains) | Higher (long-term capital gains) |
+| Stress Level | Typically higher | Typically lower |
+| Skill Required | Technical analysis, timing | Business analysis, patience |
+
+## The Power of Long-term Investing
+
+### Compound Growth
+The longer you stay invested, the more powerful compounding becomes:
+
+**Example:**
+Rs. 10,000 invested with 12% annual returns:
+- After 1 year: Rs. 11,200 (gain: Rs. 1,200)
+- After 5 years: Rs. 17,623 (gain: Rs. 7,623)
+- After 10 years: Rs. 31,058 (gain: Rs. 21,058)
+- After 20 years: Rs. 96,463 (gain: Rs. 86,463)
+- After 30 years: Rs. 299,599 (gain: Rs. 289,599)
+
+Notice how the gains accelerate dramatically in later years.
+
+### Riding Out Market Volatility
+Historically, markets have always risen over long periods despite short-term drops:
+
+- Probability of positive returns in Indian equity markets:
+  - 1-day period: ~52% (barely better than a coin flip)
+  - 1-year period: ~70%
+  - 5-year period: ~85%
+  - 10-year period: ~95%
+  - 15+ year period: Nearly 100%
+
+### Lower Costs and Taxes
+Long-term investing benefits from:
+- Fewer transaction costs
+- Lower tax rates on long-term capital gains
+- Less time spent monitoring investments
+
+## When Short-term Strategies Make Sense
+
+Short-term approaches can be appropriate for:
+
+### 1. Specific Financial Goals
+- Saving for expenses 1-2 years away
+- Building a house down payment fund
+- Creating an emergency fund
+
+### 2. Tactical Opportunities
+- Special situations (mergers, acquisitions)
+- Temporary market dislocations
+- Sector rotations in economic cycles
+
+### 3. Learning Purposes
+- Developing market understanding
+- Testing investment theories
+- Building investing skills
+
+## Investment Vehicles by Time Horizon
+
+### Short-term (<2 years)
+- High-yield savings accounts
+- Fixed deposits
+- Liquid funds
+- Ultra-short duration debt funds
+- Arbitrage funds
+
+### Medium-term (2-5 years)
+- Balanced mutual funds
+- Index funds
+- Blue-chip stocks
+- Corporate bonds
+- Hybrid funds
+
+### Long-term (5+ years)
+- Diversified equity portfolios
+- Growth-oriented mutual funds
+- Quality companies with moats
+- Equity-oriented asset allocation
+
+## Student Advantage: The Ultimate Long-term Horizon
+
+As a student, you have a unique advantage: time. Starting in your late teens or early twenties gives you:
+
+- 40+ years of potential compounding
+- Ability to take more growth-oriented risks
+- Time to learn from investment mistakes
+- Opportunity to build habits that last a lifetime
+
+**The Power of Starting Early:**
+Two investors, both targeting retirement at 60:
+- Student who invests Rs. 5,000/month from age 20-30 (10 years) and then stops
+- Professional who invests Rs. 5,000/month from age 30-60 (30 years)
+
+**Result at age 60 (assuming 12% returns):**
+- Student: Rs. 1.59 crore (invested only Rs. 6 lakhs)
+- Professional: Rs. 1.48 crore (invested Rs. 18 lakhs)
+
+The student invested only 1/3 as much money but ended with more!
+
+## Creating a Balanced Approach
+
+Most successful investors combine elements of both timeframes:
+
+### Core and Satellite Strategy
+- **Core portfolio (80%)**: Long-term, buy-and-hold investments
+- **Satellite positions (20%)**: Tactical, shorter-term opportunities
+
+### Time-Based Asset Allocation
+Allocate investments based on when you'll need the money:
+- Short-term needs: Conservative investments
+- Medium-term goals: Balanced approach
+- Long-term growth: Aggressive growth assets
+
+### Laddering Approach
+Creating investments with staggered maturity dates:
+- Some money accessible in the short term
+- Some invested for medium-term growth
+- Some positioned for maximum long-term return
+
+## Common Mistakes to Avoid
+
+### Short-term Investor Mistakes
+- Trading too frequently
+- Chasing "hot tips" and trends
+- Ignoring transaction costs
+- Emotional buying and selling
+- Getting distracted by market noise
+
+### Long-term Investor Mistakes
+- "Set and forget" without periodic review
+- Holding onto losing investments too long
+- Not rebalancing occasionally
+- Ignoring fundamental business changes
+- Being too patient with underperforming assets
+
+## How to Develop Your Time Horizon Strategy
+
+### 1. Understand Your Goals
+List your financial goals and their timeframes:
+- Education expenses: 1-4 years
+- First home down payment: 5-7 years
+- Retirement: 30+ years
+
+### 2. Match Investments to Timeframes
+Align risk levels with when you'll need the money:
+- Short-term needs: Safety first
+- Long-term growth: Accept volatility for returns
+
+### 3. Create a Mixed Approach
+For students, a reasonable mix might be:
+- 70% long-term growth investments
+- 20% medium-term balanced investments
+- 10% short-term safety/opportunity fund
+
+### 4. Document Your Strategy
+Write down your approach to refer to during market turbulence.
+
+💡 **Pro Tip for Students**: Take advantage of your long time horizon by focusing primarily on quality growth investments while you're young. As you get older and your financial needs evolve, you can gradually shift to a more balanced approach.`,
+              lesson_order: 2
+            },
+            {
+              title: "Using News & Trends for Smart Decisions",
+              content: `# Using News & Trends for Smart Decisions
+
+📰 Learning how to interpret financial news and market trends can significantly improve your investment decision-making.
+
+## The Role of News in Investing
+
+News influences markets in several ways:
+- Providing new information about companies and economies
+- Shaping investor sentiment and emotions
+- Creating short-term trading opportunities
+- Signaling long-term shifts in industries or markets
+
+### Types of Financial News to Follow
+
+#### 1. Company-Specific News
+- Earnings announcements
+- Management changes
+- New product launches
+- Partnerships or acquisitions
+- Legal or regulatory issues
+
+#### 2. Industry News
+- Sector-wide trends
+- Regulatory changes
+- Technology disruptions
+- Competitive dynamics
+
+#### 3. Macroeconomic News
+- GDP growth rates
+- Inflation data
+- Interest rate decisions
+- Employment figures
+- Government policies
+
+#### 4. Global Events
+- Geopolitical developments
+- Trade agreements or tensions
+- Natural disasters
+- Health crises (like pandemics)
+
+## Distinguishing Signal from Noise
+
+Not all news deserves your attention or reaction:
+
+### What Usually Matters (Signal)
+- Significant changes in company fundamentals
+- Structural shifts in industries
+- Major policy changes affecting multiple sectors
+- Sustained economic trends
+
+### What Often Doesn't Matter (Noise)
+- Daily market movements
+- Short-term price predictions
+- Pundit opinions and "hot tips"
+- Sensationalized headlines
+- Much of social media financial content
+
+## Reliable vs. Unreliable Sources
+
+### Generally Reliable Sources
+- Company filings and official statements
+- Reputable financial publications
+- Research from established institutions
+- Data from government and regulatory bodies
+- Industry-specific trade publications
+
+### Exercise Caution With
+- Social media tips and trends
+- Investment "gurus" with extreme predictions
+- Platforms with revenue from subscriptions or clicks
+- Sources with undisclosed conflicts of interest
+- Anonymous online recommendations
+
+## How Different News Affects Different Investments
+
+### Blue-Chip Stocks
+- Less affected by short-term news
+- More sensitive to interest rate changes
+- Impacted by major economic policy shifts
+
+### Growth Stocks
+- Highly sensitive to earnings reports
+- Significantly affected by interest rate news
+- Reactive to growth projection changes
+
+### Value Stocks
+- Less volatile to general market news
+- More sensitive to turnaround developments
+- Affected by sector-specific regulatory changes
+
+### Small-Cap Stocks
+- Can be dramatically moved by single news items
+- Less analyst coverage means news has bigger impact
+- More sensitive to liquidity and funding news
+
+## Reading Beyond the Headlines
+
+### Step 1: Identify the Source
+- Who is reporting this information?
+- What is their track record for accuracy?
+- Do they have any potential biases?
+
+### Step 2: Understand the Context
+- Is this an isolated event or part of a pattern?
+- How does it compare to historical situations?
+- What's the broader context around this news?
+
+### Step 3: Consider Multiple Perspectives
+- How are different sources interpreting the same news?
+- What are the bull and bear cases?
+- What might the consensus be missing?
+
+### Step 4: Evaluate Actual Impact
+- How does this affect the company's earnings potential?
+- Is this a short-term or long-term development?
+- Does it change your investment thesis?
+
+## Using News for Investment Decisions
+
+### 1. Creating a News Filter System
+Develop a personal system to filter information:
+- Set up Google Alerts for your investments
+- Follow specific journalists or analysts known for quality
+- Use news aggregators to see diverse perspectives
+- Schedule regular times to review news (avoid constant checking)
+
+### 2. Developing a Response Framework
+Not all news requires action. Consider this framework:
+
+| News Type | Potential Response |
+|-----------|-------------------|
+| Minor daily news | No action, just awareness |
+| Earnings surprises | Compare to your expectations, evaluate impact on thesis |
+| Major company changes | Reassess your investment case |
+| Macroeconomic shifts | Consider portfolio allocation adjustments |
+| Black swan events | Avoid panic selling, consider buying opportunities |
+
+### 3. Maintaining a News Journal
+Keep a simple record of significant news and your thoughts:
+- Date and news item
+- Your initial reaction
+- Decision made (if any)
+- Follow-up note (was your reaction correct?)
+
+This creates accountability and helps improve your news interpretation skills.
+
+## Identifying Important Trends
+
+### 1. Secular vs. Cyclical Trends
+**Secular trends:** Long-term shifts that continue regardless of economic cycles
+- Digital transformation
+- Aging demographics
+- Climate change adaptation
+- Financial inclusion
+
+**Cyclical trends:** Repeat with economic expansions and contractions
+- Consumer discretionary spending
+- Business capital expenditure
+- Commodity prices
+- Employment levels
+
+### 2. Trend Identification Tools
+- Moving averages (50-day, 200-day)
+- Trend lines on price charts
+- Industry growth rate comparisons
+- Diffusion indices (like PMI)
+
+### 3. Trend Confirmation Signals
+Look for multiple confirmations:
+- Price action consistent with the trend
+- Volume supporting the movement
+- Breadth (how many stocks are participating)
+- Cross-asset confirmation (related assets moving similarly)
+
+## Common News Interpretation Mistakes
+
+### 1. Recency Bias
+Giving too much importance to recent news while ignoring long-term patterns.
+**Solution:** Maintain a long-term perspective and historical context.
+
+### 2. Confirmation Bias
+Seeking news that confirms existing beliefs while ignoring contradictory information.
+**Solution:** Deliberately seek opposing viewpoints.
+
+### 3. Narrative Fallacy
+Creating simple stories to explain complex market movements.
+**Solution:** Accept that many factors influence markets simultaneously.
+
+### 4. Action Bias
+Feeling compelled to trade on news when doing nothing might be better.
+**Solution:** Have pre-defined criteria for when news justifies action.
+
+## Student-Specific News Strategy
+
+As a student investor with limited time and resources:
+
+### 1. Focus on Quality Over Quantity
+- 15 minutes of high-quality financial news is better than hours of noise
+- One thorough earnings report review beats skimming dozens
+
+### 2. Use Technology Wisely
+- Set up alerts for only your most important holdings
+- Use news aggregators that filter for significance
+- Consider AI summaries of lengthy financial reports
+
+### 3. Develop Academic Discipline
+- Apply critical thinking skills from your studies
+- Question assertions and look for evidence
+- Practice patience and long-term thinking
+
+### 4. Start with the Macro Picture
+- Understand the current economic environment
+- Know where we are in the business cycle
+- Then focus on industries, then individual companies
+
+💡 **Pro Tip**: Create a simple weekly ritual—perhaps Sunday evening—to review the past week's significant news and prepare for the week ahead. This disciplined approach prevents daily news from becoming overwhelming while keeping you informed enough to make good decisions.`,
+              lesson_order: 3
+            }
+          ]
+        }
+      ]
+    };
+    
+    console.log("Starting to create courses...");
+    
+    // Create AI Tools course if it doesn't exist
+    const aiToolsExists = await courseExists("AI Tools for Students");
+    if (!aiToolsExists) {
+      console.log("Creating AI Tools for Students course...");
+      await createCourse(aiToolsCourse);
     }
     
-    // Create modules and lessons for Stock Market course
-    if (stockCourse && stockCourse.length > 0) {
-      const stockCourseId = stockCourse[0].id;
-      
-      for (const module of stockMarketCourseData.modules) {
-        // Create module
-        const { data: createdModule, error: moduleError } = await supabase
-          .from('course_modules')
-          .insert([
-            {
-              course_id: stockCourseId,
-              title: module.title,
-              description: module.description,
-              module_order: module.module_order,
-              content: ''
-            }
-          ])
-          .select();
-          
-        if (moduleError) throw moduleError;
-        console.log(`Created module: ${module.title}`);
-        
-        if (createdModule && createdModule.length > 0) {
-          const moduleId = createdModule[0].id;
-          
-          // Update module with lessons as content
-          for (const lesson of module.lessons) {
-            // Create user progress records if there's a user provided
-            if (userId) {
-              await supabase
-                .from('user_progress')
-                .insert([
-                  {
-                    user_id: userId,
-                    module_id: moduleId,
-                    completed: false
-                  }
-                ]);
-            }
-            
-            // Add lesson content to module
-            await supabase
-              .from('course_modules')
-              .update({ content: lesson.content })
-              .eq('id', moduleId);
-              
-            console.log(`Added content to module: ${module.title}`);
-          }
-        }
-      }
+    // Create Stock Market course if it doesn't exist
+    const stockMarketExists = await courseExists("Introduction to Stock Investment");
+    if (!stockMarketExists) {
+      console.log("Creating Introduction to Stock Investment course...");
+      await createCourse(stockMarketCourse);
     }
     
-    console.log('Course initialization complete!');
-    
+    console.log("Course initialization complete!");
   } catch (error) {
-    console.error('Error initializing app data:', error);
-    throw error;
+    console.error("Error in initializeAppData:", error);
   }
 };
