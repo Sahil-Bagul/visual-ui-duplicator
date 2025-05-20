@@ -1,29 +1,85 @@
 
-# A string used as a secret key for functions
-# Note: This can be generated using `openssl rand -hex 32`
-project_id = "jepeeykyoouhaqhondcq"
+# This file is used by Supabase CLI to manage your project
+# Visit https://supabase.com/docs/reference/cli to learn more
 
-[api]
-enabled = true
-port = 54321
-schemas = ["public", "storage", "graphql_public"]
+[project]
+name = "learnandearn"
+organizationId = ""
 
-[db]
-port = 54322
-
-[studio]
-enabled = true
-port = 54323
-
-[storage]
-enabled = true
-
-[auth]
-enabled = true
-
-[realtime]
-enabled = true
+# Define RPC functions for course modules and user progress
+[[functions]]
+name = "get_course_modules"
+verbosity = "debug"
+verify_jwt = true
+schema = "public"
+language = "sql"
+definition = """
+CREATE OR REPLACE FUNCTION public.get_course_modules(course_id_param UUID)
+RETURNS SETOF public.course_modules
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT * FROM public.course_modules WHERE course_id = course_id_param;
+$$;
+"""
 
 [[functions]]
-name = "get-course-url"
+name = "get_user_progress"
+verbosity = "debug"
 verify_jwt = true
+schema = "public"
+language = "sql"
+definition = """
+CREATE OR REPLACE FUNCTION public.get_user_progress(user_id_param UUID, course_id_param UUID)
+RETURNS SETOF public.user_progress
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  SELECT up.* FROM public.user_progress up
+  JOIN public.course_modules cm ON up.module_id = cm.id
+  WHERE up.user_id = user_id_param AND cm.course_id = course_id_param;
+$$;
+"""
+
+[[functions]]
+name = "update_user_progress"
+verbosity = "debug"
+verify_jwt = true
+schema = "public" 
+language = "sql"
+definition = """
+CREATE OR REPLACE FUNCTION public.update_user_progress(progress_id_param UUID, completed_param BOOLEAN)
+RETURNS public.user_progress
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  UPDATE public.user_progress
+  SET completed = completed_param,
+      completed_at = CASE WHEN completed_param THEN CURRENT_TIMESTAMP ELSE completed_at END
+  WHERE id = progress_id_param
+  RETURNING *;
+$$;
+"""
+
+[[functions]]
+name = "create_user_progress"
+verbosity = "debug"
+verify_jwt = true
+schema = "public"
+language = "sql"
+definition = """
+CREATE OR REPLACE FUNCTION public.create_user_progress(user_id_param UUID, module_id_param UUID, completed_param BOOLEAN)
+RETURNS public.user_progress
+LANGUAGE sql
+SECURITY DEFINER
+AS $$
+  INSERT INTO public.user_progress (user_id, module_id, completed, completed_at)
+  VALUES (
+    user_id_param,
+    module_id_param,
+    completed_param,
+    CASE WHEN completed_param THEN CURRENT_TIMESTAMP ELSE NULL END
+  )
+  RETURNING *;
+$$;
+"""

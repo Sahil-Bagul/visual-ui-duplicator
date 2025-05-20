@@ -9,6 +9,7 @@ import { BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Module } from '@/types/course';
 
 interface Course {
   id: string;
@@ -16,12 +17,6 @@ interface Course {
   description: string;
   price: number;
   referral_reward: number;
-}
-
-interface Module {
-  id: string;
-  title: string;
-  module_order: number;
 }
 
 const CourseDetail: React.FC = () => {
@@ -54,13 +49,23 @@ const CourseDetail: React.FC = () => {
         
         // Fetch course modules (just titles for preview)
         const { data: modulesData, error: modulesError } = await supabase
-          .from('course_modules')
-          .select('id, title, module_order')
-          .eq('course_id', id)
-          .order('module_order', { ascending: true });
+          .rpc('get_course_modules', { course_id_param: id });
           
-        if (modulesError) throw modulesError;
-        setModules(modulesData);
+        if (modulesError) {
+          console.error("Error fetching modules via RPC:", modulesError);
+          
+          // Fallback to direct query
+          const { data: directModulesData, error: directModulesError } = await supabase
+            .from('course_modules')
+            .select('id, title, module_order')
+            .eq('course_id', id)
+            .order('module_order', { ascending: true });
+            
+          if (directModulesError) throw directModulesError;
+          setModules(directModulesData as Module[]);
+        } else {
+          setModules(modulesData as Module[]);
+        }
         
         // Check if user has purchased this course
         if (user) {

@@ -9,7 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, BookOpen, CheckCircle } from 'lucide-react';
-import { CourseWithProgress } from '@/types/course';
+import { CourseWithProgress, Module } from '@/types/course';
 
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
@@ -42,30 +42,43 @@ const MyCourses: React.FC = () => {
           purchasedCourses.map(async (course) => {
             // Get modules for this course
             const { data: modulesData, error: modulesError } = await supabase
-              .from('course_modules')
-              .select('*')
-              .eq('course_id', course.id)
-              .order('module_order', { ascending: true });
+              .rpc('get_course_modules', { course_id_param: course.id });
               
-            if (modulesError) throw modulesError;
+            let modules: Module[] = [];
+            
+            if (modulesError) {
+              console.error("Error fetching modules via RPC:", modulesError);
+              
+              // Fallback to direct query
+              const { data: directModulesData, error: directModulesError } = await supabase
+                .from('course_modules')
+                .select('*')
+                .eq('course_id', course.id)
+                .order('module_order', { ascending: true });
+                
+              if (directModulesError) throw directModulesError;
+              modules = directModulesData as Module[];
+            } else {
+              modules = modulesData as Module[];
+            }
             
             // Get user progress for this course's modules
             const { data: progressData, error: progressError } = await supabase
               .from('user_progress')
               .select('*')
               .eq('user_id', user.id)
-              .in('module_id', modulesData.map(module => module.id));
+              .in('module_id', modules.map(module => module.id));
               
             if (progressError) throw progressError;
             
             // Calculate progress
-            const totalModules = modulesData.length;
+            const totalModules = modules.length;
             const completedModules = progressData.filter(p => p.completed).length;
             const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
             
             return {
               ...course,
-              modules: modulesData,
+              modules,
               totalModules,
               completedModules,
               progress
