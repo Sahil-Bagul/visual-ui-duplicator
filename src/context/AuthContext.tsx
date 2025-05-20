@@ -41,7 +41,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Initialize app data with courses if user is logged in
         if (session?.user) {
-          await initializeAppData(session.user.id);
+          await initializeAppData();
         }
       }
       
@@ -56,7 +56,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         // Initialize app data with courses if user is logged in
         if (session?.user) {
-          await initializeAppData(session.user.id);
+          await initializeAppData();
         }
       }
     );
