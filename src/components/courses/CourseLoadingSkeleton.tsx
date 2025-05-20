@@ -17,13 +17,13 @@ const CourseLoadingSkeleton: React.FC<CourseLoadingSkeletonProps> = ({ count = 2
               <Skeleton className="h-4 w-full mb-1" />
               <Skeleton className="h-4 w-2/3" />
             </div>
-            <Skeleton className="h-6 w-20 rounded-full" />
+            <Skeleton className="h-5 w-20 rounded-full" />
           </div>
           
           <div className="mt-auto pt-4">
             <div className="flex justify-between items-center">
               <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-9 w-20 rounded" />
+              <Skeleton className="h-9 w-24 rounded" />
             </div>
           </div>
         </div>
