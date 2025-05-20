@@ -18,6 +18,7 @@ import Referrals from "./pages/Referrals";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
+import Admin from "./pages/Admin";
 
 const queryClient = new QueryClient();
 
@@ -44,6 +45,7 @@ const App = () => (
               <Route path="/referrals" element={<Referrals />} />
               <Route path="/profile" element={<Profile />} />
               <Route path="/wallet" element={<Wallet />} />
+              <Route path="/admin" element={<Admin />} />
             </Route>
             
             {/* Catch-all route */}
