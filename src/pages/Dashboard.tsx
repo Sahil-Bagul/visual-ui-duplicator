@@ -6,13 +6,14 @@ import Footer from '@/components/layout/Footer';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
 import CourseCard from '@/components/courses/CourseCard';
 import CourseProgressCard from '@/components/dashboard/CourseProgressCard';
+import CourseLoadingSkeleton from '@/components/courses/CourseLoadingSkeleton';
+import InitializationButton from '@/components/admin/InitializationButton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
 import { CourseWithProgress } from '@/types/course';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
 
 interface Course {
   id: string;
@@ -159,10 +160,13 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4">
-        <WelcomeCard 
-          userName={user?.user_metadata?.name || 'User'} 
-          walletBalance={walletBalance} 
-        />
+        <div className="flex justify-between items-center mb-4">
+          <WelcomeCard 
+            userName={user?.user_metadata?.name || 'User'} 
+            walletBalance={walletBalance} 
+          />
+          <InitializationButton />
+        </div>
         
         {/* Error display */}
         {error && (
@@ -178,8 +182,7 @@ const Dashboard: React.FC = () => {
           <section className="mt-8">
             <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Your Learning Progress</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <Skeleton className="h-40 w-full rounded-lg" />
-              <Skeleton className="h-40 w-full rounded-lg" />
+              <CourseLoadingSkeleton type="progress" count={2} />
             </div>
           </section>
         ) : enrolledCourses.length > 0 ? (
@@ -206,8 +209,7 @@ const Dashboard: React.FC = () => {
           
           {isLoading ? (
             <div className="flex gap-6 max-md:flex-col">
-              <Skeleton className="h-64 w-full rounded-lg" />
-              <Skeleton className="h-64 w-full rounded-lg" />
+              <CourseLoadingSkeleton count={2} />
             </div>
           ) : allCourses.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 text-center">

@@ -52,7 +52,7 @@ const CourseLoadingSkeleton: React.FC<CourseLoadingSkeletonProps> = ({
           <div className="mt-auto pt-4">
             <div className="flex justify-between items-center">
               <Skeleton className="h-5 w-16" />
-              <Skeleton className="h-9 w-20 rounded" />
+              <Skeleton className="h-9 w-24 rounded" />
             </div>
           </div>
         </div>

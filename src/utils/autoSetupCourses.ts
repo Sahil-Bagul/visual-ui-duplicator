@@ -157,161 +157,201 @@ const getStockMarketCourseModules = () => {
   ];
 };
 
-// Function to find a course by title
-const findCourseByTitle = async (title: string) => {
-  console.log(`Looking for course with title: "${title}"`);
+// Function to create or get the courses
+const createOrGetCourses = async () => {
+  console.log("Starting course setup process...");
   
-  const { data: courses, error } = await supabase
-    .from('courses')
-    .select('*')
-    .eq('title', title);
+  try {
+    // Attempt to create AI Tools course if it doesn't exist
+    const { data: aiToolsCourseExists, error: aiToolsCheckError } = await supabase
+      .from('courses')
+      .select('id')
+      .eq('title', 'AI Tools for Students')
+      .single();
     
-  if (error) {
-    console.error("Error finding course by title:", error);
-    return null;
+    let aiToolsCourseId;
+    
+    if (aiToolsCheckError && aiToolsCheckError.code === 'PGRST116') {
+      // Course doesn't exist, create it
+      console.log("Creating AI Tools course...");
+      const { data: newAiToolsCourse, error: createAiToolsError } = await supabase
+        .from('courses')
+        .insert({
+          title: 'AI Tools for Students',
+          description: 'Useful AI tools for students to enhance their academic performance',
+          price: 500,
+          referral_reward: 250
+        })
+        .select()
+        .single();
+      
+      if (createAiToolsError) {
+        console.error("Error creating AI Tools course:", createAiToolsError);
+        throw createAiToolsError;
+      }
+      
+      aiToolsCourseId = newAiToolsCourse.id;
+      console.log("AI Tools course created with ID:", aiToolsCourseId);
+    } else if (aiToolsCheckError) {
+      console.error("Error checking for AI Tools course:", aiToolsCheckError);
+      throw aiToolsCheckError;
+    } else {
+      aiToolsCourseId = aiToolsCourseExists.id;
+      console.log("Found existing AI Tools course with ID:", aiToolsCourseId);
+    }
+    
+    // Attempt to create Stock Market course if it doesn't exist
+    const { data: stockMarketCourseExists, error: stockMarketCheckError } = await supabase
+      .from('courses')
+      .select('id')
+      .eq('title', 'Stock Market Basics')
+      .single();
+    
+    let stockMarketCourseId;
+    
+    if (stockMarketCheckError && stockMarketCheckError.code === 'PGRST116') {
+      // Course doesn't exist, create it
+      console.log("Creating Stock Market course...");
+      const { data: newStockMarketCourse, error: createStockMarketError } = await supabase
+        .from('courses')
+        .insert({
+          title: 'Stock Market Basics',
+          description: 'Simple, practical stock investing guide for beginners',
+          price: 1000,
+          referral_reward: 500
+        })
+        .select()
+        .single();
+      
+      if (createStockMarketError) {
+        console.error("Error creating Stock Market course:", createStockMarketError);
+        throw createStockMarketError;
+      }
+      
+      stockMarketCourseId = newStockMarketCourse.id;
+      console.log("Stock Market course created with ID:", stockMarketCourseId);
+    } else if (stockMarketCheckError) {
+      console.error("Error checking for Stock Market course:", stockMarketCheckError);
+      throw stockMarketCheckError;
+    } else {
+      stockMarketCourseId = stockMarketCourseExists.id;
+      console.log("Found existing Stock Market course with ID:", stockMarketCourseId);
+    }
+    
+    return { aiToolsCourseId, stockMarketCourseId };
+  } catch (error) {
+    console.error("Error in createOrGetCourses:", error);
+    throw error;
   }
-  
-  if (!courses || courses.length === 0) {
-    console.log(`Course with title "${title}" not found`);
-    return null;
-  }
-  
-  console.log(`Course found:`, courses[0]);
-  return courses[0];
 };
 
-// Check if a course already has modules
-const courseHasModules = async (courseId: string) => {
-  console.log(`Checking if course with ID ${courseId} has modules`);
-  
-  const { data: modules, error } = await supabase
-    .from('course_modules')
-    .select('id')
-    .eq('course_id', courseId)
-    .limit(1);
-    
-  if (error) {
-    console.error("Error checking course modules:", error);
-    return false;
-  }
-  
-  const hasModules = modules && modules.length > 0;
-  console.log(`Course ${courseId} has modules: ${hasModules}`);
-  return hasModules;
-};
-
-// Create modules and lessons for a course
+// Function to create modules and lessons for a course
 const createCourseContent = async (courseId: string, modules: any[]) => {
   console.log(`Creating content for course ${courseId} with ${modules.length} modules`);
   
-  for (const moduleData of modules) {
-    // Create the module
-    const { data: moduleRecord, error: moduleError } = await supabase
+  try {
+    // Check if modules already exist to avoid duplicates
+    const { data: existingModules, error: checkError } = await supabase
       .from('course_modules')
-      .insert({
-        course_id: courseId,
-        title: moduleData.title,
-        description: moduleData.description,
-        content: moduleData.content,
-        module_order: moduleData.module_order
-      })
-      .select();
-      
-    if (moduleError || !moduleRecord) {
-      console.error("Error creating module:", moduleError);
-      continue; // Skip to next module if there was an error
+      .select('id, title')
+      .eq('course_id', courseId);
+    
+    if (checkError) {
+      console.error("Error checking existing modules:", checkError);
+      throw checkError;
     }
     
-    const moduleId = moduleRecord[0].id;
-    console.log(`Created module with ID ${moduleId}`);
+    const existingModuleTitles = existingModules?.map(module => module.title) || [];
+    console.log(`Found ${existingModuleTitles.length} existing modules for course ${courseId}`);
     
-    // Create lessons for this module
-    if (moduleData.lessons && moduleData.lessons.length > 0) {
-      for (const lessonData of moduleData.lessons) {
-        const { error: lessonError } = await supabase
-          .from('lessons')
-          .insert({
-            module_id: moduleId,
-            title: lessonData.title,
-            content: lessonData.content,
-            lesson_order: lessonData.lesson_order
-          });
+    for (const moduleData of modules) {
+      // Skip if module with same title already exists
+      if (existingModuleTitles.includes(moduleData.title)) {
+        console.log(`Module "${moduleData.title}" already exists, skipping...`);
+        continue;
+      }
+      
+      // Create the module
+      console.log(`Creating module: ${moduleData.title}`);
+      const { data: moduleRecord, error: moduleError } = await supabase
+        .from('course_modules')
+        .insert({
+          course_id: courseId,
+          title: moduleData.title,
+          description: moduleData.description,
+          content: moduleData.content,
+          module_order: moduleData.module_order
+        })
+        .select();
+      
+      if (moduleError) {
+        console.error(`Error creating module ${moduleData.title}:`, moduleError);
+        continue; // Skip to next module if there was an error
+      }
+      
+      if (!moduleRecord || moduleRecord.length === 0) {
+        console.error(`No module record returned for ${moduleData.title}`);
+        continue;
+      }
+      
+      const moduleId = moduleRecord[0].id;
+      console.log(`Successfully created module with ID: ${moduleId}`);
+      
+      // Create lessons for this module
+      if (moduleData.lessons && moduleData.lessons.length > 0) {
+        for (const lessonData of moduleData.lessons) {
+          console.log(`Creating lesson: ${lessonData.title}`);
+          const { error: lessonError } = await supabase
+            .from('lessons')
+            .insert({
+              module_id: moduleId,
+              title: lessonData.title,
+              content: lessonData.content,
+              lesson_order: lessonData.lesson_order
+            });
           
-        if (lessonError) {
-          console.error("Error creating lesson:", lessonError);
-        } else {
-          console.log(`Created lesson: ${lessonData.title}`);
+          if (lessonError) {
+            console.error(`Error creating lesson "${lessonData.title}":`, lessonError);
+          } else {
+            console.log(`Successfully created lesson: ${lessonData.title}`);
+          }
         }
       }
     }
+    
+    console.log(`Finished creating content for course ${courseId}`);
+    return true;
+  } catch (error) {
+    console.error(`Error creating course content for course ${courseId}:`, error);
+    return false;
   }
-  
-  console.log(`Finished creating content for course ${courseId}`);
 };
 
-// Setup course content if needed
+// Main function to initialize the app data
 export const initializeAppData = async () => {
   try {
     console.log("Starting app data initialization...");
     
-    // First, check if each course exists and create content if needed
+    // Create or get courses
+    const { aiToolsCourseId, stockMarketCourseId } = await createOrGetCourses();
     
-    // 1. AI Tools Course
-    const aiToolsCourseTitles = ["AI Tools Mastery", "AI Tools for Students"];
-    let aiToolsCourse = null;
+    // Check if content already exists and create if needed
+    console.log("Starting content creation for AI Tools course...");
+    await createCourseContent(aiToolsCourseId, getAIToolsCourseModules());
     
-    // Try both potential titles
-    for (const title of aiToolsCourseTitles) {
-      const course = await findCourseByTitle(title);
-      if (course) {
-        aiToolsCourse = course;
-        console.log(`Found AI Tools course with title: ${title}`);
-        break;
-      }
-    }
+    console.log("Starting content creation for Stock Market course...");
+    await createCourseContent(stockMarketCourseId, getStockMarketCourseModules());
     
-    if (aiToolsCourse) {
-      const hasModules = await courseHasModules(aiToolsCourse.id);
-      if (!hasModules) {
-        console.log("AI Tools course exists but has no modules. Creating content...");
-        await createCourseContent(aiToolsCourse.id, getAIToolsCourseModules());
-      } else {
-        console.log("AI Tools course already has modules. Skipping content creation.");
-      }
-    } else {
-      console.log("AI Tools course not found in database.");
-    }
-    
-    // 2. Stock Market Course
-    const stockMarketCourseTitles = ["Stock Market Fundamentals", "Stock Market Basics"];
-    let stockMarketCourse = null;
-    
-    // Try both potential titles
-    for (const title of stockMarketCourseTitles) {
-      const course = await findCourseByTitle(title);
-      if (course) {
-        stockMarketCourse = course;
-        console.log(`Found Stock Market course with title: ${title}`);
-        break;
-      }
-    }
-    
-    if (stockMarketCourse) {
-      const hasModules = await courseHasModules(stockMarketCourse.id);
-      if (!hasModules) {
-        console.log("Stock Market course exists but has no modules. Creating content...");
-        await createCourseContent(stockMarketCourse.id, getStockMarketCourseModules());
-      } else {
-        console.log("Stock Market course already has modules. Skipping content creation.");
-      }
-    } else {
-      console.log("Stock Market course not found in database.");
-    }
-    
-    // Log a summary
-    console.log("App data initialization complete.");
-    
+    console.log("App data initialization complete successfully!");
+    return { success: true };
   } catch (error) {
     console.error("Error during app data initialization:", error);
+    return { success: false, error };
   }
+};
+
+// Function to trigger initialization manually if needed
+export const triggerInitialization = async () => {
+  console.log("Manually triggering data initialization...");
+  return await initializeAppData();
 };

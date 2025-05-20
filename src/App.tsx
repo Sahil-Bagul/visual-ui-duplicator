@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -36,8 +37,9 @@ const App = () => {
   useEffect(() => {
     const setupCourses = async () => {
       try {
-        await initializeAppData();
-        console.log("App data initialization complete");
+        console.log("Starting app initialization...");
+        const result = await initializeAppData();
+        console.log("App initialization result:", result);
       } catch (error) {
         console.error("Error initializing app data:", error);
       } finally {
@@ -48,10 +50,16 @@ const App = () => {
     setupCourses();
   }, []);
 
+  // Show a simple loading indicator during initialization
   if (isInitializing) {
-    // Optional: You could show a simple loading indicator here
-    // But keeping it minimal to avoid another loading state
-    return null;
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600 text-lg">Setting up your courses...</p>
+        </div>
+      </div>
+    );
   }
 
   return (
