@@ -1,9 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { BookOpen } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -14,11 +16,17 @@ interface Course {
   description: string;
   price: number;
   referral_reward: number;
-  pdf_url?: string;
+}
+
+interface Module {
+  id: string;
+  title: string;
+  module_order: number;
 }
 
 const CourseDetail: React.FC = () => {
   const [course, setCourse] = useState<Course | null>(null);
+  const [modules, setModules] = useState<Module[]>([]);
   const [referralCode, setReferralCode] = useState('');
   const [isLoading, setIsLoading] = useState(true);
   const [isPurchased, setIsPurchased] = useState(false);
@@ -43,6 +51,16 @@ const CourseDetail: React.FC = () => {
           
         if (courseError) throw courseError;
         setCourse(courseData);
+        
+        // Fetch course modules (just titles for preview)
+        const { data: modulesData, error: modulesError } = await supabase
+          .from('course_modules')
+          .select('id, title, module_order')
+          .eq('course_id', id)
+          .order('module_order', { ascending: true });
+          
+        if (modulesError) throw modulesError;
+        setModules(modulesData);
         
         // Check if user has purchased this course
         if (user) {
@@ -124,16 +142,27 @@ const CourseDetail: React.FC = () => {
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
             <div className="inline-flex items-center text-blue-600">
-              <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg" className="mr-1">
-                <path d="M10 4.5V16.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M3 14C2.73478 14 2.48043 13.8946 2.29289 13.7071C2.10536 13.5196 2 13.2652 2 13V3C2 2.73478 2.10536 2.48043 2.29289 2.29289C2.48043 2.10536 2.73478 2 3 2H7C7.79565 2 8.55871 2.31607 9.12132 2.87868C9.68393 3.44129 10 4.20435 10 5C10 4.20435 10.3161 3.44129 10.8787 2.87868C11.4413 2.31607 12.2044 2 13 2H17C17.2652 2 17.5196 2.10536 17.7071 2.29289C17.8946 2.48043 18 2.73478 18 3V13C18 13.2652 17.8946 13.5196 17.7071 13.7071C17.5196 13.8946 17.2652 14 17 14H13C12.2044 14 11.4413 13.6839 10.8787 13.1213C10.3161 12.5587 10 11.7956 10 11C10 11.7956 9.68393 12.5587 9.12132 13.1213C8.55871 13.6839 7.79565 14 7 14H3Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-              </svg>
-              <span className="text-sm">PDF Course</span>
+              <BookOpen size={20} className="mr-1" />
+              <span className="text-sm">Web Course</span>
             </div>
           </div>
 
           <div className="mb-6 text-gray-600">
             <p className="mb-4">{course.description}</p>
+          </div>
+
+          <div className="mb-6">
+            <h2 className="text-lg font-semibold text-gray-800 mb-3">What You'll Learn</h2>
+            <ul className="space-y-2">
+              {modules.map((module) => (
+                <li key={module.id} className="flex items-start">
+                  <span className="inline-flex items-center justify-center h-5 w-5 rounded-full bg-blue-100 text-blue-800 text-xs mr-2 mt-0.5">
+                    {module.module_order}
+                  </span>
+                  <span className="text-gray-700">{module.title}</span>
+                </li>
+              ))}
+            </ul>
           </div>
 
           <div className="border-t border-gray-200 my-6"></div>
@@ -143,8 +172,12 @@ const CourseDetail: React.FC = () => {
               <div className="bg-green-50 p-4 rounded-lg border border-green-100 mb-4">
                 <p className="text-green-700 font-medium">You've already purchased this course</p>
               </div>
-              <Button className="bg-blue-600 hover:bg-blue-700 mr-2" onClick={() => navigate('/my-courses')}>View in My Courses</Button>
-              <Button variant="outline" onClick={() => navigate('/referrals')}>Manage Referrals</Button>
+              <Button className="bg-blue-600 hover:bg-blue-700 mr-2" onClick={() => navigate(`/course-content/${course.id}`)}>
+                Continue Learning
+              </Button>
+              <Button variant="outline" onClick={() => navigate('/referrals')}>
+                Manage Referrals
+              </Button>
             </div>
           ) : (
             <div className="flex flex-col mb-6">

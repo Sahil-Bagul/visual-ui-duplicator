@@ -11,6 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import MyCourses from "./pages/MyCourses";
 import CourseDetail from "./pages/CourseDetail";
+import CourseContent from "./pages/CourseContent";
 import Payment from "./pages/Payment";
 import PaymentSuccess from "./pages/PaymentSuccess";
 import Referrals from "./pages/Referrals";
@@ -37,6 +38,7 @@ const App = () => (
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/my-courses" element={<MyCourses />} />
               <Route path="/course/:id" element={<CourseDetail />} />
+              <Route path="/course-content/:courseId" element={<CourseContent />} />
               <Route path="/payment" element={<Payment />} />
               <Route path="/payment-success" element={<PaymentSuccess />} />
               <Route path="/referrals" element={<Referrals />} />

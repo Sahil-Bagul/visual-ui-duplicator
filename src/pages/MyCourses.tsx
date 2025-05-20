@@ -4,23 +4,16 @@ import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
+import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download } from 'lucide-react';
-
-interface Course {
-  id: string;
-  title: string;
-  description: string;
-  price: number;
-  pdf_url?: string;
-}
+import { Loader2, BookOpen, CheckCircle } from 'lucide-react';
+import { CourseWithProgress } from '@/types/course';
 
 const MyCourses: React.FC = () => {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -34,16 +27,53 @@ const MyCourses: React.FC = () => {
         setIsLoading(true);
         
         // Get user's purchased courses
-        const { data, error } = await supabase
+        const { data: purchasesData, error: purchasesError } = await supabase
           .from('purchases')
           .select('course:courses(*)')
           .eq('user_id', user.id);
           
-        if (error) throw error;
+        if (purchasesError) throw purchasesError;
         
         // Extract course data from the join
-        const purchasedCourses = data?.map(item => item.course as Course) || [];
-        setCourses(purchasedCourses);
+        const purchasedCourses = purchasesData?.map(item => item.course) || [];
+        
+        // For each course, fetch modules and user progress
+        const coursesWithProgress = await Promise.all(
+          purchasedCourses.map(async (course) => {
+            // Get modules for this course
+            const { data: modulesData, error: modulesError } = await supabase
+              .from('course_modules')
+              .select('*')
+              .eq('course_id', course.id)
+              .order('module_order', { ascending: true });
+              
+            if (modulesError) throw modulesError;
+            
+            // Get user progress for this course's modules
+            const { data: progressData, error: progressError } = await supabase
+              .from('user_progress')
+              .select('*')
+              .eq('user_id', user.id)
+              .in('module_id', modulesData.map(module => module.id));
+              
+            if (progressError) throw progressError;
+            
+            // Calculate progress
+            const totalModules = modulesData.length;
+            const completedModules = progressData.filter(p => p.completed).length;
+            const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+            
+            return {
+              ...course,
+              modules: modulesData,
+              totalModules,
+              completedModules,
+              progress
+            };
+          })
+        );
+        
+        setCourses(coursesWithProgress);
         
       } catch (error) {
         console.error("Error fetching courses:", error);
@@ -60,39 +90,8 @@ const MyCourses: React.FC = () => {
     fetchMyCourses();
   }, [user, toast]);
 
-  const handleDownload = async (course: Course) => {
-    if (!user) return;
-    
-    setDownloadingId(course.id);
-    
-    try {
-      // Call the edge function to get a signed URL
-      const { data, error } = await supabase.functions.invoke('get-course-url', {
-        body: { user_id: user.id, course_id: course.id },
-      });
-      
-      if (error) throw error;
-      
-      // Open the URL in a new tab
-      if (data?.url) {
-        window.open(data.url, '_blank');
-        toast({
-          title: "Download Started",
-          description: `Your PDF for ${course.title} should download shortly.`,
-        });
-      } else {
-        throw new Error('No download URL returned');
-      }
-    } catch (error) {
-      console.error("Download error:", error);
-      toast({
-        title: "Download Failed",
-        description: "Could not download the course PDF. Please try again later.",
-        variant: "destructive"
-      });
-    } finally {
-      setDownloadingId(null);
-    }
+  const handleContinueCourse = (courseId: string) => {
+    navigate(`/course-content/${courseId}`);
   };
 
   return (
@@ -114,28 +113,30 @@ const MyCourses: React.FC = () => {
                     <h2 className="text-xl font-semibold text-gray-800 mb-2">{course.title}</h2>
                     <p className="text-gray-600 text-sm mb-4">{course.description}</p>
                   </div>
-                  <div className="bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-xs font-semibold">
-                    PDF Course
+                  <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-xs font-semibold">
+                    <BookOpen className="w-3.5 h-3.5" />
+                    <span>Web Course</span>
                   </div>
+                </div>
+                
+                <div className="mb-6">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm font-medium text-gray-700">
+                      Progress: {course.completedModules}/{course.totalModules} modules
+                    </span>
+                    <span className="text-sm font-medium text-gray-700">
+                      {course.progress}%
+                    </span>
+                  </div>
+                  <Progress value={course.progress} className="h-2" />
                 </div>
                 
                 <div className="flex flex-wrap gap-3">
                   <Button 
-                    onClick={() => handleDownload(course)}
+                    onClick={() => handleContinueCourse(course.id)}
                     className="bg-[#4F46E5] hover:bg-blue-700"
-                    disabled={downloadingId === course.id}
                   >
-                    {downloadingId === course.id ? (
-                      <>
-                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                        Downloading...
-                      </>
-                    ) : (
-                      <>
-                        <Download className="w-5 h-5 mr-2" />
-                        Download PDF
-                      </>
-                    )}
+                    {course.progress > 0 ? "Continue Learning" : "Start Learning"}
                   </Button>
                   <Button 
                     variant="outline"

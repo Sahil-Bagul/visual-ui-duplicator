@@ -2,11 +2,14 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
 import CourseCard from '@/components/courses/CourseCard';
+import CourseProgressCard from '@/components/dashboard/CourseProgressCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { Module, CourseWithProgress } from '@/types/course';
 
 interface Course {
   id: string;
@@ -15,13 +18,10 @@ interface Course {
   price: number;
 }
 
-interface Purchase {
-  course_id: string;
-}
-
 const Dashboard: React.FC = () => {
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [allCourses, setAllCourses] = useState<Course[]>([]);
   const [purchasedCourses, setPurchasedCourses] = useState<string[]>([]);
+  const [enrolledCourses, setEnrolledCourses] = useState<CourseWithProgress[]>([]);
   const [walletBalance, setWalletBalance] = useState<number>(0);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -38,7 +38,7 @@ const Dashboard: React.FC = () => {
           .select('*');
           
         if (coursesError) throw coursesError;
-        setCourses(coursesData || []);
+        setAllCourses(coursesData || []);
         
         // Fetch user's purchased courses
         if (user) {
@@ -48,7 +48,59 @@ const Dashboard: React.FC = () => {
             .eq('user_id', user.id);
             
           if (purchasesError) throw purchasesError;
-          setPurchasedCourses((purchasesData || []).map(purchase => purchase.course_id));
+          const courseIds = (purchasesData || []).map(purchase => purchase.course_id);
+          setPurchasedCourses(courseIds);
+          
+          // For each purchased course, get progress data
+          if (courseIds.length > 0) {
+            // Get all modules for purchased courses
+            const { data: modulesData, error: modulesError } = await supabase
+              .from('course_modules')
+              .select('*')
+              .in('course_id', courseIds);
+              
+            if (modulesError) throw modulesError;
+            
+            // Get user progress
+            const { data: progressData, error: progressError } = await supabase
+              .from('user_progress')
+              .select('*')
+              .eq('user_id', user.id)
+              .in('module_id', modulesData.map((module: Module) => module.id));
+              
+            if (progressError) throw progressError;
+            
+            // Group modules by course
+            const modulesByCourse: Record<string, Module[]> = {};
+            modulesData.forEach((module: Module) => {
+              if (!modulesByCourse[module.course_id]) {
+                modulesByCourse[module.course_id] = [];
+              }
+              modulesByCourse[module.course_id].push(module);
+            });
+            
+            // Calculate progress for each course
+            const coursesWithProgress: CourseWithProgress[] = coursesData
+              .filter(course => courseIds.includes(course.id))
+              .map(course => {
+                const modules = modulesByCourse[course.id] || [];
+                const totalModules = modules.length;
+                const completedModules = progressData.filter(
+                  (p: any) => modules.some(m => m.id === p.module_id) && p.completed
+                ).length;
+                const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+                
+                return {
+                  ...course,
+                  modules,
+                  totalModules,
+                  completedModules,
+                  progress
+                };
+              });
+              
+            setEnrolledCourses(coursesWithProgress);
+          }
           
           // Fetch wallet balance
           const { data: walletData, error: walletError } = await supabase
@@ -93,6 +145,19 @@ const Dashboard: React.FC = () => {
           walletBalance={walletBalance} 
         />
         
+        {/* User's enrolled courses with progress */}
+        {enrolledCourses.length > 0 && (
+          <section className="mt-8">
+            <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Your Learning Progress</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {enrolledCourses.map(course => (
+                <CourseProgressCard key={course.id} course={course} />
+              ))}
+            </div>
+          </section>
+        )}
+        
+        {/* Available courses */}
         <section className="mt-8">
           <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Available Courses</h2>
           
@@ -102,13 +167,13 @@ const Dashboard: React.FC = () => {
             </div>
           ) : (
             <div className="flex gap-6 max-md:flex-col">
-              {courses.map((course) => (
+              {allCourses.map((course) => (
                 <CourseCard
                   key={course.id}
                   title={course.title}
                   description={course.description}
                   price={course.price}
-                  type="PDF Course"
+                  type="Web Course"
                   onClick={() => handleCourseClick(course.id)}
                   isPurchased={purchasedCourses.includes(course.id)}
                 />
@@ -117,6 +182,7 @@ const Dashboard: React.FC = () => {
           )}
         </section>
       </main>
+      <Footer />
     </div>
   );
 };
