@@ -9,7 +9,7 @@ import CourseProgressCard from '@/components/dashboard/CourseProgressCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
-import { Module, CourseWithProgress } from '@/types/course';
+import { Module, CourseWithProgress, GetCourseModulesResponse } from '@/types/course';
 
 interface Course {
   id: string;
@@ -57,9 +57,9 @@ const Dashboard: React.FC = () => {
               coursesData
                 .filter(course => courseIds.includes(course.id))
                 .map(async (course) => {
-                  // Get modules for this course
+                  // Get modules for this course using RPC
                   const { data: modulesData, error: modulesError } = await supabase
-                    .rpc('get_course_modules', { course_id_param: course.id });
+                    .rpc<GetCourseModulesResponse>('get_course_modules', { course_id_param: course.id });
                     
                   let modules: Module[] = [];
                   

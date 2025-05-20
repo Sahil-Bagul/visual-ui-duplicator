@@ -19,7 +19,7 @@ RETURNS SETOF public.course_modules
 LANGUAGE sql
 SECURITY DEFINER
 AS $$
-  SELECT * FROM public.course_modules WHERE course_id = course_id_param;
+  SELECT * FROM public.course_modules WHERE course_id = course_id_param ORDER BY module_order ASC;
 $$;
 """
 

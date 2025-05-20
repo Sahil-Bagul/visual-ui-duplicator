@@ -8,8 +8,12 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, BookOpen, CheckCircle } from 'lucide-react';
-import { CourseWithProgress, Module } from '@/types/course';
+import { BookOpen } from 'lucide-react';
+import { 
+  CourseWithProgress, 
+  Module,
+  GetCourseModulesResponse
+} from '@/types/course';
 
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
@@ -40,9 +44,9 @@ const MyCourses: React.FC = () => {
         // For each course, fetch modules and user progress
         const coursesWithProgress = await Promise.all(
           purchasedCourses.map(async (course) => {
-            // Get modules for this course
+            // Get modules for this course using RPC
             const { data: modulesData, error: modulesError } = await supabase
-              .rpc('get_course_modules', { course_id_param: course.id });
+              .rpc<GetCourseModulesResponse>('get_course_modules', { course_id_param: course.id });
               
             let modules: Module[] = [];
             
