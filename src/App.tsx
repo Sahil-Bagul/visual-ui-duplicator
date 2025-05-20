@@ -18,54 +18,41 @@ import Referrals from "./pages/Referrals";
 import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
-import { useEffect } from "react";
-import { initializeAppData } from "./utils/autoSetupCourses";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  // Automatically initialize app data on first load
-  useEffect(() => {
-    const setupCourses = async () => {
-      await initializeAppData(undefined);
-    };
-    
-    setupCourses();
-  }, []);
-  
-  return (
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <BrowserRouter>
-          <AuthProvider>
-            <Toaster />
-            <Sonner />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Auth />} />
-              <Route path="/policies" element={<Policies />} />
-              
-              {/* Protected routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/my-courses" element={<MyCourses />} />
-                <Route path="/course/:id" element={<CourseDetail />} />
-                <Route path="/course-content/:courseId" element={<CourseContent />} />
-                <Route path="/payment" element={<Payment />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route path="/referrals" element={<Referrals />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/wallet" element={<Wallet />} />
-              </Route>
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </AuthProvider>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  );
-};
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <BrowserRouter>
+        <AuthProvider>
+          <Toaster />
+          <Sonner />
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Auth />} />
+            <Route path="/policies" element={<Policies />} />
+            
+            {/* Protected routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/my-courses" element={<MyCourses />} />
+              <Route path="/course/:id" element={<CourseDetail />} />
+              <Route path="/course-content/:courseId" element={<CourseContent />} />
+              <Route path="/payment" element={<Payment />} />
+              <Route path="/payment-success" element={<PaymentSuccess />} />
+              <Route path="/referrals" element={<Referrals />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/wallet" element={<Wallet />} />
+            </Route>
+            
+            {/* Catch-all route */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </AuthProvider>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
 export default App;
