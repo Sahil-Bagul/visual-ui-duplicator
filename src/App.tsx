@@ -59,7 +59,8 @@ const App = () => {
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
           <div className="w-16 h-16 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-600 text-lg">Setting up your courses...</p>
+          <p className="text-gray-600 text-lg">Setting up enhanced course content...</p>
+          <p className="text-gray-400 text-sm mt-2">This may take a moment</p>
         </div>
       </div>
     );

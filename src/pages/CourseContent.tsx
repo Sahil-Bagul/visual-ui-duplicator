@@ -1,15 +1,16 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import ModuleContent from '@/components/courses/CourseContent';
+import ModulesList from '@/components/courses/ModulesList';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Module, UserProgress } from '@/types/course';
-import { Check, ChevronLeft, ChevronRight, BookOpen, CheckCircle } from 'lucide-react';
+import { Module, UserProgress, Lesson } from '@/types/course';
 
 const CourseContent: React.FC = () => {
   const { courseId } = useParams<{ courseId: string }>();
@@ -17,6 +18,8 @@ const CourseContent: React.FC = () => {
   const [modules, setModules] = useState<Module[]>([]);
   const [userProgress, setUserProgress] = useState<UserProgress[]>([]);
   const [activeModule, setActiveModule] = useState<Module | null>(null);
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isMarkingComplete, setIsMarkingComplete] = useState(false);
   
@@ -63,7 +66,7 @@ const CourseContent: React.FC = () => {
         if (courseError) throw courseError;
         setCourseTitle(courseData.title);
         
-        // Get modules for this course using direct query
+        // Get modules for this course
         const { data: modulesData, error: modulesError } = await supabase
           .from('course_modules')
           .select('*')
@@ -78,22 +81,22 @@ const CourseContent: React.FC = () => {
           // Set the first module as active if no active module
           if (modulesData.length > 0 && !activeModule) {
             setActiveModule(modulesData[0] as Module);
+            
+            // Fetch lessons for this module
+            fetchLessons(modulesData[0].id);
           }
         }
         
         // Get user progress
-        if (modules.length > 0) {
-          const { data: progressData, error: progressError } = await supabase
-            .from('user_progress')
-            .select('*')
-            .eq('user_id', user.id)
-            .in('module_id', modules.map(m => m.id));
+        const { data: progressData, error: progressError } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', user.id);
               
-          if (progressError) throw progressError;
+        if (progressError) throw progressError;
             
-          if (progressData) {
-            setUserProgress(progressData as UserProgress[]);
-          }
+        if (progressData) {
+          setUserProgress(progressData as UserProgress[]);
         }
         
       } catch (error) {
@@ -109,10 +112,62 @@ const CourseContent: React.FC = () => {
     };
     
     fetchCourseData();
-  }, [user, courseId, toast, navigate, activeModule]);
+  }, [user, courseId, toast, navigate]);
+
+  const fetchLessons = async (moduleId: string) => {
+    try {
+      setLessons([]);
+      
+      const { data, error } = await supabase
+        .from('lessons')
+        .select('*')
+        .eq('module_id', moduleId)
+        .order('lesson_order', { ascending: true });
+        
+      if (error) throw error;
+      
+      if (data && data.length > 0) {
+        setLessons(data as Lesson[]);
+        
+        // Set the first lesson as active if there's no active lesson
+        if (!activeLessonId) {
+          setActiveLessonId(data[0].id);
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching lessons:", error);
+      toast({
+        title: "Error",
+        description: "Failed to load lessons for this module",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleModuleSelect = (module: Module) => {
+    setActiveModule(module);
+    setActiveLessonId(null);
+    fetchLessons(module.id);
+  };
+  
+  const handleLessonSelect = (lesson: Lesson) => {
+    setActiveLessonId(lesson.id);
+  };
 
   const isModuleCompleted = (moduleId: string) => {
-    return userProgress.some(p => p.module_id === moduleId && p.completed);
+    const moduleLessons = lessons.filter(lesson => lesson.module_id === moduleId);
+    const completedLessons = userProgress.filter(p => 
+      p.module_id === moduleId && 
+      p.completed
+    );
+    
+    return moduleLessons.length > 0 && completedLessons.length === moduleLessons.length;
+  };
+  
+  const getLessonCompletionStatus = () => {
+    return userProgress
+      .filter(p => p.lesson_id && p.completed)
+      .map(p => p.lesson_id as string);
   };
 
   const getModuleProgress = () => {
@@ -128,87 +183,121 @@ const CourseContent: React.FC = () => {
     };
   };
 
-  const navigateToModule = (direction: 'next' | 'prev') => {
-    if (!activeModule || !modules.length) return;
-    
-    const currentIndex = modules.findIndex(m => m.id === activeModule.id);
-    let newIndex;
-    
-    if (direction === 'next') {
-      newIndex = Math.min(currentIndex + 1, modules.length - 1);
-    } else {
-      newIndex = Math.max(currentIndex - 1, 0);
-    }
-    
-    setActiveModule(modules[newIndex]);
-  };
-
   const handleMarkAsComplete = async () => {
-    if (!user || !activeModule) return;
+    if (!user || !activeModule || !activeLessonId) return;
     
     setIsMarkingComplete(true);
     
     try {
-      // Check if progress record exists
-      const existingProgress = userProgress.find(p => p.module_id === activeModule.id);
+      // Check if progress record exists for this lesson
+      const existingLessonProgress = userProgress.find(p => p.lesson_id === activeLessonId);
       
-      if (existingProgress) {
-        // Update existing record directly
-        const { error: directError } = await supabase
+      if (existingLessonProgress) {
+        // Update existing record
+        const { error: updateError } = await supabase
           .from('user_progress')
           .update({ 
             completed: true,
             completed_at: new Date().toISOString()
           })
-          .eq('id', existingProgress.id);
+          .eq('id', existingLessonProgress.id);
             
-        if (directError) throw directError;
+        if (updateError) throw updateError;
       } else {
-        // Create new progress record directly
-        const { data: directData, error: directError } = await supabase
+        // Create new progress record for lesson
+        const { data: lessonProgressData, error: lessonProgressError } = await supabase
           .from('user_progress')
           .insert({
             user_id: user.id,
+            lesson_id: activeLessonId,
             module_id: activeModule.id,
             completed: true,
             completed_at: new Date().toISOString()
           })
           .select();
             
-        if (directError) throw directError;
-          
+        if (lessonProgressError) throw lessonProgressError;
+        
         // Add new progress to local state
-        if (directData && directData.length > 0) {
-          setUserProgress(prev => [...prev, directData[0] as UserProgress]);
+        if (lessonProgressData && lessonProgressData.length > 0) {
+          setUserProgress(prev => [...prev, lessonProgressData[0] as UserProgress]);
         }
       }
       
-      toast({
-        title: "Module Completed",
-        description: "Your progress has been saved",
-      });
+      // Also check if this completes the module
+      const moduleLessons = lessons.filter(lesson => lesson.module_id === activeModule.id);
+      const updatedCompletedLessons = [
+        ...userProgress.filter(p => p.lesson_id && p.completed).map(p => p.lesson_id as string),
+        activeLessonId
+      ];
+      
+      const allLessonsCompleted = moduleLessons.every(lesson => 
+        updatedCompletedLessons.includes(lesson.id)
+      );
+      
+      // If all lessons are completed, mark the module as completed too
+      if (allLessonsCompleted) {
+        // Check if module progress record exists
+        const existingModuleProgress = userProgress.find(
+          p => p.module_id === activeModule.id && !p.lesson_id
+        );
+        
+        if (existingModuleProgress) {
+          // Update existing module progress
+          await supabase
+            .from('user_progress')
+            .update({ 
+              completed: true,
+              completed_at: new Date().toISOString()
+            })
+            .eq('id', existingModuleProgress.id);
+        } else {
+          // Create new module progress record
+          const { data: moduleProgressData } = await supabase
+            .from('user_progress')
+            .insert({
+              user_id: user.id,
+              module_id: activeModule.id,
+              lesson_id: null,
+              completed: true,
+              completed_at: new Date().toISOString()
+            })
+            .select();
+          
+          // Update local state
+          if (moduleProgressData && moduleProgressData.length > 0) {
+            setUserProgress(prev => [...prev, moduleProgressData[0] as UserProgress]);
+          }
+        }
+        
+        // Show special message for module completion
+        toast({
+          title: "Module Completed!",
+          description: "Congratulations on completing this module!",
+          variant: "default"
+        });
+      } else {
+        // Show lesson completion message
+        toast({
+          title: "Lesson Completed",
+          description: "Your progress has been saved",
+        });
+      }
       
       // Refresh user progress data
       const { data: refreshedProgress, error } = await supabase
         .from('user_progress')
         .select('*')
-        .eq('user_id', user.id)
-        .in('module_id', modules.map(m => m.id));
+        .eq('user_id', user.id);
         
       if (refreshedProgress) {
         setUserProgress(refreshedProgress as UserProgress[]);
       }
       
-      // If this is the last module, show special message
-      const isLastModule = activeModule.module_order === modules.length;
-      if (isLastModule) {
-        toast({
-          title: "Congratulations!",
-          description: "You've completed the entire course!",
-        });
-      } else {
-        // Navigate to next module
-        navigateToModule('next');
+      // Automatically move to next lesson if available
+      const currentLessonIndex = lessons.findIndex(lesson => lesson.id === activeLessonId);
+      if (currentLessonIndex < lessons.length - 1) {
+        setActiveLessonId(lessons[currentLessonIndex + 1].id);
       }
       
     } catch (error) {
@@ -224,14 +313,18 @@ const CourseContent: React.FC = () => {
   };
 
   const { current, total } = getModuleProgress();
+  const completedLessonIds = getLessonCompletionStatus();
 
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
+        <main className="max-w-7xl mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
           <div className="flex justify-center py-8">
-            <p className="text-gray-500">Loading course content...</p>
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-500">Loading course content...</p>
+            </div>
           </div>
         </main>
         <Footer />
@@ -242,7 +335,7 @@ const CourseContent: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
+      <main className="max-w-7xl mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <div className="mb-6">
           <div className="flex justify-between items-center">
             <div>
@@ -261,115 +354,38 @@ const CourseContent: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           {/* Left sidebar - Module list */}
           <div className="md:col-span-1 bg-white rounded-lg shadow-sm border border-gray-100 p-4 h-fit">
             <h2 className="font-semibold text-gray-800 mb-3">Course Modules</h2>
-            <Accordion type="single" defaultValue={activeModule?.id} collapsible className="w-full">
-              {modules.map((module) => {
-                const completed = isModuleCompleted(module.id);
-                const isActive = activeModule?.id === module.id;
-                
-                return (
-                  <AccordionItem 
-                    key={module.id} 
-                    value={module.id}
-                    className={`${completed ? 'bg-green-50 border-green-100' : ''} ${isActive ? 'border-l-4 border-l-blue-500 pl-2' : ''} rounded-md mb-1`}
-                  >
-                    <AccordionTrigger className="py-2 px-1 hover:no-underline">
-                      <div className="flex items-center gap-2 text-left">
-                        {completed ? (
-                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-                        ) : (
-                          <div className={`h-4 w-4 rounded-full border ${isActive ? 'border-blue-500 bg-blue-100' : 'border-gray-300'} flex-shrink-0`} />
-                        )}
-                        <span className={`text-sm ${completed ? 'text-green-700' : 'text-gray-700'} ${isActive ? 'font-medium' : ''}`}>
-                          {module.title}
-                        </span>
-                      </div>
-                    </AccordionTrigger>
-                    <AccordionContent className="text-xs text-gray-600 pl-6">
-                      <Button 
-                        variant="ghost" 
-                        size="sm" 
-                        className="w-full justify-start px-0 hover:bg-transparent hover:underline"
-                        onClick={() => setActiveModule(module)}
-                      >
-                        View Module
-                      </Button>
-                    </AccordionContent>
-                  </AccordionItem>
-                );
-              })}
-            </Accordion>
+            <ModulesList 
+              modules={modules}
+              userProgress={userProgress}
+              activeModuleId={activeModule?.id || null}
+              onSelectModule={handleModuleSelect}
+            />
           </div>
 
-          {/* Main content area */}
-          <div className="md:col-span-3 bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-            {activeModule ? (
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl font-semibold text-gray-800">
-                    {activeModule.title}
-                  </h2>
-                  {isModuleCompleted(activeModule.id) && (
-                    <div className="flex items-center text-green-600 text-sm bg-green-50 px-2 py-1 rounded-full">
-                      <CheckCircle className="w-4 h-4 mr-1" />
-                      <span>Completed</span>
-                    </div>
-                  )}
-                </div>
-                
-                <Separator className="my-4" />
-                
-                <div className="prose max-w-none mb-8">
-                  {activeModule.content.split('\n').map((paragraph, idx) => (
-                    <p key={idx} className="mb-4 text-gray-700">
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-                
-                <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-                  <Button 
-                    variant="outline" 
-                    onClick={() => navigateToModule('prev')}
-                    disabled={modules.findIndex(m => m.id === activeModule.id) === 0}
-                  >
-                    <ChevronLeft className="w-4 h-4 mr-2" />
-                    Previous
-                  </Button>
-                  
-                  {!isModuleCompleted(activeModule.id) ? (
-                    <Button 
-                      onClick={handleMarkAsComplete}
-                      disabled={isMarkingComplete}
-                      className="bg-[#00C853] hover:bg-green-700"
-                    >
-                      {isMarkingComplete ? (
-                        <>Loading...</>
-                      ) : (
-                        <>
-                          <Check className="w-4 h-4 mr-2" />
-                          Mark as Complete
-                        </>
-                      )}
-                    </Button>
-                  ) : (
-                    <Button 
-                      onClick={() => navigateToModule('next')}
-                      disabled={modules.findIndex(m => m.id === activeModule.id) === modules.length - 1}
-                      className="bg-[#4F46E5] hover:bg-blue-700"
-                    >
-                      Next Module
-                      <ChevronRight className="w-4 h-4 ml-2" />
-                    </Button>
-                  )}
-                </div>
-              </div>
+          {/* Main content area - Replaced with our new ModuleContent component */}
+          <div className="md:col-span-3">
+            {activeModule && lessons.length > 0 ? (
+              <ModuleContent 
+                activeModule={activeModule}
+                activeLessonId={activeLessonId}
+                lessons={lessons}
+                userProgress={userProgress}
+                onSelectLesson={handleLessonSelect}
+                onMarkComplete={handleMarkAsComplete}
+                isMarkingComplete={isMarkingComplete}
+                completedLessonIds={completedLessonIds}
+              />
             ) : (
-              <div className="flex flex-col items-center justify-center py-8">
-                <p className="text-gray-500">Select a module to start learning</p>
+              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex justify-center">
+                <p className="text-gray-500">
+                  {modules.length === 0 
+                    ? "No modules found for this course." 
+                    : "Select a module to view its content."}
+                </p>
               </div>
             )}
           </div>

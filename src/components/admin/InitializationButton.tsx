@@ -12,12 +12,17 @@ const InitializationButton: React.FC = () => {
   const handleReinitialization = async () => {
     try {
       setIsLoading(true);
+      toast({
+        title: "Initializing Courses",
+        description: "Please wait while course data is being processed...",
+      });
+      
       const result = await triggerInitialization();
       
       if (result.success) {
         toast({
           title: "Initialization Complete",
-          description: "Course data has been successfully set up.",
+          description: "Course data has been successfully set up with enhanced content.",
           variant: "default"
         });
       } else {
@@ -32,7 +37,7 @@ const InitializationButton: React.FC = () => {
       console.error("Error during manual initialization:", error);
       toast({
         title: "Initialization Error",
-        description: "An unexpected error occurred.",
+        description: "An unexpected error occurred during the process.",
         variant: "destructive"
       });
     } finally {
@@ -51,12 +56,12 @@ const InitializationButton: React.FC = () => {
       {isLoading ? (
         <>
           <Loader2 className="h-4 w-4 animate-spin" />
-          <span>Initializing...</span>
+          <span>Initializing Enhanced Content...</span>
         </>
       ) : (
         <>
           <RefreshCw className="h-4 w-4" />
-          <span>Reinitialize Courses</span>
+          <span>Reinitialize Enhanced Courses</span>
         </>
       )}
     </Button>
