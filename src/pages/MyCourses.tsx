@@ -2,10 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { Loader2, Download } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -18,6 +20,7 @@ interface Course {
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [downloadingId, setDownloadingId] = useState<string | null>(null);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -57,18 +60,45 @@ const MyCourses: React.FC = () => {
     fetchMyCourses();
   }, [user, toast]);
 
-  const handleDownload = (course: Course) => {
-    // In a real app, this would download the PDF or open it in a new tab
-    toast({
-      title: "Download Started",
-      description: `Downloading ${course.title}...`,
-    });
+  const handleDownload = async (course: Course) => {
+    if (!user) return;
+    
+    setDownloadingId(course.id);
+    
+    try {
+      // Call the edge function to get a signed URL
+      const { data, error } = await supabase.functions.invoke('get-course-url', {
+        body: { user_id: user.id, course_id: course.id },
+      });
+      
+      if (error) throw error;
+      
+      // Open the URL in a new tab
+      if (data?.url) {
+        window.open(data.url, '_blank');
+        toast({
+          title: "Download Started",
+          description: `Your PDF for ${course.title} should download shortly.`,
+        });
+      } else {
+        throw new Error('No download URL returned');
+      }
+    } catch (error) {
+      console.error("Download error:", error);
+      toast({
+        title: "Download Failed",
+        description: "Could not download the course PDF. Please try again later.",
+        variant: "destructive"
+      });
+    } finally {
+      setDownloadingId(null);
+    }
   };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <h1 className="text-2xl font-bold text-gray-900 mb-8">My Courses</h1>
 
         {isLoading ? (
@@ -93,13 +123,19 @@ const MyCourses: React.FC = () => {
                   <Button 
                     onClick={() => handleDownload(course)}
                     className="bg-[#4F46E5] hover:bg-blue-700"
+                    disabled={downloadingId === course.id}
                   >
-                    <svg className="w-5 h-5 mr-2" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                      <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                      <path d="M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    </svg>
-                    Download PDF
+                    {downloadingId === course.id ? (
+                      <>
+                        <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                        Downloading...
+                      </>
+                    ) : (
+                      <>
+                        <Download className="w-5 h-5 mr-2" />
+                        Download PDF
+                      </>
+                    )}
                   </Button>
                   <Button 
                     variant="outline"
@@ -127,6 +163,7 @@ const MyCourses: React.FC = () => {
           </div>
         )}
       </main>
+      <Footer />
     </div>
   );
 };

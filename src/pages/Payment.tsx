@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import PaymentOption from '@/components/payment/PaymentOption';
@@ -250,7 +251,7 @@ const Payment: React.FC<PaymentProps> = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-6">Checkout</h1>
           
@@ -365,6 +366,7 @@ const Payment: React.FC<PaymentProps> = () => {
           </div>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };

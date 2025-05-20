@@ -1,4 +1,6 @@
 
+# A string used as a secret key for functions
+# Note: This can be generated using `openssl rand -hex 32`
 project_id = "jepeeykyoouhaqhondcq"
 
 [api]
@@ -8,44 +10,20 @@ schemas = ["public", "storage", "graphql_public"]
 
 [db]
 port = 54322
-shadow_port = 54320
-
-[db.pooler]
-port = 54329
-shadow_port = 54319
-
-[realtime]
-enabled = true
-port = 54323
 
 [studio]
 enabled = true
-port = 54324
-api_url = "http://127.0.0.1"
-
-[inbucket]
-enabled = true
-port = 54325
-
-[auth]
-enabled = true
-port = 54326
-uri_allow_list = ["https://jepeeykyoouhaqhondcq.supabase.co/auth/v1/callback"]
+port = 54323
 
 [storage]
 enabled = true
-port = 54327
 
-[edge_runtime]
+[auth]
 enabled = true
-port = 54328
 
-[functions]
-port = 54328
+[realtime]
+enabled = true
 
-[functions.processPayout]
+[[functions]]
+name = "get-course-url"
 verify_jwt = true
-
-[functions.payment-webhook]
-verify_jwt = false
-

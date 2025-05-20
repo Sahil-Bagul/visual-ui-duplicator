@@ -1,7 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/layout/Header';
+import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { supabase } from '@/integrations/supabase/client';
@@ -92,9 +92,10 @@ const CourseDetail: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
           <div className="flex justify-center py-8">Loading course details...</div>
         </main>
+        <Footer />
       </div>
     );
   }
@@ -103,13 +104,14 @@ const CourseDetail: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
-        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+        <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
             <h1 className="text-xl font-bold text-gray-900 mb-4">Course not found</h1>
             <p className="text-gray-600 mb-4">The course you're looking for doesn't exist or has been removed.</p>
             <Button onClick={() => navigate('/dashboard')}>Back to Dashboard</Button>
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
@@ -117,7 +119,7 @@ const CourseDetail: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
-      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
+      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8">
           <div className="flex items-center justify-between mb-2">
             <h1 className="text-2xl font-bold text-gray-900">{course.title}</h1>
@@ -176,6 +178,7 @@ const CourseDetail: React.FC = () => {
           )}
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
