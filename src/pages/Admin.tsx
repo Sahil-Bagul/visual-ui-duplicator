@@ -4,6 +4,8 @@ import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import CourseSetup from '@/components/admin/CourseSetup';
+import LessonContentManager from '@/components/admin/LessonContentManager';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/context/AuthContext';
 
 const Admin = () => {
@@ -34,10 +36,20 @@ const Admin = () => {
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
         
-        <div className="mb-8">
-          <h2 className="text-xl font-semibold text-gray-800 mb-4">Course Management</h2>
-          <CourseSetup />
-        </div>
+        <Tabs defaultValue="courses">
+          <TabsList className="mb-6">
+            <TabsTrigger value="courses">Course Setup</TabsTrigger>
+            <TabsTrigger value="lessons">Lesson Content</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="courses" className="space-y-6">
+            <CourseSetup />
+          </TabsContent>
+          
+          <TabsContent value="lessons" className="space-y-6">
+            <LessonContentManager />
+          </TabsContent>
+        </Tabs>
       </main>
       <Footer />
     </div>
