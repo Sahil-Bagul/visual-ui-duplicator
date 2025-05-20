@@ -13,7 +13,9 @@ import {
   Module, 
   UserProgress, 
   GetCourseModulesResponse,
-  GetUserProgressResponse
+  GetUserProgressResponse,
+  UpdateUserProgressResponse,
+  CreateUserProgressResponse
 } from '@/types/course';
 import { Check, ChevronLeft, ChevronRight, BookOpen, CheckCircle } from 'lucide-react';
 
@@ -71,7 +73,7 @@ const CourseContent: React.FC = () => {
         
         // Get modules for this course using RPC
         const { data: modulesData, error: modulesError } = await supabase
-          .rpc<GetCourseModulesResponse>('get_course_modules', { course_id_param: courseId });
+          .rpc<GetCourseModulesResponse, { course_id_param: string }>('get_course_modules', { course_id_param: courseId });
           
         if (modulesError) {
           console.error("Error fetching modules via RPC:", modulesError);
@@ -85,7 +87,7 @@ const CourseContent: React.FC = () => {
             
           if (directModulesError) throw directModulesError;
           
-          if (directModulesData) {
+          if (directModulesData && directModulesData.length > 0) {
             setModules(directModulesData as Module[]);
             
             // Set the first module as active if no active module
@@ -94,17 +96,17 @@ const CourseContent: React.FC = () => {
             }
           }
         } else if (modulesData) {
-          setModules(modulesData as Module[]);
+          setModules(modulesData);
           
           // Set the first module as active if no active module
           if (modulesData.length > 0 && !activeModule) {
-            setActiveModule(modulesData[0] as Module);
+            setActiveModule(modulesData[0]);
           }
         }
         
         // Get user progress using RPC
         const { data: progressData, error: progressError } = await supabase
-          .rpc<GetUserProgressResponse>('get_user_progress', { 
+          .rpc<GetUserProgressResponse, { user_id_param: string, course_id_param: string }>('get_user_progress', { 
             user_id_param: user.id,
             course_id_param: courseId
           });
@@ -127,7 +129,7 @@ const CourseContent: React.FC = () => {
             }
           }
         } else if (progressData) {
-          setUserProgress(progressData as UserProgress[]);
+          setUserProgress(progressData);
         }
         
       } catch (error) {
@@ -189,7 +191,7 @@ const CourseContent: React.FC = () => {
       if (existingProgress) {
         // Update existing record using RPC
         const { data, error } = await supabase
-          .rpc('update_user_progress', {
+          .rpc<UpdateUserProgressResponse, { progress_id_param: string, completed_param: boolean }>('update_user_progress', {
             progress_id_param: existingProgress.id,
             completed_param: true
           });
@@ -211,7 +213,7 @@ const CourseContent: React.FC = () => {
       } else {
         // Create new progress record using RPC
         const { data, error } = await supabase
-          .rpc('create_user_progress', {
+          .rpc<CreateUserProgressResponse, { user_id_param: string, module_id_param: string, completed_param: boolean }>('create_user_progress', {
             user_id_param: user.id,
             module_id_param: activeModule.id,
             completed_param: true
@@ -239,7 +241,7 @@ const CourseContent: React.FC = () => {
           }
         } else if (data) {
           // Add new progress to local state
-          setUserProgress(prev => [...prev, data as UserProgress]);
+          setUserProgress(prev => [...prev, data]);
         }
       }
       
@@ -250,13 +252,13 @@ const CourseContent: React.FC = () => {
       
       // Refresh user progress data
       const { data: refreshedProgress } = await supabase
-        .rpc<GetUserProgressResponse>('get_user_progress', { 
+        .rpc<GetUserProgressResponse, { user_id_param: string, course_id_param: string }>('get_user_progress', { 
           user_id_param: user.id,
-          course_id_param: courseId
+          course_id_param: courseId as string
         });
         
       if (refreshedProgress) {
-        setUserProgress(refreshedProgress as UserProgress[]);
+        setUserProgress(refreshedProgress);
       }
       
       // If this is the last module, show special message

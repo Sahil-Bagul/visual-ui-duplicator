@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -45,7 +46,7 @@ const MyCourses: React.FC = () => {
           purchasedCourses.map(async (course) => {
             // Get modules for this course using RPC
             const { data: modulesData, error: modulesError } = await supabase
-              .rpc<GetCourseModulesResponse>('get_course_modules', { course_id_param: course.id });
+              .rpc<GetCourseModulesResponse, { course_id_param: string }>('get_course_modules', { course_id_param: course.id });
               
             let modules: Module[] = [];
             
@@ -62,7 +63,7 @@ const MyCourses: React.FC = () => {
               if (directModulesError) throw directModulesError;
               modules = directModulesData as Module[];
             } else {
-              modules = modulesData as Module[];
+              modules = modulesData;
             }
             
             // Get user progress for this course's modules

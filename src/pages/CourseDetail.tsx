@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -48,7 +49,7 @@ const CourseDetail: React.FC = () => {
         
         // Fetch course modules (just titles for preview)
         const { data: modulesData, error: modulesError } = await supabase
-          .rpc<GetCourseModulesResponse>('get_course_modules', { course_id_param: id });
+          .rpc<GetCourseModulesResponse, { course_id_param: string }>('get_course_modules', { course_id_param: id });
           
         if (modulesError) {
           console.error("Error fetching modules via RPC:", modulesError);
@@ -63,7 +64,7 @@ const CourseDetail: React.FC = () => {
           if (directModulesError) throw directModulesError;
           setModules(directModulesData as Module[]);
         } else {
-          setModules(modulesData as Module[]);
+          setModules(modulesData);
         }
         
         // Check if user has purchased this course
