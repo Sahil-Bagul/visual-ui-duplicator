@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -150,7 +149,7 @@ const MyCourses: React.FC = () => {
                 
                 <div className="flex flex-wrap gap-3">
                   <Button 
-                    onClick={() => handleContinueCourse(course.id)}
+                    onClick={() => navigate(`/course-content/${course.id}`)}
                     className="bg-[#4F46E5] hover:bg-blue-700"
                   >
                     {course.progress > 0 ? "Continue Learning" : "Start Learning"}
