@@ -74,6 +74,42 @@ export type Database = {
         }
         Relationships: []
       }
+      feedback: {
+        Row: {
+          admin_response: string | null
+          id: string
+          message: string
+          rating: number | null
+          responded_at: string | null
+          status: string | null
+          subject: string
+          submitted_at: string
+          user_id: string | null
+        }
+        Insert: {
+          admin_response?: string | null
+          id?: string
+          message: string
+          rating?: number | null
+          responded_at?: string | null
+          status?: string | null
+          subject: string
+          submitted_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          admin_response?: string | null
+          id?: string
+          message?: string
+          rating?: number | null
+          responded_at?: string | null
+          status?: string | null
+          subject?: string
+          submitted_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       lessons: {
         Row: {
           content: string

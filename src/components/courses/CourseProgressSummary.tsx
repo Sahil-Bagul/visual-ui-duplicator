@@ -24,10 +24,11 @@ const CourseProgressSummary: React.FC<CourseProgressSummaryProps> = ({ course, o
         </div>
       </div>
       
-      <div className="mb-6">
+      {/* Simplified Progress Bar */}
+      <div className="mb-5">
         <div className="flex justify-between items-center mb-2">
           <span className="text-sm font-medium text-gray-700">
-            Progress: {course.completedModules}/{course.totalModules} modules
+            Course Progress
           </span>
           <span className="text-sm font-medium text-gray-700">
             {course.progress}%
@@ -36,17 +37,18 @@ const CourseProgressSummary: React.FC<CourseProgressSummaryProps> = ({ course, o
         <Progress value={course.progress} className="h-2" />
       </div>
       
-      <div className="grid grid-cols-3 gap-3 mb-5">
-        <div className="bg-gray-50 p-3 rounded-lg text-center">
-          <div className="text-2xl font-semibold text-gray-800">{course.totalModules}</div>
+      {/* Simple Progress Stats */}
+      <div className="flex items-center justify-between mb-5 p-3 bg-gray-50 rounded-lg">
+        <div className="text-center">
+          <div className="text-lg font-semibold text-gray-800">{course.totalModules}</div>
           <div className="text-xs text-gray-500">Total Modules</div>
         </div>
-        <div className="bg-green-50 p-3 rounded-lg text-center">
-          <div className="text-2xl font-semibold text-green-600">{course.completedModules}</div>
+        <div className="text-center">
+          <div className="text-lg font-semibold text-green-600">{course.completedModules}</div>
           <div className="text-xs text-gray-500">Completed</div>
         </div>
-        <div className="bg-blue-50 p-3 rounded-lg text-center">
-          <div className="text-2xl font-semibold text-blue-600">{course.totalModules - course.completedModules}</div>
+        <div className="text-center">
+          <div className="text-lg font-semibold text-blue-600">{course.totalModules - course.completedModules}</div>
           <div className="text-xs text-gray-500">Remaining</div>
         </div>
       </div>

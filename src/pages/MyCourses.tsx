@@ -8,10 +8,11 @@ import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { BookOpen, AlertCircle } from 'lucide-react';
+import { BookOpen, AlertCircle, MessageSquare } from 'lucide-react';
 import { CourseWithProgress, Module } from '@/types/course';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
+import CourseProgressSummary from '@/components/courses/CourseProgressSummary';
 
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
@@ -137,7 +138,17 @@ const MyCourses: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">My Courses</h1>
+        <div className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
+          <Button 
+            onClick={() => navigate('/feedback')} 
+            variant="outline"
+            className="flex items-center gap-2 border-[#00C853] text-[#00C853] hover:bg-green-50"
+          >
+            <MessageSquare className="h-4 w-4" />
+            <span>Send Feedback</span>
+          </Button>
+        </div>
 
         {/* Error display */}
         {error && (
@@ -156,45 +167,12 @@ const MyCourses: React.FC = () => {
         ) : courses.length > 0 ? (
           <div className="space-y-6">
             {courses.map(course => (
-              <div key={course.id} className="bg-white rounded-lg shadow-sm border border-gray-100 p-6">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h2 className="text-xl font-semibold text-gray-800 mb-2">{course.title}</h2>
-                    <p className="text-gray-600 text-sm mb-4">{course.description || "No description available"}</p>
-                  </div>
-                  <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-xs font-semibold">
-                    <BookOpen className="w-3.5 h-3.5" />
-                    <span>Web Course</span>
-                  </div>
-                </div>
-                
-                <div className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <span className="text-sm font-medium text-gray-700">
-                      Progress: {course.completedModules}/{course.totalModules} modules
-                    </span>
-                    <span className="text-sm font-medium text-gray-700">
-                      {course.progress}%
-                    </span>
-                  </div>
-                  <Progress value={course.progress} className="h-2" />
-                </div>
-                
-                <div className="flex flex-wrap gap-3">
-                  <Button 
-                    onClick={() => navigate(`/course-content/${course.id}`)}
-                    className="bg-[#4F46E5] hover:bg-blue-700"
-                  >
-                    {course.progress > 0 ? "Continue Learning" : "Start Learning"}
-                  </Button>
-                  <Button 
-                    variant="outline"
-                    onClick={() => navigate('/referrals')}
-                  >
-                    Share & Earn
-                  </Button>
-                </div>
-              </div>
+              <CourseProgressSummary 
+                key={course.id}
+                course={course}
+                onContinue={() => navigate(`/course-content/${course.id}`)}
+                onShare={() => navigate('/referrals')}
+              />
             ))}
           </div>
         ) : dataFetched ? (
