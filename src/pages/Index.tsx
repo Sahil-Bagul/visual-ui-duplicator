@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import AuthForm from '@/components/auth/AuthForm';
 import Header from '@/components/layout/Header';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
 import CourseCard from '@/components/courses/CourseCard';
+
 const Index: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
@@ -12,9 +14,11 @@ const Index: React.FC = () => {
   const toggleView = () => {
     setIsLoggedIn(!isLoggedIn);
   };
+
   const handleCourseClick = (courseId: string) => {
     navigate(`/course/${courseId}`);
   };
+
   return <>
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
       
@@ -56,4 +60,5 @@ const Index: React.FC = () => {
         </div>}
     </>;
 };
+
 export default Index;
