@@ -1,275 +1,412 @@
 
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "@/hooks/use-toast";
+import { supabase } from '@/integrations/supabase/client';
 
-/**
- * Helper function to clear all lesson content
- */
-export const clearAllLessonContent = async () => {
-  try {
-    // Update all lessons to have empty content
-    const { error } = await supabase
-      .from('lessons')
-      .update({ content: "" })
-      .not('content', 'eq', '');
-    
-    if (error) throw error;
-    return { success: true };
-  } catch (error) {
-    console.error('Error clearing lesson content:', error);
-    return { success: false, error };
-  }
-};
-
-/**
- * Helper function to set up AI Tools course with modules and lessons
- */
+// Set up AI Tools for Students course
 export const setupAIToolsCourse = async () => {
   try {
-    // Step 1: Insert the course
+    // Create course
     const { data: courseData, error: courseError } = await supabase
       .from('courses')
       .insert({
         title: 'AI Tools for Students',
         description: 'A beginner-friendly course to help students learn about the most useful AI tools for productivity, learning, and creativity.',
         price: 500,
-        referral_reward: 250 // 50% of the price
+        referral_reward: 250
       })
-      .select('id')
-      .single();
-      
+      .select();
+
     if (courseError) throw courseError;
-    const courseId = courseData.id;
-    
-    // Step 2: Insert modules
-    const modules = [
-      { 
-        title: 'Introduction to AI', 
-        description: 'Learn the basics of artificial intelligence and why it matters for students.',
-        module_order: 1
-      },
-      { 
-        title: 'Essential AI Tools', 
-        description: 'Discover practical AI tools that you can start using today.',
-        module_order: 2
-      },
-      { 
-        title: 'Using AI for Studies', 
-        description: 'Learn how to leverage AI to enhance your academic performance.',
-        module_order: 3
-      },
-      { 
-        title: 'Responsible AI Use', 
-        description: 'Understanding the ethical considerations and best practices for AI use.',
-        module_order: 4
-      }
-    ];
-    
-    for (const module of modules) {
-      // Insert the module
-      const { data: moduleData, error: moduleError } = await supabase
-        .from('course_modules')
-        .insert({
-          course_id: courseId,
-          title: module.title,
-          description: module.description,
-          content: '',
-          module_order: module.module_order
-        })
-        .select('id')
-        .single();
-      
-      if (moduleError) throw moduleError;
-      const moduleId = moduleData.id;
-      
-      // Step 3: Insert lessons for each module
-      let lessons = [];
-      
-      if (module.module_order === 1) {
-        lessons = [
-          { title: 'What is Artificial Intelligence?', lesson_order: 1 },
-          { title: 'Why Should Students Care About AI?', lesson_order: 2 },
-          { title: 'Real-Life Examples of AI in Daily Use', lesson_order: 3 }
-        ];
-      } else if (module.module_order === 2) {
-        lessons = [
-          { title: 'ChatGPT – Smart Conversations', lesson_order: 1 },
-          { title: 'Grammarly – Better Writing with AI', lesson_order: 2 },
-          { title: 'Canva – AI for Design', lesson_order: 3 },
-          { title: 'Notion AI – Smarter Notes and Docs', lesson_order: 4 }
-        ];
-      } else if (module.module_order === 3) {
-        lessons = [
-          { title: 'AI for Research & Summaries', lesson_order: 1 },
-          { title: 'AI for Note-Taking and Productivity', lesson_order: 2 },
-          { title: 'Using AI to Generate Ideas and Projects', lesson_order: 3 }
-        ];
-      } else if (module.module_order === 4) {
-        lessons = [
-          { title: 'Ethics of Using AI in Education', lesson_order: 1 },
-          { title: 'How to Avoid Misusing AI Tools', lesson_order: 2 },
-          { title: 'Being Future-Ready with AI Skills', lesson_order: 3 }
-        ];
-      }
-      
-      for (const lesson of lessons) {
-        // Insert each lesson with empty content
-        const { error: lessonError } = await supabase
-          .from('lessons')
-          .insert({
-            module_id: moduleId,
-            title: lesson.title,
-            content: '',
-            lesson_order: lesson.lesson_order
-          });
-        
-        if (lessonError) throw lessonError;
-      }
-    }
-    
-    return { success: true, courseId };
+    if (!courseData || courseData.length === 0) throw new Error("Failed to create course");
+
+    const courseId = courseData[0].id;
+
+    // Module 1
+    const { data: module1Data, error: module1Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Introduction to AI Tools',
+        description: 'Learn the basics of AI tools and how they can help students',
+        module_order: 1,
+        content: 'This module introduces you to the concept of AI tools and their benefits for students.'
+      })
+      .select();
+
+    if (module1Error) throw module1Error;
+    if (!module1Data || module1Data.length === 0) throw new Error("Failed to create module 1");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module1Data[0].id,
+          title: 'What are AI Tools?',
+          lesson_order: 1,
+          content: 'AI tools are software or platforms powered by artificial intelligence that help with tasks like writing, designing, organizing, and more. For students, these tools are time-savers and idea generators.'
+        },
+        {
+          module_id: module1Data[0].id,
+          title: 'Benefits of AI Tools for Students',
+          lesson_order: 2,
+          content: 'From summarizing notes to creating presentations, AI tools help students boost productivity, enhance creativity, and make learning more personalized.'
+        },
+        {
+          module_id: module1Data[0].id,
+          title: 'How to Use This Course',
+          lesson_order: 3,
+          content: 'Each lesson introduces an AI tool with examples. Try each one yourself using the links and ideas we share. No coding or tech experience needed.'
+        }
+      ]);
+
+    // Module 2
+    const { data: module2Data, error: module2Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Text-Based AI Tools',
+        description: 'Explore AI tools that help with writing and text generation',
+        module_order: 2,
+        content: 'This module covers text-based AI tools that can help you with writing, studying, and communication.'
+      })
+      .select();
+
+    if (module2Error) throw module2Error;
+    if (!module2Data || module2Data.length === 0) throw new Error("Failed to create module 2");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module2Data[0].id,
+          title: 'ChatGPT Basics',
+          lesson_order: 1,
+          content: 'ChatGPT is an AI chatbot that helps explain concepts, write essays, generate ideas, and much more. You interact with it using prompts.'
+        },
+        {
+          module_id: module2Data[0].id,
+          title: 'Prompts for Studying',
+          lesson_order: 2,
+          content: 'Prompts are questions or instructions you give AI. Example: "Summarize the French Revolution in 100 words." We\'ll share effective prompts for academics.'
+        },
+        {
+          module_id: module2Data[0].id,
+          title: 'Grammarly',
+          lesson_order: 3,
+          content: 'Grammarly is an AI writing assistant that corrects grammar, improves clarity, and enhances your writing style in real time.'
+        }
+      ]);
+
+    // Module 3
+    const { data: module3Data, error: module3Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Visual & Presentation Tools',
+        description: 'Learn about AI tools for visual content and presentations',
+        module_order: 3,
+        content: 'This module explores AI-powered tools for creating visual content, presentations, and graphics.'
+      })
+      .select();
+
+    if (module3Error) throw module3Error;
+    if (!module3Data || module3Data.length === 0) throw new Error("Failed to create module 3");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module3Data[0].id,
+          title: 'Canva AI Features',
+          lesson_order: 1,
+          content: 'Canva\'s AI tools help generate designs, social posts, and academic graphics with ease. Learn how to auto-generate layouts and content.'
+        },
+        {
+          module_id: module3Data[0].id,
+          title: 'SlidesAI',
+          lesson_order: 2,
+          content: 'SlidesAI turns plain text into full PowerPoint/Google slides automatically. Great for projects and class presentations.'
+        },
+        {
+          module_id: module3Data[0].id,
+          title: 'Remove.bg',
+          lesson_order: 3,
+          content: 'A free tool that removes backgrounds from images instantly. Useful for making clean posters, IDs, or design assets.'
+        }
+      ]);
+
+    // Module 4
+    const { data: module4Data, error: module4Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Productivity & Planning Tools',
+        description: 'Discover AI tools for better productivity and planning',
+        module_order: 4,
+        content: 'This module covers AI tools that help with productivity, note-taking, and organizing your academic life.'
+      })
+      .select();
+
+    if (module4Error) throw module4Error;
+    if (!module4Data || module4Data.length === 0) throw new Error("Failed to create module 4");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module4Data[0].id,
+          title: 'Notion AI',
+          lesson_order: 1,
+          content: 'Notion AI assists with note-taking, to-do lists, and organizing study material. Learn how to build your own smart workspace.'
+        },
+        {
+          module_id: module4Data[0].id,
+          title: 'AI Note-Takers',
+          lesson_order: 2,
+          content: 'Tools like Otter.ai convert voice to notes in real time. Helpful for lectures, interviews, or research documentation.'
+        },
+        {
+          module_id: module4Data[0].id,
+          title: 'Final Tips & Resources',
+          lesson_order: 3,
+          content: 'Explore free AI tools online, join communities, and stay updated. Apply these tools in projects and day-to-day student life.'
+        }
+      ]);
+
+    return {
+      success: true,
+      courseId
+    };
   } catch (error) {
-    console.error('Error setting up course:', error);
-    return { success: false, error };
+    console.error('Error setting up AI Tools course:', error);
+    return {
+      success: false,
+      error
+    };
   }
 };
 
-/**
- * Helper function to set up Stock Investment course with modules and lessons
- */
+// Set up Stock Investment course
 export const setupStockInvestmentCourse = async () => {
   try {
-    // Step 1: Insert the course
+    // Create course
     const { data: courseData, error: courseError } = await supabase
       .from('courses')
       .insert({
         title: 'Introduction to Stock Investment',
-        description: 'Learn the fundamentals of stock market investing with this beginner-friendly course designed specifically for college students.',
+        description: 'Learn the fundamentals of stock investing with this beginner-friendly course designed for Indian students.',
         price: 1000,
-        referral_reward: 500 // 50% of the price
+        referral_reward: 500
       })
-      .select('id')
-      .single();
-      
+      .select();
+
     if (courseError) throw courseError;
-    const courseId = courseData.id;
-    
-    // Step 2: Insert modules
-    const modules = [
-      { 
-        title: 'Getting Started with Investing', 
-        description: 'Understand the basics of investing and why it matters for your financial future.',
-        module_order: 1
-      },
-      { 
-        title: 'Understanding the Stock Market', 
-        description: 'Learn how the stock market works and the key concepts every investor should know.',
-        module_order: 2
-      },
-      { 
-        title: 'Investing for Beginners', 
-        description: 'Practical guidance on how to approach investing as a beginner.',
-        module_order: 3
-      },
-      { 
-        title: 'Making Your First Investment', 
-        description: 'Step-by-step guidance to make your first stock purchase and manage your portfolio.',
-        module_order: 4
-      }
-    ];
-    
-    for (const module of modules) {
-      // Insert the module
-      const { data: moduleData, error: moduleError } = await supabase
-        .from('course_modules')
-        .insert({
-          course_id: courseId,
-          title: module.title,
-          description: module.description,
-          content: '',
-          module_order: module.module_order
-        })
-        .select('id')
-        .single();
-      
-      if (moduleError) throw moduleError;
-      const moduleId = moduleData.id;
-      
-      // Step 3: Insert lessons for each module
-      let lessons = [];
-      
-      if (module.module_order === 1) {
-        lessons = [
-          { title: 'Why Should You Invest?', lesson_order: 1 },
-          { title: 'Compounding and Time Value of Money', lesson_order: 2 },
-          { title: 'Risk vs Reward in Stocks', lesson_order: 3 }
-        ];
-      } else if (module.module_order === 2) {
-        lessons = [
-          { title: 'What is the Stock Market?', lesson_order: 1 },
-          { title: 'How Do Stocks Work?', lesson_order: 2 },
-          { title: 'Exchanges, Brokers, and Demat Accounts', lesson_order: 3 }
-        ];
-      } else if (module.module_order === 3) {
-        lessons = [
-          { title: 'How to Pick Good Stocks', lesson_order: 1 },
-          { title: 'Long-term vs Short-term Investing', lesson_order: 2 },
-          { title: 'Mistakes to Avoid as a New Investor', lesson_order: 3 }
-        ];
-      } else if (module.module_order === 4) {
-        lessons = [
-          { title: 'Step-by-Step: Buying Your First Stock', lesson_order: 1 },
-          { title: 'Tracking Your Portfolio', lesson_order: 2 },
-          { title: 'Building Healthy Investing Habits', lesson_order: 3 }
-        ];
-      }
-      
-      for (const lesson of lessons) {
-        // Insert each lesson with empty content
-        const { error: lessonError } = await supabase
-          .from('lessons')
-          .insert({
-            module_id: moduleId,
-            title: lesson.title,
-            content: '',
-            lesson_order: lesson.lesson_order
-          });
-        
-        if (lessonError) throw lessonError;
-      }
-    }
-    
-    return { success: true, courseId };
+    if (!courseData || courseData.length === 0) throw new Error("Failed to create course");
+
+    const courseId = courseData[0].id;
+
+    // Module 1
+    const { data: module1Data, error: module1Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Stock Market Basics',
+        description: 'Understand the fundamentals of stock markets',
+        module_order: 1,
+        content: 'This module introduces you to the stock market and why people invest in stocks.'
+      })
+      .select();
+
+    if (module1Error) throw module1Error;
+    if (!module1Data || module1Data.length === 0) throw new Error("Failed to create module 1");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module1Data[0].id,
+          title: 'What is the Stock Market?',
+          lesson_order: 1,
+          content: 'A marketplace where investors buy and sell shares of companies. These shares represent partial ownership in businesses.'
+        },
+        {
+          module_id: module1Data[0].id,
+          title: 'Why Do Companies Go Public?',
+          lesson_order: 2,
+          content: 'To raise capital. When a company offers shares to the public via an IPO, it receives money to expand and grow.'
+        },
+        {
+          module_id: module1Data[0].id,
+          title: 'Why Do People Invest?',
+          lesson_order: 3,
+          content: 'Investing helps grow wealth over time, beat inflation, and build financial security. It can also generate passive income through dividends.'
+        }
+      ]);
+
+    // Module 2
+    const { data: module2Data, error: module2Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Understanding Stocks',
+        description: 'Learn about different types of stocks and stock exchanges',
+        module_order: 2,
+        content: 'This module covers the different types of stocks and stock exchanges in India.'
+      })
+      .select();
+
+    if (module2Error) throw module2Error;
+    if (!module2Data || module2Data.length === 0) throw new Error("Failed to create module 2");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module2Data[0].id,
+          title: 'Types of Stocks',
+          lesson_order: 1,
+          content: 'Includes common stocks (voting rights) and preferred stocks (fixed dividends). Also categorized by size: large-cap, mid-cap, small-cap.'
+        },
+        {
+          module_id: module2Data[0].id,
+          title: 'Stock Exchanges in India',
+          lesson_order: 2,
+          content: 'NSE (National Stock Exchange) and BSE (Bombay Stock Exchange) are where Indian stocks are listed and traded.'
+        },
+        {
+          module_id: module2Data[0].id,
+          title: 'How to Read a Stock Quote',
+          lesson_order: 3,
+          content: 'Learn key terms like current price, P/E ratio, 52-week high/low, market cap, and volume to assess a stock.'
+        }
+      ]);
+
+    // Module 3
+    const { data: module3Data, error: module3Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'How to Start Investing',
+        description: 'Step-by-step guide to start investing in stocks',
+        module_order: 3,
+        content: 'This module provides practical guidance on how to start investing in the stock market.'
+      })
+      .select();
+
+    if (module3Error) throw module3Error;
+    if (!module3Data || module3Data.length === 0) throw new Error("Failed to create module 3");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module3Data[0].id,
+          title: 'Opening a Demat Account',
+          lesson_order: 1,
+          content: 'A Demat account stores your shares in digital format. It\'s essential to begin investing and is provided by brokers.'
+        },
+        {
+          module_id: module3Data[0].id,
+          title: 'Choosing a Broker',
+          lesson_order: 2,
+          content: 'Brokers like Zerodha, Upstox, and Groww offer platforms to trade. Compare their fees, UI, and support before choosing.'
+        },
+        {
+          module_id: module3Data[0].id,
+          title: 'Placing Your First Order',
+          lesson_order: 3,
+          content: 'Learn how to search a stock, select quantity, choose market/limit order, and execute your first buy or sell.'
+        }
+      ]);
+
+    // Module 4
+    const { data: module4Data, error: module4Error } = await supabase
+      .from('course_modules')
+      .insert({
+        course_id: courseId,
+        title: 'Risk, Strategy & Mindset',
+        description: 'Learn about investment risks, strategies and developing the right mindset',
+        module_order: 4,
+        content: 'This module covers the risks associated with stock investing and strategies for successful investing.'
+      })
+      .select();
+
+    if (module4Error) throw module4Error;
+    if (!module4Data || module4Data.length === 0) throw new Error("Failed to create module 4");
+
+    await supabase
+      .from('lessons')
+      .insert([
+        {
+          module_id: module4Data[0].id,
+          title: 'Risks in Stock Market',
+          lesson_order: 1,
+          content: 'Market risks include volatility, company performance, and economic events. Always invest money you can afford to hold long-term.'
+        },
+        {
+          module_id: module4Data[0].id,
+          title: 'Long-Term vs. Short-Term Investing',
+          lesson_order: 2,
+          content: 'Long-term investing builds wealth gradually with less stress. Short-term trading can be profitable but riskier.'
+        },
+        {
+          module_id: module4Data[0].id,
+          title: 'Common Mistakes to Avoid',
+          lesson_order: 3,
+          content: 'Don\'t follow tips blindly. Avoid panic selling, overtrading, and investing without research or a goal.'
+        }
+      ]);
+
+    return {
+      success: true,
+      courseId
+    };
   } catch (error) {
-    console.error('Error setting up course:', error);
-    return { success: false, error };
+    console.error('Error setting up Stock Investment course:', error);
+    return {
+      success: false,
+      error
+    };
   }
 };
 
-/**
- * Helper function to set up both courses with modules and lessons
- */
+// Set up all courses
 export const setupAllCourses = async () => {
   try {
-    // Clear any existing lesson content first
-    const clearResult = await clearAllLessonContent();
-    if (!clearResult.success) throw clearResult.error;
-    
-    // Setup AI Tools course
     const aiToolsResult = await setupAIToolsCourse();
-    if (!aiToolsResult.success) throw aiToolsResult.error;
-    
-    // Setup Stock Investment course
     const stockInvestmentResult = await setupStockInvestmentCourse();
-    if (!stockInvestmentResult.success) throw stockInvestmentResult.error;
-    
-    return { 
-      success: true, 
-      aiToolsCourseId: aiToolsResult.courseId, 
-      stockInvestmentCourseId: stockInvestmentResult.courseId
+
+    return {
+      success: aiToolsResult.success && stockInvestmentResult.success,
+      aiToolsCourse: aiToolsResult,
+      stockInvestmentCourse: stockInvestmentResult
     };
   } catch (error) {
-    console.error('Error setting up courses:', error);
-    return { success: false, error };
+    console.error('Error setting up all courses:', error);
+    return {
+      success: false,
+      error
+    };
+  }
+};
+
+// Clear all lesson content
+export const clearAllLessonContent = async () => {
+  try {
+    const { error } = await supabase
+      .from('lessons')
+      .update({ content: '' })
+      .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all lessons
+
+    if (error) throw error;
+
+    return {
+      success: true
+    };
+  } catch (error) {
+    console.error('Error clearing lesson content:', error);
+    return {
+      success: false,
+      error
+    };
   }
 };
