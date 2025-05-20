@@ -26,7 +26,7 @@ export interface CourseWithProgress {
   progress: number;
 }
 
-// Custom types for our RPC function responses
+// Define return types for RPC functions
 export type GetCourseModulesResponse = Module[];
 export type GetUserProgressResponse = UserProgress[];
 export type UpdateUserProgressResponse = UserProgress;

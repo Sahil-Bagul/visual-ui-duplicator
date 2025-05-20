@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -75,7 +76,7 @@ const CourseContent: React.FC = () => {
         if (modulesError) {
           console.error("Error fetching modules via RPC:", modulesError);
           
-          // Fallback to direct query if RPC fails
+          // Fallback to direct query
           const { data: directModulesData, error: directModulesError } = await supabase
             .from('course_modules')
             .select('*')
