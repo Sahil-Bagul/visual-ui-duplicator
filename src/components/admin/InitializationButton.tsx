@@ -23,9 +23,10 @@ const InitializationButton: React.FC = () => {
       } else {
         toast({
           title: "Initialization Failed",
-          description: "There was a problem setting up course data.",
+          description: "There was a problem setting up course data. Check console for details.",
           variant: "destructive"
         });
+        console.error("Initialization error details:", result.error);
       }
     } catch (error) {
       console.error("Error during manual initialization:", error);

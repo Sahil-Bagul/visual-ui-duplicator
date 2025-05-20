@@ -40,6 +40,9 @@ const App = () => {
         console.log("Starting app initialization...");
         const result = await initializeAppData();
         console.log("App initialization result:", result);
+        if (!result.success) {
+          console.error("App initialization failed:", result.error);
+        }
       } catch (error) {
         console.error("Error initializing app data:", error);
       } finally {
