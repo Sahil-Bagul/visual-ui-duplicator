@@ -11,11 +11,13 @@ import { useToast } from '@/hooks/use-toast';
 import { BookOpen, AlertCircle } from 'lucide-react';
 import { CourseWithProgress, Module } from '@/types/course';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [dataFetched, setDataFetched] = useState(false);
   
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -32,23 +34,28 @@ const MyCourses: React.FC = () => {
         setIsLoading(true);
         setError(null);
         
+        console.log("Fetching courses for user:", user.id);
+        
         // Get user's purchased courses
         const { data: purchasesData, error: purchasesError } = await supabase
           .from('purchases')
           .select('course:courses(*)')
           .eq('user_id', user.id);
           
-        if (purchasesError && purchasesError.code !== 'PGRST116') {
+        if (purchasesError) {
+          console.error("Error fetching purchases:", purchasesError);
           throw purchasesError;
         }
         
         // Extract course data from the join
         const purchasedCourses = purchasesData?.map(item => item.course) || [];
+        console.log("Purchased courses:", purchasedCourses.length);
         
         if (purchasedCourses.length === 0) {
           // No courses found - not an error condition
           setIsLoading(false);
           setCourses([]);
+          setDataFetched(true);
           return;
         }
         
@@ -62,8 +69,13 @@ const MyCourses: React.FC = () => {
               .eq('course_id', course.id)
               .order('module_order', { ascending: true });
               
-            if (modulesError) throw modulesError;
+            if (modulesError) {
+              console.error(`Error fetching modules for course ${course.id}:`, modulesError);
+              throw modulesError;
+            }
+            
             const modules = modulesData as Module[] || [];
+            console.log(`Course ${course.id} modules:`, modules.length);
             
             if (modules.length === 0) {
               return {
@@ -83,6 +95,7 @@ const MyCourses: React.FC = () => {
               .in('module_id', modules.map(module => module.id));
               
             if (progressError && progressError.code !== 'PGRST116') {
+              console.error(`Error fetching progress for course ${course.id}:`, progressError);
               throw progressError;
             }
             
@@ -102,6 +115,7 @@ const MyCourses: React.FC = () => {
         );
         
         setCourses(coursesWithProgress);
+        setDataFetched(true);
         
       } catch (error: any) {
         console.error("Error fetching courses:", error);
@@ -135,11 +149,9 @@ const MyCourses: React.FC = () => {
         )}
 
         {isLoading ? (
-          <div className="flex justify-center py-8">
-            <div className="flex flex-col items-center">
-              <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
-              <p className="mt-2 text-gray-500">Loading your courses...</p>
-            </div>
+          <div className="space-y-6">
+            <Skeleton className="h-64 w-full rounded-lg" />
+            <Skeleton className="h-64 w-full rounded-lg" />
           </div>
         ) : courses.length > 0 ? (
           <div className="space-y-6">
@@ -148,7 +160,7 @@ const MyCourses: React.FC = () => {
                 <div className="flex justify-between items-start mb-4">
                   <div>
                     <h2 className="text-xl font-semibold text-gray-800 mb-2">{course.title}</h2>
-                    <p className="text-gray-600 text-sm mb-4">{course.description}</p>
+                    <p className="text-gray-600 text-sm mb-4">{course.description || "No description available"}</p>
                   </div>
                   <div className="flex items-center gap-2 bg-blue-50 px-3 py-1 rounded-full text-blue-600 text-xs font-semibold">
                     <BookOpen className="w-3.5 h-3.5" />
@@ -185,7 +197,7 @@ const MyCourses: React.FC = () => {
               </div>
             ))}
           </div>
-        ) : (
+        ) : dataFetched ? (
           <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center">
             <div className="w-16 h-16 mb-4 text-gray-300">
               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -198,6 +210,13 @@ const MyCourses: React.FC = () => {
             <Button asChild className="bg-[#4F46E5] hover:bg-blue-700">
               <Link to="/dashboard">Browse Courses</Link>
             </Button>
+          </div>
+        ) : (
+          <div className="flex justify-center py-8">
+            <div className="flex flex-col items-center">
+              <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
+              <p className="mt-2 text-gray-500">Loading your courses...</p>
+            </div>
           </div>
         )}
       </main>

@@ -12,6 +12,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CourseWithProgress } from '@/types/course';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Course {
   id: string;
@@ -77,7 +78,17 @@ const Dashboard: React.FC = () => {
                   .eq('course_id', course.id)
                   .order('module_order', { ascending: true });
                   
-                if (modulesError) throw modulesError;
+                if (modulesError) {
+                  console.error(`Error fetching modules for course ${course.id}:`, modulesError);
+                  return {
+                    ...course,
+                    modules: [],
+                    totalModules: 0,
+                    completedModules: 0,
+                    progress: 0
+                  };
+                }
+                
                 const modules = modulesData || [];
                 
                 // Get user progress for this course's modules
@@ -88,7 +99,7 @@ const Dashboard: React.FC = () => {
                   .in('module_id', modules.map(module => module.id));
                   
                 if (progressError && progressError.code !== 'PGRST116') {
-                  throw progressError;
+                  console.error(`Error fetching progress for course ${course.id}:`, progressError);
                 }
                 
                 // Calculate progress
@@ -117,7 +128,7 @@ const Dashboard: React.FC = () => {
           .single();
           
         if (walletError && walletError.code !== 'PGRST116') {
-          throw walletError;
+          console.error("Error fetching wallet data:", walletError);
         }
         
         if (walletData) {
@@ -163,7 +174,15 @@ const Dashboard: React.FC = () => {
         )}
         
         {/* User's enrolled courses with progress */}
-        {!isLoading && enrolledCourses.length > 0 && (
+        {isLoading ? (
+          <section className="mt-8">
+            <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Your Learning Progress</h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <Skeleton className="h-40 w-full rounded-lg" />
+              <Skeleton className="h-40 w-full rounded-lg" />
+            </div>
+          </section>
+        ) : enrolledCourses.length > 0 ? (
           <section className="mt-8">
             <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Your Learning Progress</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -172,18 +191,23 @@ const Dashboard: React.FC = () => {
               ))}
             </div>
           </section>
-        )}
+        ) : purchasedCourses.length > 0 ? (
+          <section className="mt-8">
+            <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Your Learning Progress</h2>
+            <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 text-center">
+              <p className="text-gray-600">You have purchased courses but they don't have any modules yet. Please check back later.</p>
+            </div>
+          </section>
+        ) : null}
         
         {/* Available courses */}
         <section className="mt-8">
           <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Available Courses</h2>
           
           {isLoading ? (
-            <div className="flex justify-center py-8">
-              <div className="flex flex-col items-center">
-                <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
-                <p className="mt-2 text-gray-600">Loading courses...</p>
-              </div>
+            <div className="flex gap-6 max-md:flex-col">
+              <Skeleton className="h-64 w-full rounded-lg" />
+              <Skeleton className="h-64 w-full rounded-lg" />
             </div>
           ) : allCourses.length === 0 ? (
             <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 text-center">
@@ -195,7 +219,7 @@ const Dashboard: React.FC = () => {
                 <CourseCard
                   key={course.id}
                   title={course.title}
-                  description={course.description}
+                  description={course.description || "No description available"}
                   price={course.price}
                   type="Web Course"
                   onClick={() => handleCourseClick(course.id)}

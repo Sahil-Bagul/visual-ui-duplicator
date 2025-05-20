@@ -13,6 +13,12 @@ interface CourseProgressCardProps {
 const CourseProgressCard: React.FC<CourseProgressCardProps> = ({ course }) => {
   const navigate = useNavigate();
 
+  // Handle the case where modules might not exist or be empty
+  const hasModules = course.modules && course.modules.length > 0;
+  const totalModules = course.totalModules || 0;
+  const completedModules = course.completedModules || 0;
+  const progress = course.progress || 0;
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-5">
       <div className="flex justify-between items-start mb-3">
@@ -26,13 +32,13 @@ const CourseProgressCard: React.FC<CourseProgressCardProps> = ({ course }) => {
       <div className="mb-4">
         <div className="flex justify-between items-center mb-1.5">
           <span className="text-xs font-medium text-gray-700">
-            {course.completedModules}/{course.totalModules} modules
+            {completedModules}/{totalModules} modules
           </span>
           <span className="text-xs font-medium text-gray-700">
-            {course.progress}%
+            {progress}%
           </span>
         </div>
-        <Progress value={course.progress} className="h-1.5" />
+        <Progress value={progress} className="h-1.5" />
       </div>
       
       <Button 
@@ -42,8 +48,9 @@ const CourseProgressCard: React.FC<CourseProgressCardProps> = ({ course }) => {
         onClick={() => navigate(`/course-content/${course.id}`)}
       >
         <span>
-          {course.progress === 0 ? 'Start Learning' : 
-           course.progress === 100 ? 'Review Course' : 
+          {!hasModules ? 'View Course' :
+           progress === 0 ? 'Start Learning' : 
+           progress === 100 ? 'Review Course' : 
            'Continue Learning'}
         </span>
         <ChevronRight className="h-4 w-4 ml-1" />
