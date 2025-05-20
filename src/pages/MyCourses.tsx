@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -9,6 +10,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { BookOpen } from 'lucide-react';
 import { CourseWithProgress, Module } from '@/types/course';
+import { initializeAppData } from '@/utils/autoSetupCourses';
 
 const MyCourses: React.FC = () => {
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
@@ -24,6 +26,9 @@ const MyCourses: React.FC = () => {
       
       try {
         setIsLoading(true);
+        
+        // Ensure courses are set up
+        await initializeAppData(user.id);
         
         // Get user's purchased courses
         const { data: purchasesData, error: purchasesError } = await supabase
@@ -60,7 +65,7 @@ const MyCourses: React.FC = () => {
             
             // Calculate progress
             const totalModules = modules.length;
-            const completedModules = progressData.filter(p => p.completed).length;
+            const completedModules = progressData?.filter(p => p.completed).length || 0;
             const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
             
             return {
@@ -89,10 +94,6 @@ const MyCourses: React.FC = () => {
     
     fetchMyCourses();
   }, [user, toast]);
-
-  const handleContinueCourse = (courseId: string) => {
-    navigate(`/course-content/${courseId}`);
-  };
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">

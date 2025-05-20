@@ -1,8 +1,27 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Set up AI Tools for Students course
-export const setupAIToolsCourse = async () => {
+/**
+ * Check if courses are already set up
+ */
+const areCoursesSetUp = async (): Promise<boolean> => {
+  const { data, error } = await supabase
+    .from('courses')
+    .select('id')
+    .limit(1);
+    
+  if (error) {
+    console.error('Error checking if courses exist:', error);
+    return false;
+  }
+  
+  return data && data.length > 0;
+};
+
+/**
+ * Auto-generate content for "AI Tools for Students" course
+ */
+const setupAIToolsCourse = async () => {
   try {
     // Create course
     const { data: courseData, error: courseError } = await supabase
@@ -33,8 +52,7 @@ export const setupAIToolsCourse = async () => {
       .select();
 
     if (module1Error) throw module1Error;
-    if (!module1Data || module1Data.length === 0) throw new Error("Failed to create module 1");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -71,8 +89,7 @@ export const setupAIToolsCourse = async () => {
       .select();
 
     if (module2Error) throw module2Error;
-    if (!module2Data || module2Data.length === 0) throw new Error("Failed to create module 2");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -109,8 +126,7 @@ export const setupAIToolsCourse = async () => {
       .select();
 
     if (module3Error) throw module3Error;
-    if (!module3Data || module3Data.length === 0) throw new Error("Failed to create module 3");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -147,8 +163,7 @@ export const setupAIToolsCourse = async () => {
       .select();
 
     if (module4Error) throw module4Error;
-    if (!module4Data || module4Data.length === 0) throw new Error("Failed to create module 4");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -172,21 +187,17 @@ export const setupAIToolsCourse = async () => {
         }
       ]);
 
-    return {
-      success: true,
-      courseId
-    };
+    return { success: true, courseId };
   } catch (error) {
     console.error('Error setting up AI Tools course:', error);
-    return {
-      success: false,
-      error
-    };
+    return { success: false, error };
   }
 };
 
-// Set up Stock Investment course
-export const setupStockInvestmentCourse = async () => {
+/**
+ * Auto-generate content for "Introduction to Stock Investment" course
+ */
+const setupStockInvestmentCourse = async () => {
   try {
     // Create course
     const { data: courseData, error: courseError } = await supabase
@@ -217,8 +228,7 @@ export const setupStockInvestmentCourse = async () => {
       .select();
 
     if (module1Error) throw module1Error;
-    if (!module1Data || module1Data.length === 0) throw new Error("Failed to create module 1");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -255,8 +265,7 @@ export const setupStockInvestmentCourse = async () => {
       .select();
 
     if (module2Error) throw module2Error;
-    if (!module2Data || module2Data.length === 0) throw new Error("Failed to create module 2");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -293,8 +302,7 @@ export const setupStockInvestmentCourse = async () => {
       .select();
 
     if (module3Error) throw module3Error;
-    if (!module3Data || module3Data.length === 0) throw new Error("Failed to create module 3");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -331,8 +339,7 @@ export const setupStockInvestmentCourse = async () => {
       .select();
 
     if (module4Error) throw module4Error;
-    if (!module4Data || module4Data.length === 0) throw new Error("Failed to create module 4");
-
+    
     await supabase
       .from('lessons')
       .insert([
@@ -356,57 +363,61 @@ export const setupStockInvestmentCourse = async () => {
         }
       ]);
 
-    return {
-      success: true,
-      courseId
-    };
+    return { success: true, courseId };
   } catch (error) {
     console.error('Error setting up Stock Investment course:', error);
-    return {
-      success: false,
-      error
-    };
+    return { success: false, error };
   }
 };
 
-// Set up all courses
-export const setupAllCourses = async () => {
+/**
+ * Auto create some purchase records for demonstration purposes
+ */
+const createDemoPurchases = async (userId: string) => {
   try {
-    const aiToolsResult = await setupAIToolsCourse();
-    const stockInvestmentResult = await setupStockInvestmentCourse();
-
-    return {
-      success: aiToolsResult.success && stockInvestmentResult.success,
-      aiToolsCourse: aiToolsResult,
-      stockInvestmentCourse: stockInvestmentResult
-    };
+    // Get all courses
+    const { data: courses } = await supabase
+      .from('courses')
+      .select('id');
+    
+    if (!courses || courses.length === 0) return;
+    
+    // Create demo purchase records for all courses for the current user
+    const purchases = courses.map(course => ({
+      user_id: userId,
+      course_id: course.id,
+      has_used_referral_code: false
+    }));
+    
+    await supabase
+      .from('purchases')
+      .upsert(purchases, { onConflict: 'user_id,course_id' });
+      
   } catch (error) {
-    console.error('Error setting up all courses:', error);
-    return {
-      success: false,
-      error
-    };
+    console.error('Error creating demo purchases:', error);
   }
 };
 
-// Clear all lesson content
-export const clearAllLessonContent = async () => {
+/**
+ * Initialize application data
+ */
+export const initializeAppData = async (userId: string | undefined): Promise<void> => {
   try {
-    const { error } = await supabase
-      .from('lessons')
-      .update({ content: '' })
-      .neq('id', '00000000-0000-0000-0000-000000000000'); // Update all lessons
-
-    if (error) throw error;
-
-    return {
-      success: true
-    };
+    // Check if courses exist
+    const coursesExist = await areCoursesSetUp();
+    
+    // If courses don't exist, create them
+    if (!coursesExist) {
+      console.log('Setting up initial courses...');
+      await setupAIToolsCourse();
+      await setupStockInvestmentCourse();
+    }
+    
+    // Create demo purchases for logged in user if available
+    if (userId) {
+      await createDemoPurchases(userId);
+    }
   } catch (error) {
-    console.error('Error clearing lesson content:', error);
-    return {
-      success: false,
-      error
-    };
+    console.error('Error initializing app data:', error);
   }
 };

@@ -9,6 +9,7 @@ import CourseProgressCard from '@/components/dashboard/CourseProgressCard';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
+import { initializeAppData } from '@/utils/autoSetupCourses';
 import { Module, CourseWithProgress } from '@/types/course';
 
 interface Course {
@@ -32,6 +33,11 @@ const Dashboard: React.FC = () => {
     const fetchData = async () => {
       setIsLoading(true);
       try {
+        // Ensure courses are set up
+        if (user) {
+          await initializeAppData(user.id);
+        }
+        
         // Fetch all courses
         const { data: coursesData, error: coursesError } = await supabase
           .from('courses')
@@ -78,7 +84,7 @@ const Dashboard: React.FC = () => {
                   
                   // Calculate progress
                   const totalModules = modules.length;
-                  const completedModules = progressData.filter(p => p.completed).length;
+                  const completedModules = progressData?.filter(p => p.completed).length || 0;
                   const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
                   
                   return {
