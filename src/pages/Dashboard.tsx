@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -8,6 +7,7 @@ import CourseCard from '@/components/courses/CourseCard';
 import CourseProgressCard from '@/components/dashboard/CourseProgressCard';
 import CourseLoadingSkeleton from '@/components/courses/CourseLoadingSkeleton';
 import InitializationButton from '@/components/admin/InitializationButton';
+import GrantCourseAccess from '@/components/admin/GrantCourseAccess';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { useToast } from '@/hooks/use-toast';
@@ -189,7 +189,10 @@ const Dashboard: React.FC = () => {
             userName={user?.user_metadata?.name || 'User'} 
             walletBalance={walletBalance} 
           />
-          <InitializationButton />
+          <div className="flex space-x-2">
+            <InitializationButton />
+            {user?.email === 'admin@learnandearn.in' && <GrantCourseAccess />}
+          </div>
         </div>
         
         {/* Error display */}
