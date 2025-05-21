@@ -1,10 +1,9 @@
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
-import { grantCourseAccessToUser } from '@/utils/demoAccess';
+import { grantCourseAccessToUser, GrantCourseResult } from '@/utils/demoAccess';
 import { useToast } from '@/hooks/use-toast';
 
 // Define an interface for the return type of grantCourseAccessToUser
@@ -37,7 +36,7 @@ const GrantAccessForm = () => {
     
     try {
       // Grant access to both courses
-      const result: GrantCourseResult = await grantCourseAccessToUser(
+      const result = await grantCourseAccessToUser(
         userEmail,
         [
           'f9ef47ca-7003-4801-903a-79de8dd005aa', // AI Tools Mastery

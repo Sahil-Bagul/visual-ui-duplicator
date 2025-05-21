@@ -1,8 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+export interface GrantCourseResult {
+  success: boolean;
+  message: string;
+  purchases?: any[];  // Changed from Json to any[]
+}
+
 // Function to grant course access to a user
-export async function grantCourseAccessToUser(userEmail: string, courseIds: string[]) {
+export async function grantCourseAccessToUser(userEmail: string, courseIds: string[]): Promise<GrantCourseResult> {
   try {
     // First, check if the user exists
     const { data: userData, error: userError } = await supabase
@@ -32,10 +38,13 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
 
+    // Ensure data.purchases is an array or convert to empty array if null/undefined
+    const purchases = Array.isArray(data) ? data : [];
+
     return {
       success: true,
       message: `Successfully granted access to courses for user ${userEmail}`,
-      purchases: data
+      purchases: purchases
     };
   } catch (error) {
     console.error("Error granting course access:", error);

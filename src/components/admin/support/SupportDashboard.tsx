@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +45,7 @@ interface FeedbackItem {
   user?: {
     email: string | null;
     name: string | null;
-  };
+  } | null;
 }
 
 const SupportDashboard: React.FC = () => {
@@ -62,22 +61,7 @@ const SupportDashboard: React.FC = () => {
   const { data: feedbackItems = [], isLoading } = useQuery({
     queryKey: ['admin-support-requests'],
     queryFn: async () => {
-      // First try the .join approach
-      const { data: joinData, error: joinError } = await supabase
-        .from('feedback')
-        .select(`
-          *,
-          user:users!feedback_user_id_fkey(email, name)
-        `)
-        .order('submitted_at', { ascending: false });
-        
-      if (!joinError && joinData) {
-        return joinData as FeedbackItem[];
-      }
-      
-      // If the join approach fails, fall back to separate queries
-      console.error("Join error, falling back to separate queries:", joinError);
-      
+      // First try with separate query to get feedback items
       const { data: feedbackData, error: feedbackError } = await supabase
         .from('feedback')
         .select('*')
@@ -88,7 +72,7 @@ const SupportDashboard: React.FC = () => {
         throw feedbackError;
       }
       
-      // Now get user information for each feedback item
+      // Now map through and get user info for each feedback item
       const feedbackWithUsers: FeedbackItem[] = await Promise.all(
         (feedbackData || []).map(async (item: any) => {
           if (!item.user_id) {
@@ -98,24 +82,32 @@ const SupportDashboard: React.FC = () => {
             };
           }
           
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('email, name')
-            .eq('id', item.user_id)
-            .single();
-          
-          if (userError || !userData) {
-            console.warn(`Could not find user for ID ${item.user_id}:`, userError);
+          try {
+            const { data: userData, error: userError } = await supabase
+              .from('users')
+              .select('email, name')
+              .eq('id', item.user_id)
+              .single();
+            
+            if (userError || !userData) {
+              console.warn(`Could not find user for ID ${item.user_id}:`, userError);
+              return {
+                ...item,
+                user: { email: 'Unknown User', name: 'Unknown' }
+              };
+            }
+            
             return {
               ...item,
-              user: { email: 'Unknown User', name: 'Unknown' }
+              user: userData
+            };
+          } catch (error) {
+            console.error(`Error fetching user data for ${item.user_id}:`, error);
+            return {
+              ...item,
+              user: { email: 'Error', name: 'Error' }
             };
           }
-          
-          return {
-            ...item,
-            user: userData
-          };
         })
       );
       
@@ -149,7 +141,7 @@ const SupportDashboard: React.FC = () => {
       setResponseText('');
     },
     onError: (error) => {
-      toast.error(`Failed to submit response: ${error.message}`);
+      toast.error(`Failed to submit response: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
   
@@ -173,7 +165,7 @@ const SupportDashboard: React.FC = () => {
       toast.success('Status updated successfully');
     },
     onError: (error) => {
-      toast.error(`Failed to update status: ${error.message}`);
+      toast.error(`Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`);
     },
   });
   

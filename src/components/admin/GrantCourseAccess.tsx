@@ -6,7 +6,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { grantCourseAccessToUser } from '@/utils/demoAccess';
 import { Loader2 } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
 
 const GrantCourseAccess: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string>('');
@@ -33,7 +32,8 @@ const GrantCourseAccess: React.FC = () => {
       
       if (success) {
         toast.success(message);
-        setResult(`Successfully granted access to ${purchases ? purchases.length : 'all'} courses for user ${userEmail}`);
+        const purchaseCount = purchases && Array.isArray(purchases) ? purchases.length : 0;
+        setResult(`Successfully granted access to ${purchaseCount} courses for user ${userEmail}`);
         setUserEmail(''); // Clear the input field on success
       } else {
         toast.error(message);
