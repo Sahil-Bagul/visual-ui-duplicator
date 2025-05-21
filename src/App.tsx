@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -58,7 +57,7 @@ const AppInitializer: React.FC = () => {
   return null;
 };
 
-const App = () => {
+function App() {
   const [isInitializing, setIsInitializing] = useState(true);
 
   // Show a shorter loading screen and initialize in the background
@@ -82,6 +81,9 @@ const App = () => {
       </div>
     );
   }
+
+  // Add the login logger hook to track user logins for analytics
+  useLoginLogger(user?.id, !!user);
 
   return (
     <QueryClientProvider client={queryClient}>

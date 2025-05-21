@@ -46,20 +46,28 @@ export async function fetchAnalyticsData(days: number = 30): Promise<DailyMetric
 }
 
 export async function generateTestData(): Promise<{ success: boolean, message: string }> {
-  const { data, error } = await supabase.rpc('generate_test_analytics_data');
-  
-  if (error) {
-    console.error('Error generating test data:', error);
+  try {
+    const { data, error } = await supabase.rpc('generate_test_analytics_data');
+    
+    if (error) {
+      console.error('Error generating test data:', error);
+      return { 
+        success: false, 
+        message: `Failed to generate test data: ${error.message}` 
+      };
+    }
+    
     return { 
-      success: false, 
-      message: `Failed to generate test data: ${error.message}` 
+      success: true, 
+      message: 'Test data generated successfully' 
+    };
+  } catch (error) {
+    console.error('Exception when generating test data:', error);
+    return {
+      success: false,
+      message: `An unexpected error occurred: ${error instanceof Error ? error.message : String(error)}`
     };
   }
-  
-  return { 
-    success: true, 
-    message: 'Test data generated successfully' 
-  };
 }
 
 export async function logUserLogin(userId: string): Promise<void> {
