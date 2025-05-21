@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -19,6 +20,7 @@ import Profile from "./pages/Profile";
 import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
 import Feedback from "./pages/Feedback";
+import AdminPanel from "./pages/AdminPanel";
 import { initializeAppData } from "./utils/autoSetupCourses";
 import { useAuth } from "./context/AuthContext";
 
@@ -106,6 +108,7 @@ const App = () => {
                 <Route path="/profile" element={<Profile />} />
                 <Route path="/wallet" element={<Wallet />} />
                 <Route path="/feedback" element={<Feedback />} />
+                <Route path="/admin" element={<AdminPanel />} />
               </Route>
               
               {/* Catch-all route */}

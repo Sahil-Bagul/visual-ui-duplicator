@@ -19,6 +19,10 @@ const Index: React.FC = () => {
     navigate(`/course/${courseId}`);
   };
 
+  // Hardcoded admin emails for demo
+  const adminEmails = ['movieskatta7641@gmail.com'];
+  const isAdmin = adminEmails.includes('movieskatta7641@gmail.com'); // For demo purposes
+
   return <>
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
       
@@ -44,8 +48,20 @@ const Index: React.FC = () => {
             <section>
               <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Available Courses</h2>
               <div className="flex gap-6 max-md:flex-col">
-                <CourseCard title="AI Tools Mastery" description="Learn how to leverage AI tools to boost your productivity and creativity. This comprehensive guide covers the most popular AI tools and how to use them effectively." price={500} type="PDF Course" onClick={() => handleCourseClick('ai-tools')} />
-                <CourseCard title="Stock Market Fundamentals" description="A beginner's guide to understanding the stock market. Learn about different investment strategies, how to read financial statements, and make informed investment decisions." price={1000} type="PDF Course" onClick={() => handleCourseClick('stock-market')} />
+                <CourseCard 
+                  title="AI Tools Mastery" 
+                  description="Learn how to leverage AI tools to boost your productivity and creativity. This comprehensive guide covers the most popular AI tools and how to use them effectively." 
+                  price={500} 
+                  type="PDF Course" 
+                  onClick={() => handleCourseClick('ai-tools')} 
+                />
+                <CourseCard 
+                  title="Stock Market Fundamentals" 
+                  description="A beginner's guide to understanding the stock market. Learn about different investment strategies, how to read financial statements, and make informed investment decisions." 
+                  price={1000} 
+                  type="PDF Course" 
+                  onClick={() => handleCourseClick('stock-market')} 
+                />
               </div>
             </section>
             <div className="mt-8 flex gap-4 justify-center">
@@ -55,6 +71,11 @@ const Index: React.FC = () => {
               <button onClick={() => navigate('/my-courses')} className="text-xs text-blue-600 underline">
                 View My Courses
               </button>
+              {isAdmin && (
+                <button onClick={() => navigate('/admin')} className="text-xs text-blue-600 underline">
+                  Admin Panel
+                </button>
+              )}
             </div>
           </main>
         </div>}
