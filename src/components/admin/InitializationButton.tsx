@@ -5,13 +5,37 @@ import { Loader2, RefreshCw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { triggerInitialization } from '@/utils/autoSetupCourses';
 
-// This component is now hidden from the UI and used only for maintenance/debugging
-const InitializationButton: React.FC = () => {
+interface InitializationButtonProps {
+  // Optional admin email array
+  adminEmails?: string[];
+}
+
+const InitializationButton: React.FC<InitializationButtonProps> = ({ 
+  adminEmails = ['admin@learnandearn.in'] 
+}) => {
   const [isLoading, setIsLoading] = useState(false);
   const { toast } = useToast();
 
+  // Check if current user is admin
+  const checkIfAdmin = async (): Promise<boolean> => {
+    try {
+      const { supabase } = await import('@/integrations/supabase/client');
+      const { data } = await supabase.auth.getUser();
+      return data.user ? adminEmails.includes(data.user.email || '') : false;
+    } catch {
+      return false;
+    }
+  };
+
   const handleReinitialization = async () => {
     try {
+      // Check if user is admin
+      const isAdmin = await checkIfAdmin();
+      if (!isAdmin) {
+        console.log("Non-admin attempted to use initialization button");
+        return;
+      }
+
       setIsLoading(true);
       toast({
         title: "Initializing Courses",
@@ -52,7 +76,7 @@ const InitializationButton: React.FC = () => {
       disabled={isLoading}
       variant="outline"
       size="sm"
-      className="flex items-center gap-2 hidden" // Added hidden class to remove from UI
+      className="flex items-center gap-2 hidden" // Hidden by default
     >
       {isLoading ? (
         <>

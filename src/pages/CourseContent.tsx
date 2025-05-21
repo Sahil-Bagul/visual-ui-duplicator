@@ -1,12 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import ModuleContent from '@/components/courses/CourseContent';
-import ModulesList from '@/components/courses/ModulesList';
+import CourseContentDisplay from '@/components/courses/CourseContentDisplay';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -146,7 +144,6 @@ const CourseContent: React.FC = () => {
 
   const handleModuleSelect = (module: Module) => {
     setActiveModule(module);
-    setActiveLessonId(null);
     fetchLessons(module.id);
   };
   
@@ -312,8 +309,11 @@ const CourseContent: React.FC = () => {
     }
   };
 
-  const { current, total } = getModuleProgress();
-  const completedLessonIds = getLessonCompletionStatus();
+  const getCompletedLessonIds = () => {
+    return userProgress
+      .filter(p => p.lesson_id && p.completed)
+      .map(p => p.lesson_id as string);
+  };
 
   if (isLoading) {
     return (
@@ -341,7 +341,7 @@ const CourseContent: React.FC = () => {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">{courseTitle}</h1>
               <p className="text-sm text-gray-600 mt-1">
-                Module {current} of {total}
+                {modules.length > 0 ? `${modules.length} modules in this course` : 'No modules available'}
               </p>
             </div>
             <Button 
@@ -354,42 +354,18 @@ const CourseContent: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          {/* Left sidebar - Module list */}
-          <div className="md:col-span-1 bg-white rounded-lg shadow-sm border border-gray-100 p-4 h-fit">
-            <h2 className="font-semibold text-gray-800 mb-3">Course Modules</h2>
-            <ModulesList 
-              modules={modules}
-              userProgress={userProgress}
-              activeModuleId={activeModule?.id || null}
-              onSelectModule={handleModuleSelect}
-            />
-          </div>
-
-          {/* Main content area - Replaced with our new ModuleContent component */}
-          <div className="md:col-span-3">
-            {activeModule && lessons.length > 0 ? (
-              <ModuleContent 
-                activeModule={activeModule}
-                activeLessonId={activeLessonId}
-                lessons={lessons}
-                userProgress={userProgress}
-                onSelectLesson={handleLessonSelect}
-                onMarkComplete={handleMarkAsComplete}
-                isMarkingComplete={isMarkingComplete}
-                completedLessonIds={completedLessonIds}
-              />
-            ) : (
-              <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 flex justify-center">
-                <p className="text-gray-500">
-                  {modules.length === 0 
-                    ? "No modules found for this course." 
-                    : "Select a module to view its content."}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
+        <CourseContentDisplay
+          modules={modules}
+          lessons={lessons}
+          userProgress={userProgress}
+          activeModuleId={activeModule?.id || null}
+          activeLessonId={activeLessonId}
+          onSelectModule={handleModuleSelect}
+          onSelectLesson={handleLessonSelect}
+          onMarkComplete={handleMarkAsComplete}
+          isMarkingComplete={isMarkingComplete}
+          completedLessonIds={getCompletedLessonIds()}
+        />
       </main>
       <Footer />
     </div>

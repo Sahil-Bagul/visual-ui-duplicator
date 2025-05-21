@@ -21,6 +21,8 @@ import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
 import Feedback from "./pages/Feedback";
 import { initializeAppData } from "./utils/autoSetupCourses";
+import { grantDemoUserAccess } from "./utils/demoAccess";
+import { useAuth } from "./context/AuthContext";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -31,35 +33,45 @@ const queryClient = new QueryClient({
   },
 });
 
-const App = () => {
-  const [isInitializing, setIsInitializing] = useState(true);
+// AppInitializer component to handle initialization after auth is loaded
+const AppInitializer: React.FC = () => {
+  const { user } = useAuth();
+  const [initialized, setInitialized] = useState(false);
 
-  // Initialize course data when the app loads but don't show loading screen for too long
   useEffect(() => {
-    const setupCourses = async () => {
+    const initialize = async () => {
       try {
-        console.log("Starting app initialization...");
-        // Set a timeout to ensure the loading screen doesn't show for too long
-        const timeoutPromise = new Promise(resolve => setTimeout(resolve, 3000));
+        // Always initialize app data (courses)
+        await initializeAppData();
         
-        // Run course initialization in parallel with the timeout
-        const [result] = await Promise.all([
-          initializeAppData(),
-          timeoutPromise
-        ]);
-        
-        console.log("App initialization result:", result);
-        if (!result.success) {
-          console.error("App initialization failed:", result.error);
+        // If user is logged in, check and grant demo access if needed
+        if (user) {
+          await grantDemoUserAccess();
         }
       } catch (error) {
-        console.error("Error initializing app data:", error);
+        console.error("Initialization error:", error);
       } finally {
-        setIsInitializing(false);
+        setInitialized(true);
       }
     };
     
-    setupCourses();
+    initialize();
+  }, [user]);
+
+  return null;
+};
+
+const App = () => {
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Show a shorter loading screen and initialize in the background
+  useEffect(() => {
+    // Set a timeout to ensure the loading screen doesn't show for too long
+    const timer = setTimeout(() => {
+      setIsInitializing(false);
+    }, 1500);
+    
+    return () => clearTimeout(timer);
   }, []);
 
   // Show a simpler loading indicator during initialization
@@ -68,7 +80,7 @@ const App = () => {
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600">Loading...</p>
+          <p className="text-gray-600">Loading Learn & Earn...</p>
         </div>
       </div>
     );
@@ -79,6 +91,7 @@ const App = () => {
       <TooltipProvider>
         <BrowserRouter>
           <AuthProvider>
+            <AppInitializer />
             <Toaster />
             <Sonner />
             <Routes>
