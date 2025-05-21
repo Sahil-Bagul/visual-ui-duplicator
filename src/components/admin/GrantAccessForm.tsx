@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -5,13 +6,6 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Loader2 } from 'lucide-react';
 import { grantCourseAccessToUser, GrantCourseResult } from '@/utils/demoAccess';
 import { useToast } from '@/hooks/use-toast';
-
-// Define an interface for the return type of grantCourseAccessToUser
-interface GrantCourseResult {
-  success: boolean;
-  message: string;
-  purchases?: any[]; // Making purchases optional to match the function's return type
-}
 
 const GrantAccessForm = () => {
   const [userEmail, setUserEmail] = useState('');
@@ -116,12 +110,12 @@ const GrantAccessForm = () => {
           <AlertDescription>
             {result.message}
             
-            {result.success && result.purchases && result.purchases.length > 0 && (
+            {result.success && result.purchases && Array.isArray(result.purchases) && result.purchases.length > 0 && (
               <div className="mt-2">
                 <p className="font-medium">Courses granted:</p>
                 <ul className="list-disc list-inside mt-1">
                   {result.purchases.map((purchase, idx) => (
-                    <li key={idx}>Course ID: {purchase.course_id}</li>
+                    <li key={idx}>Course ID: {purchase.course_id || 'Unknown'}</li>
                   ))}
                 </ul>
               </div>
