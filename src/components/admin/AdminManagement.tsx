@@ -45,18 +45,20 @@ const AdminManagement = ({ currentAdminId }: AdminManagementProps) => {
       
       if (error) throw error;
       
-      setResult(data);
+      // Cast the data to the AdminResult type since we know the structure
+      const adminResult = data as AdminResult;
+      setResult(adminResult);
       
-      if (data.success) {
+      if (adminResult.success) {
         toast({
           title: "Success",
-          description: data.message,
+          description: adminResult.message,
         });
         setUserEmail('');
       } else {
         toast({
           title: "Error",
-          description: data.message,
+          description: adminResult.message,
           variant: "destructive"
         });
       }
@@ -110,18 +112,20 @@ const AdminManagement = ({ currentAdminId }: AdminManagementProps) => {
       
       if (error) throw error;
       
-      setResult(data);
+      // Cast the data to the AdminResult type since we know the structure
+      const adminResult = data as AdminResult;
+      setResult(adminResult);
       
-      if (data.success) {
+      if (adminResult.success) {
         toast({
           title: "Success",
-          description: data.message,
+          description: adminResult.message,
         });
         setUserEmail('');
       } else {
         toast({
           title: "Error",
-          description: data.message,
+          description: adminResult.message,
           variant: "destructive"
         });
       }
