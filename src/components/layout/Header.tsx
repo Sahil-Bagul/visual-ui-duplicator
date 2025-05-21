@@ -29,9 +29,11 @@ const Header: React.FC = () => {
                 alt="Learn & Earn" 
                 className="h-full w-auto object-contain"
                 onError={(e) => {
-                  e.currentTarget.style.display = 'none';
+                  // Use proper TypeScript casting for HTMLElement
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
                   // Show text fallback when image fails
-                  const fallback = e.currentTarget.nextElementSibling;
+                  const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                   if (fallback) fallback.style.display = 'block';
                 }}
               />
