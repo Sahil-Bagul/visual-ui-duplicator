@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { Redirect } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import GrantAccessForm from '@/components/admin/GrantAccessForm';
@@ -18,11 +18,11 @@ const AdminPanel: React.FC = () => {
   const isAdmin = user && adminEmails.includes(user.email || '');
   
   if (!user) {
-    return <Redirect to="/" />;
+    return <Navigate to="/" />;
   }
   
   if (!isAdmin) {
-    return <Redirect to="/dashboard" />;
+    return <Navigate to="/dashboard" />;
   }
 
   return (

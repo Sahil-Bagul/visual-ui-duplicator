@@ -7,10 +7,17 @@ import { Loader2 } from 'lucide-react';
 import { grantCourseAccessToUser } from '@/utils/demoAccess';
 import { useToast } from '@/hooks/use-toast';
 
+// Define an interface for the return type of grantCourseAccessToUser
+interface GrantCourseResult {
+  success: boolean;
+  message: string;
+  purchases?: any[]; // Making purchases optional to match the function's return type
+}
+
 const GrantAccessForm = () => {
   const [userEmail, setUserEmail] = useState('');
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<{success: boolean, message: string} | null>(null);
+  const [result, setResult] = useState<GrantCourseResult | null>(null);
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -30,7 +37,7 @@ const GrantAccessForm = () => {
     
     try {
       // Grant access to both courses
-      const result = await grantCourseAccessToUser(
+      const result: GrantCourseResult = await grantCourseAccessToUser(
         userEmail,
         [
           'f9ef47ca-7003-4801-903a-79de8dd005aa', // AI Tools Mastery
