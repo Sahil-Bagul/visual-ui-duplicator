@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -18,7 +17,7 @@ import {
   FileText,
   MessageSquare,
   CreditCard,
-  Telegram,
+  MessageCircle,
 } from 'lucide-react';
 
 const AdminPanel: React.FC = () => {
@@ -100,9 +99,9 @@ const AdminPanel: React.FC = () => {
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Payments</span>
             </TabsTrigger>
-            <TabsTrigger value="telegram" className="flex items-center gap-2" disabled>
-              <Telegram className="h-4 w-4" />
-              <span className="hidden sm:inline">Telegram</span>
+            <TabsTrigger value="messaging" className="flex items-center gap-2" disabled>
+              <MessageCircle className="h-4 w-4" />
+              <span className="hidden sm:inline">Messaging</span>
             </TabsTrigger>
           </TabsList>
           
@@ -127,7 +126,7 @@ const AdminPanel: React.FC = () => {
           </TabsContent>
           
           {/* Placeholder for future tabs */}
-          {['analytics', 'users', 'content', 'support', 'payments', 'telegram'].map(tab => (
+          {['analytics', 'users', 'content', 'support', 'payments', 'messaging'].map(tab => (
             <TabsContent key={tab} value={tab} className="py-12 flex items-center justify-center">
               <div className="text-center">
                 <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
