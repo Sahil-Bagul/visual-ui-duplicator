@@ -12,7 +12,8 @@ import AdminManagement from '@/components/admin/AdminManagement';
 import AnalyticsDashboard from '@/components/admin/analytics/AnalyticsDashboard';
 import SupportDashboard from '@/components/admin/support/SupportDashboard';
 import PaymentsDashboard from '@/components/admin/payments/PaymentsDashboard';
-import TelegramBotGuide from '@/components/admin/TelegramBotGuide';
+import UserManagement from '@/components/admin/users/UserManagement';
+import MessagingDashboard from '@/components/admin/messaging/MessagingDashboard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -29,11 +30,13 @@ import {
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
   
-  // Fetch admin status from the database - use suspense to ensure we have the data before rendering
+  // Fetch admin status from the database
   const { data: isAdmin, isLoading } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
+      
+      console.log('Checking admin status for user:', user.id);
       
       const { data, error } = await supabase.rpc('is_user_admin', {
         user_id: user.id
@@ -44,6 +47,7 @@ const AdminPanel: React.FC = () => {
         return false;
       }
       
+      console.log('Admin status result:', data);
       return data || false;
     },
     enabled: !!user,
@@ -81,7 +85,7 @@ const AdminPanel: React.FC = () => {
         </div>
         
         <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-7 gap-2">
+          <TabsList className="mb-6 grid grid-cols-4 md:grid-cols-7 gap-2">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Tools</span>
@@ -94,7 +98,7 @@ const AdminPanel: React.FC = () => {
               <FileText className="h-4 w-4" />
               <span className="hidden sm:inline">Content</span>
             </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2" disabled>
+            <TabsTrigger value="users" className="flex items-center gap-2">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
@@ -106,7 +110,7 @@ const AdminPanel: React.FC = () => {
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Payments</span>
             </TabsTrigger>
-            <TabsTrigger value="messaging" className="flex items-center gap-2" disabled>
+            <TabsTrigger value="messaging" className="flex items-center gap-2">
               <MessageCircle className="h-4 w-4" />
               <span className="hidden sm:inline">Messaging</span>
             </TabsTrigger>
@@ -130,11 +134,6 @@ const AdminPanel: React.FC = () => {
                 </div>
               </div>
             </div>
-            
-            <div className="pt-4">
-              <h2 className="text-xl font-semibold mb-4">Telegram Bot Setup</h2>
-              <TelegramBotGuide />
-            </div>
           </TabsContent>
           
           <TabsContent value="analytics">
@@ -145,6 +144,10 @@ const AdminPanel: React.FC = () => {
             <ContentManagement />
           </TabsContent>
           
+          <TabsContent value="users">
+            <UserManagement />
+          </TabsContent>
+          
           <TabsContent value="support">
             <SupportDashboard />
           </TabsContent>
@@ -153,30 +156,8 @@ const AdminPanel: React.FC = () => {
             <PaymentsDashboard />
           </TabsContent>
           
-          {/* Placeholder for Users tab */}
-          <TabsContent value="users" className="py-12 flex items-center justify-center">
-            <div className="text-center">
-              <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
-                <Users className="h-8 w-8 text-gray-500" />
-              </div>
-              <h3 className="text-xl font-medium mb-2">Coming Soon</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                User management features are planned for a future update.
-              </p>
-            </div>
-          </TabsContent>
-          
-          {/* Placeholder for Messaging tab */}
-          <TabsContent value="messaging" className="py-12 flex items-center justify-center">
-            <div className="text-center">
-              <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
-                <MessageCircle className="h-8 w-8 text-gray-500" />
-              </div>
-              <h3 className="text-xl font-medium mb-2">Coming Soon</h3>
-              <p className="text-gray-500 max-w-md mx-auto">
-                Messaging features are planned for a future update.
-              </p>
-            </div>
+          <TabsContent value="messaging">
+            <MessagingDashboard />
           </TabsContent>
         </Tabs>
       </main>

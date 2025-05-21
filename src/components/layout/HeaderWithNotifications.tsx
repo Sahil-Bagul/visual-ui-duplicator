@@ -20,6 +20,7 @@ const HeaderWithNotifications: React.FC = () => {
       if (!user?.id) return false;
       
       try {
+        console.log('Checking admin status for user:', user.id);
         const { data, error } = await supabase.rpc('is_user_admin', {
           user_id: user.id
         });
@@ -29,6 +30,7 @@ const HeaderWithNotifications: React.FC = () => {
           return false;
         }
         
+        console.log('Admin status result:', data);
         return data || false;
       } catch (error) {
         console.error('Exception checking admin status:', error);
@@ -62,11 +64,10 @@ const HeaderWithNotifications: React.FC = () => {
           <NotificationCenter />
           
           {isAdmin && (
-            <Link to="/admin">
+            <Link to="/admin" title="Admin Dashboard">
               <Button 
                 variant={isOnAdminPage ? "default" : "ghost"}
                 size="icon"
-                title="Admin Dashboard"
                 className={isOnAdminPage ? "bg-[#00C853] hover:bg-[#00A846]" : "text-[#00C853]"}
               >
                 <Shield className="h-5 w-5" />
@@ -74,7 +75,7 @@ const HeaderWithNotifications: React.FC = () => {
             </Link>
           )}
           
-          <Link to="/profile">
+          <Link to="/profile" title="Profile">
             <Button variant="ghost" size="icon">
               <UserCircle2 className="h-5 w-5" />
             </Button>

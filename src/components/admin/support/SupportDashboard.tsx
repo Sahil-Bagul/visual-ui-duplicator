@@ -1,438 +1,316 @@
-import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { 
+  Table, 
+  TableBody, 
+  TableCell, 
+  TableHead, 
+  TableHeader, 
+  TableRow 
+} from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
+import { Loader2, Check, X } from 'lucide-react';
+import { 
+  Dialog, 
+  DialogContent, 
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogFooter
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Loader2, MessageCircle, CheckCircle, XCircle, Send } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
+import { Textarea } from '@/components/ui/textarea';
+import { 
+  Tabs, 
+  TabsContent, 
+  TabsList, 
+  TabsTrigger
+} from '@/components/ui/tabs';
+import { 
+  getAllSupportTickets, 
+  respondToSupportTicket,
+  SupportTicket
+} from '@/services/supportService';
 import { toast } from 'sonner';
+import { formatDistanceToNow } from 'date-fns';
 
-interface FeedbackItem {
-  id: string;
-  user_id: string;
-  subject: string;
-  message: string;
-  rating?: number;
-  status: 'pending' | 'responded' | 'resolved';
-  submitted_at: string;
-  responded_at: string | null;
-  admin_response: string | null;
-  user?: {
-    email: string | null;
-    name: string | null;
-  } | null;
+interface FeedbackItem extends SupportTicket {
+  user: {
+    email: string;
+    name: string;
+  };
 }
 
+const statusVariants = {
+  pending: 'bg-yellow-100 text-yellow-800 border-yellow-200',
+  in_progress: 'bg-blue-100 text-blue-800 border-blue-200',
+  resolved: 'bg-green-100 text-green-800 border-green-200',
+  closed: 'bg-gray-100 text-gray-800 border-gray-200',
+};
+
 const SupportDashboard: React.FC = () => {
-  const [selectedFeedback, setSelectedFeedback] = useState<FeedbackItem | null>(null);
-  const [responseText, setResponseText] = useState('');
+  const [tickets, setTickets] = useState<FeedbackItem[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState<FeedbackItem | null>(null);
   const [responseDialogOpen, setResponseDialogOpen] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [searchTerm, setSearchTerm] = useState('');
+  const [responseText, setResponseText] = useState('');
+  const [submitting, setSubmitting] = useState(false);
+  const [responseStatus, setResponseStatus] = useState<'in_progress' | 'resolved' | 'closed'>('resolved');
   
-  const queryClient = useQueryClient();
-  
-  // Fetch all feedback/support items with user info joined
-  const { data: feedbackItems = [], isLoading } = useQuery({
-    queryKey: ['admin-support-requests'],
-    queryFn: async () => {
-      // First try with separate query to get feedback items
-      const { data: feedbackData, error: feedbackError } = await supabase
-        .from('feedback')
-        .select('*')
-        .order('submitted_at', { ascending: false });
-      
-      if (feedbackError) {
-        console.error("Error fetching feedback:", feedbackError);
-        throw feedbackError;
-      }
-      
-      // Now map through and get user info for each feedback item
-      const feedbackWithUsers: FeedbackItem[] = await Promise.all(
-        (feedbackData || []).map(async (item: any) => {
-          if (!item.user_id) {
-            return {
-              ...item,
-              user: { email: 'Anonymous', name: 'Anonymous' }
-            };
-          }
-          
-          try {
-            const { data: userData, error: userError } = await supabase
-              .from('users')
-              .select('email, name')
-              .eq('id', item.user_id)
-              .single();
-            
-            if (userError || !userData) {
-              console.warn(`Could not find user for ID ${item.user_id}:`, userError);
-              return {
-                ...item,
-                user: { email: 'Unknown User', name: 'Unknown' }
-              };
-            }
-            
-            return {
-              ...item,
-              user: userData
-            };
-          } catch (error) {
-            console.error(`Error fetching user data for ${item.user_id}:`, error);
-            return {
-              ...item,
-              user: { email: 'Error', name: 'Error' }
-            };
-          }
-        })
-      );
-      
-      return feedbackWithUsers;
-    },
-  });
-  
-  // Submit admin response mutation
-  const respondMutation = useMutation({
-    mutationFn: async ({ id, response }: { id: string; response: string }) => {
-      const { data, error } = await supabase
-        .from('feedback')
-        .update({
-          admin_response: response,
-          status: 'responded',
-          responded_at: new Date().toISOString(),
-        })
-        .eq('id', id)
-        .select();
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-support-requests'] });
-      toast.success('Response submitted successfully');
-      setResponseDialogOpen(false);
-      setResponseText('');
-    },
-    onError: (error) => {
-      toast.error(`Failed to submit response: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    },
-  });
-  
-  // Change feedback status mutation
-  const changeStatusMutation = useMutation({
-    mutationFn: async ({ id, status }: { id: string; status: string }) => {
-      const { data, error } = await supabase
-        .from('feedback')
-        .update({ status })
-        .eq('id', id)
-        .select();
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-support-requests'] });
-      toast.success('Status updated successfully');
-    },
-    onError: (error) => {
-      toast.error(`Failed to update status: ${error instanceof Error ? error.message : 'Unknown error'}`);
-    },
-  });
-  
-  // Filter the feedback items based on status and search term
-  const filteredItems = feedbackItems.filter(item => {
-    const matchesStatus = statusFilter === 'all' || item.status === statusFilter;
-    const matchesSearch = !searchTerm || 
-      (item.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       item.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       item.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    return matchesStatus && matchesSearch;
-  });
-  
-  const handleSubmitResponse = async () => {
-    if (!selectedFeedback || !responseText.trim()) return;
-    
-    await respondMutation.mutateAsync({ 
-      id: selectedFeedback.id, 
-      response: responseText 
-    });
-  };
-  
-  const handleStatusChange = async (id: string, status: string) => {
-    await changeStatusMutation.mutateAsync({ id, status });
-  };
-  
-  // Count items by status
-  const pendingCount = feedbackItems.filter(item => item.status === 'pending').length;
-  const respondedCount = feedbackItems.filter(item => item.status === 'responded').length;
-  const resolvedCount = feedbackItems.filter(item => item.status === 'resolved').length;
-  
-  const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100">Pending</Badge>;
-      case 'responded':
-        return <Badge variant="outline" className="bg-blue-100">Responded</Badge>;
-      case 'resolved':
-        return <Badge variant="outline" className="bg-green-100">Resolved</Badge>;
-      default:
-        return <Badge variant="outline">{status}</Badge>;
+  const loadTickets = async () => {
+    setLoading(true);
+    try {
+      const allTickets = await getAllSupportTickets();
+      setTickets(allTickets as FeedbackItem[]);
+    } catch (error) {
+      console.error('Error loading tickets:', error);
+      toast.error('Failed to load support tickets');
+    } finally {
+      setLoading(false);
     }
   };
+  
+  useEffect(() => {
+    loadTickets();
+  }, []);
+  
+  const handleRespond = (ticket: FeedbackItem) => {
+    setSelectedTicket(ticket);
+    setResponseText(ticket.admin_response || '');
+    setResponseDialogOpen(true);
+  };
+  
+  const handleSubmitResponse = async () => {
+    if (!selectedTicket || !responseText.trim()) {
+      toast.error('Please enter a response');
+      return;
+    }
+    
+    setSubmitting(true);
+    
+    try {
+      const result = await respondToSupportTicket(
+        selectedTicket.id, 
+        responseText, 
+        responseStatus
+      );
+      
+      if (result.success) {
+        toast.success('Response submitted successfully');
+        setResponseDialogOpen(false);
+        loadTickets(); // Reload tickets to get the updated list
+      } else {
+        toast.error(result.error || 'Failed to submit response');
+      }
+    } catch (error) {
+      console.error('Error submitting response:', error);
+      toast.error('An unexpected error occurred');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+  
+  // Filter tickets by status
+  const pendingTickets = tickets.filter(t => t.status === 'pending');
+  const inProgressTickets = tickets.filter(t => t.status === 'in_progress');
+  const resolvedTickets = tickets.filter(t => ['resolved', 'closed'].includes(t.status));
 
+  const getStatusBadge = (status: string) => {
+    const variant = statusVariants[status as keyof typeof statusVariants] || statusVariants.pending;
+    
+    return (
+      <Badge className={variant}>
+        {status === 'in_progress' ? 'In Progress' : 
+         status.charAt(0).toUpperCase() + status.slice(1)}
+      </Badge>
+    );
+  };
+  
+  const TicketTable: React.FC<{ items: FeedbackItem[] }> = ({ items }) => {
+    if (items.length === 0) {
+      return (
+        <div className="text-center py-6 text-gray-500">
+          No tickets found
+        </div>
+      );
+    }
+    
+    return (
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>User</TableHead>
+            <TableHead>Subject</TableHead>
+            <TableHead>Status</TableHead>
+            <TableHead>Date</TableHead>
+            <TableHead className="w-[100px]"></TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {items.map(ticket => (
+            <TableRow key={ticket.id}>
+              <TableCell>
+                <div className="font-medium">{ticket.user?.name || 'Unknown'}</div>
+                <div className="text-xs text-gray-500">{ticket.user?.email || 'No email'}</div>
+              </TableCell>
+              <TableCell>{ticket.subject}</TableCell>
+              <TableCell>{getStatusBadge(ticket.status)}</TableCell>
+              <TableCell className="text-sm text-gray-500">
+                {formatDistanceToNow(new Date(ticket.submitted_at), { addSuffix: true })}
+              </TableCell>
+              <TableCell>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => handleRespond(ticket)}
+                >
+                  {ticket.admin_response ? 'View/Update' : 'Respond'}
+                </Button>
+              </TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    );
+  };
+  
   return (
     <Card>
       <CardHeader>
         <CardTitle>Support Dashboard</CardTitle>
+        <CardDescription>Manage user support tickets and feedback</CardDescription>
       </CardHeader>
-      <CardContent className="space-y-6">
-        <div className="flex flex-col md:flex-row justify-between gap-4">
-          <div className="flex gap-2">
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Requests</SelectItem>
-                <SelectItem value="pending">Pending ({pendingCount})</SelectItem>
-                <SelectItem value="responded">Responded ({respondedCount})</SelectItem>
-                <SelectItem value="resolved">Resolved ({resolvedCount})</SelectItem>
-              </SelectContent>
-            </Select>
+      
+      <CardContent>
+        {loading ? (
+          <div className="flex items-center justify-center p-12">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
+          </div>
+        ) : (
+          <Tabs defaultValue="pending">
+            <TabsList className="grid grid-cols-3 mb-4">
+              <TabsTrigger value="pending" className="relative">
+                Pending
+                {pendingTickets.length > 0 && (
+                  <span className="absolute top-0 right-1 w-5 h-5 bg-red-500 text-white rounded-full text-xs flex items-center justify-center">
+                    {pendingTickets.length}
+                  </span>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="in-progress">In Progress</TabsTrigger>
+              <TabsTrigger value="resolved">Resolved</TabsTrigger>
+            </TabsList>
             
-            <div className="relative">
-              <Input 
-                placeholder="Search..." 
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-[200px]"
+            <TabsContent value="pending">
+              <TicketTable items={pendingTickets} />
+            </TabsContent>
+            
+            <TabsContent value="in-progress">
+              <TicketTable items={inProgressTickets} />
+            </TabsContent>
+            
+            <TabsContent value="resolved">
+              <TicketTable items={resolvedTickets} />
+            </TabsContent>
+          </Tabs>
+        )}
+      </CardContent>
+      
+      {/* Response Dialog */}
+      <Dialog open={responseDialogOpen} onOpenChange={setResponseDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{selectedTicket?.subject}</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4 py-2">
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium text-gray-500">From</h4>
+              <div>
+                <div className="font-medium">{selectedTicket?.user?.name || 'Unknown'}</div>
+                <div className="text-sm text-gray-500">{selectedTicket?.user?.email || 'No email'}</div>
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <h4 className="text-sm font-medium text-gray-500">Message</h4>
+              <div className="p-3 bg-gray-50 rounded-md text-sm">
+                {selectedTicket?.message}
+              </div>
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-500" htmlFor="response">
+                Your Response
+              </label>
+              <Textarea 
+                id="response"
+                value={responseText} 
+                onChange={(e) => setResponseText(e.target.value)}
+                placeholder="Type your response here..."
+                rows={5}
               />
+            </div>
+            
+            <div className="space-y-1">
+              <label className="text-sm font-medium text-gray-500">
+                Status After Response
+              </label>
+              <div className="flex gap-2">
+                <Button 
+                  type="button"
+                  variant={responseStatus === 'in_progress' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setResponseStatus('in_progress')}
+                >
+                  In Progress
+                </Button>
+                <Button 
+                  type="button"
+                  variant={responseStatus === 'resolved' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setResponseStatus('resolved')}
+                >
+                  <Check className="mr-1 h-3 w-3" />
+                  Resolved
+                </Button>
+                <Button 
+                  type="button"
+                  variant={responseStatus === 'closed' ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setResponseStatus('closed')}
+                >
+                  <X className="mr-1 h-3 w-3" />
+                  Closed
+                </Button>
+              </div>
             </div>
           </div>
           
-          <div className="flex gap-2">
-            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-yellow-50 text-yellow-700 text-sm">
-              <span className="w-2 h-2 rounded-full bg-yellow-400"></span>
-              <span>Pending: {pendingCount}</span>
-            </div>
-            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-blue-50 text-blue-700 text-sm">
-              <span className="w-2 h-2 rounded-full bg-blue-400"></span>
-              <span>Responded: {respondedCount}</span>
-            </div>
-            <div className="flex items-center gap-1 px-3 py-1 rounded-full bg-green-50 text-green-700 text-sm">
-              <span className="w-2 h-2 rounded-full bg-green-400"></span>
-              <span>Resolved: {resolvedCount}</span>
-            </div>
-          </div>
-        </div>
-        
-        {isLoading ? (
-          <div className="flex items-center justify-center py-12">
-            <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
-          </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="text-center py-12 bg-gray-50 rounded-lg">
-            <MessageCircle className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-            <h3 className="text-lg font-medium text-gray-700 mb-1">No support requests found</h3>
-            <p className="text-gray-500">
-              {searchTerm || statusFilter !== 'all' ? 
-                'Try adjusting your filters' : 
-                'When users submit support requests, they will appear here'}
-            </p>
-          </div>
-        ) : (
-          <div className="border rounded-md overflow-hidden">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Date</TableHead>
-                  <TableHead>User</TableHead>
-                  <TableHead>Subject</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredItems.map((item) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="whitespace-nowrap">
-                      {new Date(item.submitted_at).toLocaleDateString()}
-                    </TableCell>
-                    <TableCell>{item.user?.email || 'Unknown'}</TableCell>
-                    <TableCell>{item.subject}</TableCell>
-                    <TableCell>
-                      {getStatusBadge(item.status)}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <Button 
-                          variant="outline" 
-                          size="sm"
-                          onClick={() => {
-                            setSelectedFeedback(item);
-                            setResponseDialogOpen(true);
-                            setResponseText(item.admin_response || '');
-                          }}
-                        >
-                          <MessageCircle className="h-3.5 w-3.5 mr-1" />
-                          Reply
-                        </Button>
-                        {item.status !== 'resolved' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-green-600"
-                            onClick={() => handleStatusChange(item.id, 'resolved')}
-                          >
-                            <CheckCircle className="h-3.5 w-3.5 mr-1" />
-                            Resolve
-                          </Button>
-                        )}
-                        {item.status === 'resolved' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-yellow-600"
-                            onClick={() => handleStatusChange(item.id, 'pending')}
-                          >
-                            <XCircle className="h-3.5 w-3.5 mr-1" />
-                            Reopen
-                          </Button>
-                        )}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-        )}
-        
-        {/* Response Dialog */}
-        {selectedFeedback && (
-          <Dialog open={responseDialogOpen} onOpenChange={setResponseDialogOpen}>
-            <DialogContent className="max-w-2xl">
-              <DialogHeader>
-                <DialogTitle>Respond to Support Request</DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-6">
-                <div className="space-y-4">
-                  <div className="bg-gray-50 p-4 rounded-md space-y-2">
-                    <div className="flex justify-between">
-                      <div>
-                        <Label className="text-gray-500 text-xs">FROM</Label>
-                        <div className="font-medium">{selectedFeedback.user?.email || 'Unknown'}</div>
-                      </div>
-                      <div className="text-right">
-                        <Label className="text-gray-500 text-xs">SUBMITTED</Label>
-                        <div className="font-mono text-sm">
-                          {new Date(selectedFeedback.submitted_at).toLocaleString()}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-gray-500 text-xs">SUBJECT</Label>
-                      <div className="font-semibold">{selectedFeedback.subject}</div>
-                    </div>
-                    
-                    <div>
-                      <Label className="text-gray-500 text-xs">MESSAGE</Label>
-                      <div className="whitespace-pre-wrap bg-white p-3 rounded-md border mt-1">
-                        {selectedFeedback.message}
-                      </div>
-                    </div>
-                    
-                    {selectedFeedback.rating && (
-                      <div>
-                        <Label className="text-gray-500 text-xs">RATING</Label>
-                        <div className="flex mt-1">
-                          {Array.from({ length: 5 }).map((_, i) => (
-                            <span 
-                              key={i}
-                              className={`h-5 w-5 text-lg ${i < selectedFeedback.rating! ? 'text-yellow-400' : 'text-gray-300'}`}
-                            >
-                              ★
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="response">Your Response</Label>
-                    <Textarea
-                      id="response"
-                      placeholder="Type your response here..."
-                      value={responseText}
-                      onChange={(e) => setResponseText(e.target.value)}
-                      className="min-h-[150px]"
-                    />
-                  </div>
-                </div>
-              </div>
-              
-              <DialogFooter>
-                <Button 
-                  variant="outline" 
-                  onClick={() => setResponseDialogOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button 
-                  onClick={handleSubmitResponse}
-                  disabled={!responseText.trim() || respondMutation.isPending}
-                >
-                  {respondMutation.isPending ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Sending...
-                    </>
-                  ) : (
-                    <>
-                      <Send className="mr-2 h-4 w-4" />
-                      Send Response
-                    </>
-                  )}
-                </Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
-      </CardContent>
+          <DialogFooter>
+            <Button 
+              variant="outline" 
+              onClick={() => setResponseDialogOpen(false)}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button 
+              onClick={handleSubmitResponse}
+              disabled={submitting || !responseText.trim()}
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Response'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };

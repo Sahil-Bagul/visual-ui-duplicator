@@ -34,6 +34,7 @@ export interface Lesson {
 // Get all courses
 export async function getAllCourses(): Promise<Course[]> {
   try {
+    console.log('Fetching all courses');
     const { data, error } = await supabase
       .from('courses')
       .select('*')
@@ -45,6 +46,7 @@ export async function getAllCourses(): Promise<Course[]> {
       return [];
     }
 
+    console.log(`Retrieved ${data?.length || 0} courses`);
     return data as Course[];
   } catch (error) {
     console.error('Exception fetching courses:', error);
@@ -56,6 +58,7 @@ export async function getAllCourses(): Promise<Course[]> {
 // Get a single course by ID
 export async function getCourseById(courseId: string): Promise<Course | null> {
   try {
+    console.log(`Fetching course with ID: ${courseId}`);
     const { data, error } = await supabase
       .from('courses')
       .select('*')
@@ -68,6 +71,7 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
       return null;
     }
 
+    console.log('Retrieved course:', data);
     return data as Course;
   } catch (error) {
     console.error('Exception fetching course:', error);
@@ -79,6 +83,7 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
 // Create a new course
 export async function createCourse(course: Omit<Course, 'id'>): Promise<{ success: boolean; courseId?: string; error?: string }> {
   try {
+    console.log('Creating new course:', course);
     const { data, error } = await supabase
       .from('courses')
       .insert([course])
@@ -89,6 +94,8 @@ export async function createCourse(course: Omit<Course, 'id'>): Promise<{ succes
       console.error('Error creating course:', error);
       return { success: false, error: error.message };
     }
+
+    console.log('Created course:', data);
 
     // Log the content management operation
     await logContentManagement(
@@ -108,6 +115,7 @@ export async function createCourse(course: Omit<Course, 'id'>): Promise<{ succes
 // Update a course
 export async function updateCourse(courseId: string, updates: Partial<Course>): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Updating course ${courseId}:`, updates);
     const { error } = await supabase
       .from('courses')
       .update(updates)
@@ -117,6 +125,8 @@ export async function updateCourse(courseId: string, updates: Partial<Course>): 
       console.error('Error updating course:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Course ${courseId} updated successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -136,6 +146,7 @@ export async function updateCourse(courseId: string, updates: Partial<Course>): 
 // Delete a course
 export async function deleteCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Deleting course with ID: ${courseId}`);
     const { error } = await supabase
       .from('courses')
       .delete()
@@ -145,6 +156,8 @@ export async function deleteCourse(courseId: string): Promise<{ success: boolean
       console.error('Error deleting course:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Course ${courseId} deleted successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -164,6 +177,7 @@ export async function deleteCourse(courseId: string): Promise<{ success: boolean
 // Get modules for a course
 export async function getModulesForCourse(courseId: string): Promise<Module[]> {
   try {
+    console.log(`Fetching modules for course: ${courseId}`);
     const { data, error } = await supabase
       .from('course_modules')
       .select('*')
@@ -176,6 +190,7 @@ export async function getModulesForCourse(courseId: string): Promise<Module[]> {
       return [];
     }
 
+    console.log(`Retrieved ${data?.length || 0} modules for course ${courseId}`);
     return data as Module[];
   } catch (error) {
     console.error('Exception fetching modules:', error);
@@ -187,6 +202,8 @@ export async function getModulesForCourse(courseId: string): Promise<Module[]> {
 // Create a module
 export async function createModule(module: Omit<Module, 'id'>): Promise<{ success: boolean; moduleId?: string; error?: string }> {
   try {
+    console.log('Creating new module:', module);
+    
     // If module_order is not specified, get the maximum order and add 1
     if (!module.module_order) {
       const { data: maxOrderData } = await supabase
@@ -211,6 +228,8 @@ export async function createModule(module: Omit<Module, 'id'>): Promise<{ succes
       return { success: false, error: error.message };
     }
 
+    console.log('Created module:', data);
+
     // Log the content management operation
     await logContentManagement(
       'create',
@@ -230,6 +249,7 @@ export async function createModule(module: Omit<Module, 'id'>): Promise<{ succes
 // Update a module
 export async function updateModule(moduleId: string, updates: Partial<Module>): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Updating module ${moduleId}:`, updates);
     const { error } = await supabase
       .from('course_modules')
       .update(updates)
@@ -239,6 +259,8 @@ export async function updateModule(moduleId: string, updates: Partial<Module>): 
       console.error('Error updating module:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Module ${moduleId} updated successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -259,6 +281,7 @@ export async function updateModule(moduleId: string, updates: Partial<Module>): 
 // Delete a module
 export async function deleteModule(moduleId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Deleting module with ID: ${moduleId}`);
     const { error } = await supabase
       .from('course_modules')
       .delete()
@@ -268,6 +291,8 @@ export async function deleteModule(moduleId: string): Promise<{ success: boolean
       console.error('Error deleting module:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Module ${moduleId} deleted successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -288,6 +313,7 @@ export async function deleteModule(moduleId: string): Promise<{ success: boolean
 // Get lessons for a module
 export async function getLessonsForModule(moduleId: string): Promise<Lesson[]> {
   try {
+    console.log(`Fetching lessons for module: ${moduleId}`);
     const { data, error } = await supabase
       .from('lessons')
       .select('*')
@@ -300,6 +326,7 @@ export async function getLessonsForModule(moduleId: string): Promise<Lesson[]> {
       return [];
     }
 
+    console.log(`Retrieved ${data?.length || 0} lessons for module ${moduleId}`);
     return data as Lesson[];
   } catch (error) {
     console.error('Exception fetching lessons:', error);
@@ -311,6 +338,8 @@ export async function getLessonsForModule(moduleId: string): Promise<Lesson[]> {
 // Create a lesson
 export async function createLesson(lesson: Omit<Lesson, 'id'>): Promise<{ success: boolean; lessonId?: string; error?: string }> {
   try {
+    console.log('Creating new lesson:', lesson);
+    
     // If lesson_order is not specified, get the maximum order and add 1
     if (!lesson.lesson_order) {
       const { data: maxOrderData } = await supabase
@@ -335,6 +364,8 @@ export async function createLesson(lesson: Omit<Lesson, 'id'>): Promise<{ succes
       return { success: false, error: error.message };
     }
 
+    console.log('Created lesson:', data);
+
     // Log the content management operation
     await logContentManagement(
       'create',
@@ -354,6 +385,7 @@ export async function createLesson(lesson: Omit<Lesson, 'id'>): Promise<{ succes
 // Update a lesson
 export async function updateLesson(lessonId: string, updates: Partial<Lesson>): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Updating lesson ${lessonId}:`, updates);
     const { error } = await supabase
       .from('lessons')
       .update(updates)
@@ -363,6 +395,8 @@ export async function updateLesson(lessonId: string, updates: Partial<Lesson>): 
       console.error('Error updating lesson:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Lesson ${lessonId} updated successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -383,6 +417,7 @@ export async function updateLesson(lessonId: string, updates: Partial<Lesson>): 
 // Delete a lesson
 export async function deleteLesson(lessonId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Deleting lesson with ID: ${lessonId}`);
     const { error } = await supabase
       .from('lessons')
       .delete()
@@ -392,6 +427,8 @@ export async function deleteLesson(lessonId: string): Promise<{ success: boolean
       console.error('Error deleting lesson:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Lesson ${lessonId} deleted successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -412,6 +449,7 @@ export async function deleteLesson(lessonId: string): Promise<{ success: boolean
 // Get the full course structure (all modules and lessons)
 export async function getFullCourseStructure(courseId: string): Promise<CourseStructure[]> {
   try {
+    console.log(`Fetching full course structure for course: ${courseId}`);
     const { data, error } = await supabase.rpc('get_course_structure', {
       course_id_param: courseId
     });
@@ -422,6 +460,7 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
       return [];
     }
 
+    console.log(`Retrieved course structure for course ${courseId}`);
     return data as CourseStructure[];
   } catch (error) {
     console.error('Exception fetching course structure:', error);
@@ -433,6 +472,7 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
 // Publish a course (make it visible to users)
 export async function publishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Publishing course: ${courseId}`);
     // Update the is_published field to true
     const { error } = await supabase
       .from('courses')
@@ -443,6 +483,8 @@ export async function publishCourse(courseId: string): Promise<{ success: boolea
       console.error('Error publishing course:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Course ${courseId} published successfully`);
 
     // Log the content management operation
     await logContentManagement(
@@ -462,6 +504,7 @@ export async function publishCourse(courseId: string): Promise<{ success: boolea
 // Unpublish a course (hide it from users)
 export async function unpublishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    console.log(`Unpublishing course: ${courseId}`);
     // Update the is_published field to false
     const { error } = await supabase
       .from('courses')
@@ -472,6 +515,8 @@ export async function unpublishCourse(courseId: string): Promise<{ success: bool
       console.error('Error unpublishing course:', error);
       return { success: false, error: error.message };
     }
+
+    console.log(`Course ${courseId} unpublished successfully`);
 
     // Log the content management operation
     await logContentManagement(

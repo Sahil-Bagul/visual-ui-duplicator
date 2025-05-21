@@ -24,6 +24,8 @@ export async function logContentManagement(
       return null;
     }
     
+    console.log(`Logging content management: ${operation} ${resourceType} ${resourceId}`);
+    
     const { data, error } = await supabase.rpc(
       'log_content_management',
       {
@@ -49,6 +51,8 @@ export async function logContentManagement(
 
 export async function getContentManagementLogs(limit: number = 50): Promise<ContentManagementLog[]> {
   try {
+    console.log(`Fetching content management logs, limit: ${limit}`);
+    
     const { data, error } = await supabase
       .from('content_management_logs')
       .select('*')
@@ -60,6 +64,7 @@ export async function getContentManagementLogs(limit: number = 50): Promise<Cont
       return [];
     }
 
+    console.log(`Retrieved ${data?.length || 0} content management logs`);
     return data as ContentManagementLog[];
   } catch (error) {
     console.error('Exception fetching content management logs:', error);

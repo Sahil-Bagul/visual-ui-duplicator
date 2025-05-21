@@ -10,7 +10,7 @@ import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications
 import Footer from '@/components/layout/Footer';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { MessageCircle, Settings, Lock, LogOut, HelpCircle } from 'lucide-react';
+import { MessageCircle, LogOut, HelpCircle } from 'lucide-react';
 import ContactSupportButton from '@/components/support/ContactSupportButton';
 
 const Profile = () => {
@@ -19,6 +19,7 @@ const Profile = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     const fetchUserProfile = async () => {
@@ -27,7 +28,7 @@ const Profile = () => {
       try {
         const { data, error } = await supabase
           .from('users')
-          .select('name, email')
+          .select('name, email, is_admin')
           .eq('id', user.id)
           .single();
 
@@ -38,6 +39,7 @@ const Profile = () => {
         if (data) {
           setName(data.name || '');
           setEmail(data.email || '');
+          setIsAdmin(data.is_admin || false);
         }
       } catch (error) {
         console.error('Error fetching user profile:', error);
@@ -119,6 +121,18 @@ const Profile = () => {
               <Input id="email" type="email" value={email} readOnly disabled className="w-full bg-gray-50" />
               <p className="mt-1 text-xs text-gray-500">Email address cannot be changed</p>
             </div>
+
+            {isAdmin && (
+              <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+                <p className="text-blue-800 font-medium">Admin Account</p>
+                <p className="text-sm text-blue-600 mt-1">You have administrative privileges on this platform</p>
+                <Link to="/admin">
+                  <Button variant="outline" className="mt-2 w-full border-blue-200 hover:bg-blue-100">
+                    Go to Admin Dashboard
+                  </Button>
+                </Link>
+              </div>
+            )}
           </CardContent>
           <CardFooter className="justify-between">
             <Button variant="outline" onClick={() => navigate(-1)}>

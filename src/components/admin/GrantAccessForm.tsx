@@ -29,6 +29,8 @@ const GrantAccessForm = () => {
     setResult(null);
     
     try {
+      console.log("Submitting grant access for:", userEmail);
+      
       // Grant access to both courses
       const result = await grantCourseAccessToUser(
         userEmail,
@@ -38,6 +40,7 @@ const GrantAccessForm = () => {
         ]
       );
       
+      console.log("Grant access result:", result);
       setResult(result);
       
       if (result.success) {

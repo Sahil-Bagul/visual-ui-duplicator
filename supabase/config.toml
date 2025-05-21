@@ -1,115 +1,37 @@
 
-# This file is used by Supabase CLI to manage your project
-# Visit https://supabase.com/docs/reference/cli to learn more
+project_id = "jepeeykyoouhaqhondcq"
 
-[project]
-name = "learnandearn"
-organizationId = ""
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
 
-# Define RPC functions for course modules, lessons, and user progress
-[[functions]]
-name = "get_course_modules"
-verbosity = "debug"
-verify_jwt = true
-schema = "public"
-language = "sql"
-definition = """
-CREATE OR REPLACE FUNCTION public.get_course_modules(course_id_param UUID)
-RETURNS SETOF public.course_modules
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT * FROM public.course_modules WHERE course_id = course_id_param ORDER BY module_order ASC;
-$$;
-"""
+[db]
+port = 54322
+shadow_port = 54320
+major_version = 15
 
-[[functions]]
-name = "get_module_lessons"
-verbosity = "debug"
-verify_jwt = true
-schema = "public"
-language = "sql"
-definition = """
-CREATE OR REPLACE FUNCTION public.get_module_lessons(module_id_param UUID)
-RETURNS SETOF public.lessons
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT * FROM public.lessons WHERE module_id = module_id_param ORDER BY lesson_order ASC;
-$$;
-"""
+[studio]
+enabled = true
+port = 54323
+api_url = "http://localhost"
 
-[[functions]]
-name = "get_user_progress"
-verbosity = "debug"
-verify_jwt = true
-schema = "public"
-language = "sql"
-definition = """
-CREATE OR REPLACE FUNCTION public.get_user_progress(user_id_param UUID, course_id_param UUID)
-RETURNS SETOF public.user_progress
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  SELECT up.* FROM public.user_progress up
-  JOIN public.lessons l ON up.lesson_id = l.id
-  JOIN public.course_modules cm ON l.module_id = cm.id
-  WHERE up.user_id = user_id_param AND cm.course_id = course_id_param;
-$$;
-"""
+[inbucket]
+enabled = true
+port = 54324
 
-[[functions]]
-name = "update_user_progress"
-verbosity = "debug"
-verify_jwt = true
-schema = "public" 
-language = "sql"
-definition = """
-CREATE OR REPLACE FUNCTION public.update_user_progress(progress_id_param UUID, completed_param BOOLEAN)
-RETURNS public.user_progress
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  UPDATE public.user_progress
-  SET completed = completed_param,
-      completed_at = CASE WHEN completed_param THEN CURRENT_TIMESTAMP ELSE completed_at END
-  WHERE id = progress_id_param
-  RETURNING *;
-$$;
-"""
+[auth]
+enabled = true
+port = 9999
 
-[[functions]]
-name = "create_user_progress"
-verbosity = "debug"
-verify_jwt = true
-schema = "public"
-language = "sql"
-definition = """
-CREATE OR REPLACE FUNCTION public.create_user_progress(user_id_param UUID, lesson_id_param UUID, completed_param BOOLEAN)
-RETURNS public.user_progress
-LANGUAGE sql
-SECURITY DEFINER
-AS $$
-  INSERT INTO public.user_progress (user_id, lesson_id, completed, completed_at)
-  VALUES (
-    user_id_param,
-    lesson_id_param,
-    completed_param,
-    CASE WHEN completed_param THEN CURRENT_TIMESTAMP ELSE NULL END
-  )
-  RETURNING *;
-$$;
-"""
+[storage]
+enabled = true
 
-# Configure the telegramWebhook endpoint as public (no JWT verification)
-# This is needed so Telegram can call it directly
-[functions.telegramWebhook]
-verify_jwt = false
+[realtime]
+enabled = true
 
-# The webhook setup function requires admin authentication
-[functions.setupTelegramWebhook]
-verify_jwt = true
+[functions]
+enabled = true
 
-# The telegram bot test function requires admin authentication
-[functions.telegramBotTest]
+[functions.telegram-test]
 verify_jwt = true

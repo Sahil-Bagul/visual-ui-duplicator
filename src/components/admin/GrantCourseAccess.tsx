@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { toast } from 'sonner';
-import { grantCourseAccessToUser } from '@/utils/demoAccess';
+import { grantCourseAccessToUser, GrantCourseResult } from '@/utils/demoAccess';
 import { Loader2 } from 'lucide-react';
 
 const GrantCourseAccess: React.FC = () => {
@@ -22,22 +22,26 @@ const GrantCourseAccess: React.FC = () => {
     setResult(null);
     
     try {
+      console.log("Granting access to:", userEmail);
+      
       const courseIds = [
         'f9ef47ca-7003-4801-903a-79de8dd005aa', // AI Tools Mastery
         '46f0b0fa-6cc1-482e-adca-6d50eab9538f'  // Stock Market Fundamentals
       ];
       
       // Call the function to grant access
-      const { success, message, purchases } = await grantCourseAccessToUser(userEmail, courseIds);
+      const response = await grantCourseAccessToUser(userEmail, courseIds);
       
-      if (success) {
-        toast.success(message);
-        const purchaseCount = purchases && Array.isArray(purchases) ? purchases.length : 0;
+      console.log("Grant course access response:", response);
+      
+      if (response.success) {
+        toast.success(response.message);
+        const purchaseCount = response.purchases && Array.isArray(response.purchases) ? response.purchases.length : 0;
         setResult(`Successfully granted access to ${purchaseCount} courses for user ${userEmail}`);
         setUserEmail(''); // Clear the input field on success
       } else {
-        toast.error(message);
-        setResult(`Error: ${message}`);
+        toast.error(response.message);
+        setResult(`Error: ${response.message}`);
       }
     } catch (error) {
       console.error("Error in grant access handler:", error);
