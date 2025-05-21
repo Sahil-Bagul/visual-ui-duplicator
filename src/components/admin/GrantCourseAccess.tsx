@@ -27,7 +27,7 @@ const GrantCourseAccess: React.FC = () => {
         toast({
           title: "Success",
           description: message,
-          variant: "success",
+          variant: "default", // Changed from "success" to "default"
         });
         setResult(`Successfully granted access to ${purchases.length} courses for user ${userEmail}`);
       } else {
