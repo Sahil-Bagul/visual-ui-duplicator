@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
@@ -12,6 +11,9 @@ enum AdminCommand {
   ConfirmPayout = "/confirm_payout",
   Help = "/help"
 }
+
+// Keep track of pending confirmations requiring a second step
+const pendingConfirmations = new Map();
 
 // Telegram message structure
 interface TelegramUpdate {
@@ -59,7 +61,7 @@ serve(async (req) => {
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     
     // Verify webhook secret if provided
-    const secretHeader = req.headers.get("x-telegram-webhook-secret");
+    const secretHeader = req.headers.get("x-telegram-bot-api-secret-token");
     if (telegramWebhookSecret && secretHeader !== telegramWebhookSecret) {
       console.error("Invalid webhook secret");
       return new Response(
@@ -94,6 +96,70 @@ serve(async (req) => {
       }
       
       const payoutId = parts[1].trim();
+      
+      // Check if payout exists and is pending
+      const { data: payoutData, error: payoutError } = await supabase
+        .from("payouts")
+        .select("id, user_id, amount, status, payout_method_id")
+        .eq("id", payoutId)
+        .eq("status", "pending")
+        .single();
+        
+      if (payoutError || !payoutData) {
+        await sendTelegramMessage(telegramBotToken, telegramChatId, 
+          `❌ Payout not found or already processed: ${payoutError?.message || "Not found"}`);
+          
+        return new Response(
+          JSON.stringify({ success: false, error: payoutError?.message || "Payout not found" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Add to pending confirmations
+      pendingConfirmations.set(payoutId, {
+        timestamp: Date.now(),
+        payoutData
+      });
+      
+      // Ask for second confirmation
+      await sendTelegramMessage(telegramBotToken, telegramChatId, 
+        `🔐 To confirm payment of ₹${payoutData.amount} for payout ID: ${payoutId}\n\nReply with:\n\nYES ${payoutId}`);
+          
+      return new Response(
+        JSON.stringify({ success: true, message: "Confirmation requested" }),
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    } else if (messageText.startsWith("YES ")) {
+      // Second step confirmation
+      const parts = messageText.split(" ");
+      if (parts.length !== 2) {
+        await sendTelegramMessage(telegramBotToken, telegramChatId, 
+          "❌ Invalid format. Use: YES [payout_id]");
+        return new Response(JSON.stringify({ success: false }), 
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } });
+      }
+      
+      const payoutId = parts[1].trim();
+      const pendingConfirmation = pendingConfirmations.get(payoutId);
+      
+      // Check if confirmation is pending and not expired (10 minutes)
+      if (!pendingConfirmation || (Date.now() - pendingConfirmation.timestamp) > 10 * 60 * 1000) {
+        await sendTelegramMessage(telegramBotToken, telegramChatId, 
+          `❌ No pending confirmation found for payout ID: ${payoutId} or it has expired`);
+          
+        // Clean up expired confirmation
+        if (pendingConfirmation) {
+          pendingConfirmations.delete(payoutId);
+        }
+        
+        return new Response(
+          JSON.stringify({ success: false, message: "Confirmation expired or not found" }),
+          { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      // Process the payout confirmation
+      const { payoutData } = pendingConfirmation;
       
       // Update the payout status in the database
       const { data, error } = await supabase
@@ -143,6 +209,31 @@ serve(async (req) => {
           `✅ Payout #${payoutId.substring(0, 8)}... confirmed! Amount: ₹${data[0].amount}`);
       }
       
+      // Log admin action
+      try {
+        const { error: logError } = await supabase
+          .from("admin_logs")
+          .insert({
+            action_type: "payout_confirmation",
+            payout_id: payoutId,
+            admin_telegram_id: update.message.from.id.toString(),
+            details: JSON.stringify({
+              amount: data[0].amount,
+              user_id: data[0].user_id
+            }),
+            created_at: new Date().toISOString()
+          });
+        
+        if (logError) {
+          console.error("Failed to log admin action:", logError);
+        }
+      } catch (logException) {
+        console.error("Error logging admin action:", logException);
+      }
+      
+      // Clean up the pending confirmation
+      pendingConfirmations.delete(payoutId);
+      
       return new Response(
         JSON.stringify({ success: true }),
         { headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -150,7 +241,8 @@ serve(async (req) => {
     } else if (messageText === AdminCommand.Help) {
       await sendTelegramMessage(telegramBotToken, telegramChatId, 
         "Available commands:\n\n" +
-        "/confirm_payout [payout_id] - Mark a payout as paid\n" +
+        "/confirm_payout [payout_id] - Start the payout confirmation process\n" +
+        "YES [payout_id] - Final confirmation for a payout\n" +
         "/help - Show this help message");
         
       return new Response(
