@@ -1,6 +1,6 @@
 
 import { useEffect } from 'react';
-import { logUserLogin } from '@/services/analyticsService';
+import { logUserLogin } from '../services/analyticsService';
 
 /**
  * Hook to log user logins for analytics

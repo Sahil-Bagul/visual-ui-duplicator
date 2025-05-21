@@ -1,3 +1,4 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -22,6 +23,7 @@ import Feedback from "./pages/Feedback";
 import AdminPanel from "./pages/AdminPanel";
 import { initializeAppData } from "./utils/autoSetupCourses";
 import { useAuth } from "./context/AuthContext";
+import { useLoginLogger } from "./hooks/useLoginLogger";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -59,6 +61,7 @@ const AppInitializer: React.FC = () => {
 
 function App() {
   const [isInitializing, setIsInitializing] = useState(true);
+  const { user } = useAuth();  // Add this line to get the user from context
 
   // Show a shorter loading screen and initialize in the background
   useEffect(() => {
@@ -121,6 +124,6 @@ function App() {
       </TooltipProvider>
     </QueryClientProvider>
   );
-};
+}
 
 export default App;
