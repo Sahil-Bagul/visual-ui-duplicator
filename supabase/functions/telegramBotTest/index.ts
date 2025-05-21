@@ -18,8 +18,9 @@ serve(async (req) => {
     // This should be an admin-only function, check for admin auth
     const authHeader = req.headers.get("Authorization");
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("Authentication failed: Missing or invalid Bearer token");
       return new Response(
-        JSON.stringify({ success: false, message: "Unauthorized" }),
+        JSON.stringify({ success: false, message: "Unauthorized", detail: "Missing or invalid Bearer token format" }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -28,8 +29,16 @@ serve(async (req) => {
     const adminToken = Deno.env.get("ADMIN_API_TOKEN");
     
     if (!adminToken || token !== adminToken) {
+      console.error("Authentication failed: Token mismatch", {
+        receivedToken: token.substring(0, 5) + "...", // Log only first 5 chars for security
+        hasAdminToken: !!adminToken
+      });
       return new Response(
-        JSON.stringify({ success: false, message: "Invalid admin token" }),
+        JSON.stringify({ 
+          success: false, 
+          message: "Invalid admin token", 
+          detail: "The provided token does not match the ADMIN_API_TOKEN"
+        }),
         { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
@@ -38,18 +47,23 @@ serve(async (req) => {
     const telegramChatId = Deno.env.get("TELEGRAM_CHAT_ID");
     
     if (!telegramBotToken || !telegramChatId) {
+      const missingEnv = [];
+      if (!telegramBotToken) missingEnv.push("TELEGRAM_BOT_TOKEN");
+      if (!telegramChatId) missingEnv.push("TELEGRAM_CHAT_ID");
+      
+      console.error(`Missing environment variables: ${missingEnv.join(", ")}`);
       return new Response(
         JSON.stringify({ 
           success: false, 
           message: "Telegram credentials not properly configured",
-          missing: {
-            botToken: !telegramBotToken,
-            chatId: !telegramChatId
-          }
+          missing: missingEnv,
+          detail: "Please check that all required environment variables are set in Supabase"
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Starting bot verification test");
     
     // Get bot info as a first test
     const botInfoResponse = await fetch(
@@ -65,15 +79,57 @@ serve(async (req) => {
     const botInfoData = await botInfoResponse.json();
     
     if (!botInfoResponse.ok || !botInfoData.ok) {
+      console.error("Bot token verification failed", botInfoData);
       return new Response(
         JSON.stringify({ 
           success: false, 
           message: "Failed to get bot information. Token may be invalid.", 
-          telegram_response: botInfoData 
+          telegram_response: botInfoData,
+          detail: "The TELEGRAM_BOT_TOKEN seems to be invalid or expired"
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Bot token verified successfully", {
+      username: botInfoData.result.username,
+      id: botInfoData.result.id
+    });
+    
+    // Test the connection to the specified chat
+    const chatTestResponse = await fetch(
+      `https://api.telegram.org/bot${telegramBotToken}/getChat`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: telegramChatId
+        }),
+      }
+    );
+    
+    const chatData = await chatTestResponse.json();
+    
+    if (!chatTestResponse.ok || !chatData.ok) {
+      console.error("Chat ID verification failed", chatData);
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          message: "Failed to connect to the specified chat ID. The chat ID may be incorrect or the bot doesn't have permission.", 
+          telegram_response: chatData,
+          bot_info: botInfoData.result,
+          detail: "The TELEGRAM_CHAT_ID seems to be invalid or the bot doesn't have permission to access it"
+        }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
+    console.log("Chat ID verified successfully", {
+      chat_type: chatData.result.type,
+      chat_title: chatData.result.title || chatData.result.first_name
+    });
     
     // Send a test message
     const testMessage = "🔔 Test message from Learn and Earn platform. If you're seeing this, your bot is configured correctly!";
@@ -96,16 +152,21 @@ serve(async (req) => {
     const sendMessageData = await sendMessageResponse.json();
     
     if (!sendMessageResponse.ok || !sendMessageData.ok) {
+      console.error("Message sending failed", sendMessageData);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          message: "Bot is valid but failed to send message. Chat ID may be incorrect.", 
+          message: "Bot and chat verified but failed to send message.", 
           telegram_response: sendMessageData,
-          bot_info: botInfoData.result
+          bot_info: botInfoData.result,
+          chat_info: chatData.result,
+          detail: "The bot can't send messages to this chat. Check permissions."
         }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    console.log("Test message sent successfully");
     
     // Get webhook info
     const webhookInfoResponse = await fetch(
@@ -120,13 +181,33 @@ serve(async (req) => {
     
     const webhookInfoData = await webhookInfoResponse.json();
     
+    let webhookStatus = "Not configured";
+    
+    if (webhookInfoData.ok && webhookInfoData.result) {
+      if (webhookInfoData.result.url) {
+        webhookStatus = webhookInfoData.result.pending_update_count > 0 
+          ? "Configured but has pending updates" 
+          : "Properly configured and working";
+      } else {
+        webhookStatus = "Not set";
+      }
+    }
+    
+    console.log("Webhook status:", webhookStatus, webhookInfoData.result);
+    
     return new Response(
       JSON.stringify({ 
         success: true, 
         message: "Bot test successful. Message sent to your chat.", 
         bot_info: botInfoData.result,
+        chat_info: {
+          id: chatData.result.id,
+          type: chatData.result.type,
+          title: chatData.result.title || chatData.result.first_name
+        },
         message_info: sendMessageData.result,
-        webhook_info: webhookInfoData.result
+        webhook_info: webhookInfoData.result,
+        webhook_status: webhookStatus
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
@@ -134,7 +215,12 @@ serve(async (req) => {
     console.error("Error testing Telegram bot:", error);
     
     return new Response(
-      JSON.stringify({ success: false, message: error.message }),
+      JSON.stringify({ 
+        success: false, 
+        message: error.message,
+        stack: error.stack,
+        detail: "An unexpected error occurred while testing the Telegram bot"
+      }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }

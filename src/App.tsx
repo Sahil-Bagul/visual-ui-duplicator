@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
@@ -21,7 +20,6 @@ import Wallet from "./pages/Wallet";
 import Policies from "./pages/Policies";
 import Feedback from "./pages/Feedback";
 import { initializeAppData } from "./utils/autoSetupCourses";
-import { grantDemoUserAccess } from "./utils/demoAccess";
 import { useAuth } from "./context/AuthContext";
 
 const queryClient = new QueryClient({
@@ -44,10 +42,7 @@ const AppInitializer: React.FC = () => {
         // Always initialize app data (courses)
         await initializeAppData();
         
-        // If user is logged in, check and grant demo access if needed
-        if (user) {
-          await grantDemoUserAccess();
-        }
+        // Demo access code removed - now managed manually through database entries
       } catch (error) {
         console.error("Initialization error:", error);
       } finally {

@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
@@ -22,12 +21,16 @@ const Header: React.FC = () => {
         {/* Logo with error handling */}
         <div className="flex items-center">
           <NavLink to="/dashboard" className="flex items-center">
-            {/* Logo with fallback */}
-            <div className="h-8 w-auto mr-2">
+            {/* Enhanced logo styling */}
+            <div className="h-10 w-auto mr-2 flex items-center">
               <img 
                 src={logoImage} 
                 alt="Learn & Earn" 
-                className="h-full w-auto object-contain"
+                className="h-auto w-full max-h-10 object-contain"
+                style={{
+                  filter: "brightness(1.2) contrast(1.2)",
+                  maxWidth: "150px",
+                }}
                 onError={(e) => {
                   // Use proper TypeScript casting for HTMLElement
                   const target = e.currentTarget as HTMLImageElement;
