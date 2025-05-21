@@ -109,3 +109,7 @@ verify_jwt = false
 # The webhook setup function requires admin authentication
 [functions.setupTelegramWebhook]
 verify_jwt = true
+
+# The telegram bot test function requires admin authentication
+[functions.telegramBotTest]
+verify_jwt = true
