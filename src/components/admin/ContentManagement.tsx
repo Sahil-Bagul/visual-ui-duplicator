@@ -1,7 +1,5 @@
-
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Edit, Trash, Plus, File, FolderClosed, Book, Eye, EyeOff, Calendar } from "lucide-react";
 import { 
   Card, 
   CardContent,
@@ -9,16 +7,20 @@ import {
   CardHeader, 
   CardTitle 
 } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
+
+import { getContentManagementLogs, ContentManagementLog } from "@/services/contentManagementService";
+import { Course } from "@/services/courseManagementService";
+import CourseListView from "./content/CourseListView";
+import CourseForm from "./content/CourseForm";
+import { Edit, Trash, Plus, File, FolderClosed, Book, Eye, EyeOff, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableBody,
@@ -28,7 +30,6 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getContentManagementLogs, ContentManagementLog } from "@/services/contentManagementService";
 import { Badge } from "@/components/ui/badge";
 
 interface LogsTableProps {
@@ -123,10 +124,30 @@ const LogsTable: React.FC<LogsTableProps> = ({ logs, isLoading }) => {
 };
 
 const ContentManagement: React.FC = () => {
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [dialogTitle, setDialogTitle] = useState("Create New Course");
+  const [selectedCourse, setSelectedCourse] = useState<Course | undefined>(undefined);
+  
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['contentManagementLogs'],
     queryFn: () => getContentManagementLogs(100),
   });
+
+  const handleCreateCourse = () => {
+    setSelectedCourse(undefined);
+    setDialogTitle("Create New Course");
+    setDialogOpen(true);
+  };
+
+  const handleEditCourse = (course: Course) => {
+    setSelectedCourse(course);
+    setDialogTitle(`Edit Course: ${course.title}`);
+    setDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setDialogOpen(false);
+  };
 
   return (
     <Card>
@@ -138,57 +159,50 @@ const ContentManagement: React.FC = () => {
       </CardHeader>
       <CardContent>
         <Tabs defaultValue="courses">
-          <div className="flex items-center justify-between mb-4">
-            <TabsList>
-              <TabsTrigger value="courses">Courses</TabsTrigger>
-              <TabsTrigger value="modules">Modules</TabsTrigger>
-              <TabsTrigger value="lessons">Lessons</TabsTrigger>
-              <TabsTrigger value="history">History</TabsTrigger>
-            </TabsList>
-            
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button size="sm" className="gap-1">
-                  <Plus className="h-4 w-4" />
-                  <span>New Course</span>
-                </Button>
-              </DialogTrigger>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Create New Course</DialogTitle>
-                  <DialogDescription>
-                    Add a new course to the platform.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="py-4 text-center text-gray-500">
-                  Course creation form to be implemented
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
+          <TabsList>
+            <TabsTrigger value="courses">Courses</TabsTrigger>
+            <TabsTrigger value="modules">Modules</TabsTrigger>
+            <TabsTrigger value="lessons">Lessons</TabsTrigger>
+            <TabsTrigger value="history">History</TabsTrigger>
+          </TabsList>
           
-          <TabsContent value="courses" className="mt-0">
-            <div className="text-sm text-gray-500 py-8 text-center">
-              Course management interface to be implemented
-            </div>
+          <TabsContent value="courses" className="mt-4">
+            <CourseListView 
+              onCreateCourse={handleCreateCourse}
+              onEditCourse={handleEditCourse}
+            />
           </TabsContent>
           
-          <TabsContent value="modules" className="mt-0">
+          <TabsContent value="modules" className="mt-4">
             <div className="text-sm text-gray-500 py-8 text-center">
               Module management interface to be implemented
             </div>
           </TabsContent>
           
-          <TabsContent value="lessons" className="mt-0">
+          <TabsContent value="lessons" className="mt-4">
             <div className="text-sm text-gray-500 py-8 text-center">
               Lesson management interface to be implemented
             </div>
           </TabsContent>
           
-          <TabsContent value="history" className="mt-0">
+          <TabsContent value="history" className="mt-4">
             <LogsTable logs={logs} isLoading={isLoading} />
           </TabsContent>
         </Tabs>
+        
+        {/* Course Edit/Create Dialog */}
+        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle>{dialogTitle}</DialogTitle>
+            </DialogHeader>
+            <CourseForm 
+              course={selectedCourse}
+              onSuccess={handleDialogClose}
+              onCancel={handleDialogClose}
+            />
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
