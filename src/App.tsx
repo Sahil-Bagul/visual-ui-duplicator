@@ -4,7 +4,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "./context/AuthContext";
+import { AuthProvider, useAuth } from "./context/AuthContext";
 import { useEffect, useState } from "react";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 import Auth from "./pages/Auth";
@@ -22,7 +22,6 @@ import Policies from "./pages/Policies";
 import Feedback from "./pages/Feedback";
 import AdminPanel from "./pages/AdminPanel";
 import { initializeAppData } from "./utils/autoSetupCourses";
-import { useAuth } from "./context/AuthContext";
 import { useLoginLogger } from "./hooks/useLoginLogger";
 
 const queryClient = new QueryClient({
@@ -59,9 +58,42 @@ const AppInitializer: React.FC = () => {
   return null;
 };
 
+// Main App component wrapped with AuthProvider
+const AppWithAuth = () => {
+  const { user } = useAuth();
+  
+  // Add the login logger hook to track user logins for analytics
+  useLoginLogger(user?.id, !!user);
+  
+  return (
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<Auth />} />
+      <Route path="/policies" element={<Policies />} />
+      
+      {/* Protected routes */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/my-courses" element={<MyCourses />} />
+        <Route path="/course/:id" element={<CourseDetail />} />
+        <Route path="/course-content/:courseId" element={<CourseContent />} />
+        <Route path="/payment" element={<Payment />} />
+        <Route path="/payment-success" element={<PaymentSuccess />} />
+        <Route path="/referrals" element={<Referrals />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/wallet" element={<Wallet />} />
+        <Route path="/feedback" element={<Feedback />} />
+        <Route path="/admin" element={<AdminPanel />} />
+      </Route>
+      
+      {/* Catch-all route */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
+  );
+};
+
 function App() {
   const [isInitializing, setIsInitializing] = useState(true);
-  const { user } = useAuth();  // Add this line to get the user from context
 
   // Show a shorter loading screen and initialize in the background
   useEffect(() => {
@@ -85,9 +117,6 @@ function App() {
     );
   }
 
-  // Add the login logger hook to track user logins for analytics
-  useLoginLogger(user?.id, !!user);
-
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
@@ -96,29 +125,7 @@ function App() {
             <AppInitializer />
             <Toaster />
             <Sonner />
-            <Routes>
-              {/* Public routes */}
-              <Route path="/" element={<Auth />} />
-              <Route path="/policies" element={<Policies />} />
-              
-              {/* Protected routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<Dashboard />} />
-                <Route path="/my-courses" element={<MyCourses />} />
-                <Route path="/course/:id" element={<CourseDetail />} />
-                <Route path="/course-content/:courseId" element={<CourseContent />} />
-                <Route path="/payment" element={<Payment />} />
-                <Route path="/payment-success" element={<PaymentSuccess />} />
-                <Route path="/referrals" element={<Referrals />} />
-                <Route path="/profile" element={<Profile />} />
-                <Route path="/wallet" element={<Wallet />} />
-                <Route path="/feedback" element={<Feedback />} />
-                <Route path="/admin" element={<AdminPanel />} />
-              </Route>
-              
-              {/* Catch-all route */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
+            <AppWithAuth />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
