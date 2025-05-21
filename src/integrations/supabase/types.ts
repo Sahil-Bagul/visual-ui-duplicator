@@ -355,18 +355,21 @@ export type Database = {
         Row: {
           email: string | null
           id: string
+          is_admin: boolean
           joined_at: string | null
           name: string | null
         }
         Insert: {
           email?: string | null
           id: string
+          is_admin?: boolean
           joined_at?: string | null
           name?: string | null
         }
         Update: {
           email?: string | null
           id?: string
+          is_admin?: boolean
           joined_at?: string | null
           name?: string | null
         }
@@ -428,6 +431,22 @@ export type Database = {
           completed: boolean
           completed_at: string
         }[]
+      }
+      grant_admin_privileges: {
+        Args: { admin_email: string }
+        Returns: Json
+      }
+      grant_one_time_access_to_user: {
+        Args: { user_email: string }
+        Returns: Json
+      }
+      is_user_admin: {
+        Args: { user_id: string }
+        Returns: boolean
+      }
+      revoke_admin_privileges: {
+        Args: { admin_email: string }
+        Returns: Json
       }
     }
     Enums: {

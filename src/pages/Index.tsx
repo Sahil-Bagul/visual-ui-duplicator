@@ -5,10 +5,43 @@ import AuthForm from '@/components/auth/AuthForm';
 import Header from '@/components/layout/Header';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
 import CourseCard from '@/components/courses/CourseCard';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const Index: React.FC = () => {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const navigate = useNavigate();
+  const [userEmail, setUserEmail] = useState('movieskatta7641@gmail.com'); // For demo purposes
+
+  // Check if user is admin
+  const { data: isAdmin } = useQuery({
+    queryKey: ['isAdmin', userEmail],
+    queryFn: async () => {
+      // For demo purposes, we're using the is_user_admin RPC function
+      // This won't actually run in the demo without a real user session
+      if (!userEmail) return false;
+      
+      try {
+        const { data: userId } = await supabase
+          .from('users')
+          .select('id')
+          .eq('email', userEmail)
+          .single();
+          
+        if (!userId) return false;
+        
+        const { data } = await supabase.rpc('is_user_admin', {
+          user_id: userId.id
+        });
+        
+        return data || false;
+      } catch (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+    },
+    enabled: !!userEmail
+  });
 
   // Toggle between login and dashboard views for demo purposes
   const toggleView = () => {
@@ -18,10 +51,6 @@ const Index: React.FC = () => {
   const handleCourseClick = (courseId: string) => {
     navigate(`/course/${courseId}`);
   };
-
-  // Hardcoded admin emails for demo
-  const adminEmails = ['movieskatta7641@gmail.com'];
-  const isAdmin = adminEmails.includes('movieskatta7641@gmail.com'); // For demo purposes
 
   return <>
       <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
