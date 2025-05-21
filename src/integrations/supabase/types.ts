@@ -48,6 +48,36 @@ export type Database = {
         }
         Relationships: []
       }
+      content_management_logs: {
+        Row: {
+          admin_id: string
+          created_at: string
+          details: Json | null
+          id: string
+          operation_type: string
+          resource_id: string
+          resource_type: string
+        }
+        Insert: {
+          admin_id: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          operation_type: string
+          resource_id: string
+          resource_type: string
+        }
+        Update: {
+          admin_id?: string
+          created_at?: string
+          details?: Json | null
+          id?: string
+          operation_type?: string
+          resource_id?: string
+          resource_type?: string
+        }
+        Relationships: []
+      }
       course_modules: {
         Row: {
           content: string
@@ -183,6 +213,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      notifications: {
+        Row: {
+          action_text: string | null
+          action_url: string | null
+          created_at: string
+          id: string
+          message: string
+          read: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          action_text?: string | null
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          read?: boolean
+          title: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          action_text?: string | null
+          action_url?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          read?: boolean
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       payout_methods: {
         Row: {
@@ -479,6 +545,17 @@ export type Database = {
         Args: { target_date: string }
         Returns: undefined
       }
+      create_user_notification: {
+        Args: {
+          user_id_param: string
+          title_param: string
+          message_param: string
+          type_param: string
+          action_url_param?: string
+          action_text_param?: string
+        }
+        Returns: string
+      }
       generate_test_analytics_data: {
         Args: Record<PropertyKey, never>
         Returns: undefined
@@ -518,9 +595,27 @@ export type Database = {
         Args: { user_id: string }
         Returns: boolean
       }
+      log_content_management: {
+        Args: {
+          admin_id_param: string
+          operation_type_param: string
+          resource_type_param: string
+          resource_id_param: string
+          details_param?: Json
+        }
+        Returns: string
+      }
       log_user_login: {
         Args: { user_id_param: string }
         Returns: undefined
+      }
+      mark_all_notifications_as_read: {
+        Args: { user_id_param: string }
+        Returns: number
+      }
+      mark_notification_as_read: {
+        Args: { notification_id_param: string }
+        Returns: boolean
       }
       revoke_admin_privileges: {
         Args: { admin_email: string }
