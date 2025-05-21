@@ -9,17 +9,18 @@ import { logUserLogin } from '../services/analyticsService';
  */
 export function useLoginLogger(userId: string | undefined, isAuthenticated: boolean) {
   useEffect(() => {
-    const logLogin = async () => {
-      if (userId && isAuthenticated) {
+    // Only proceed with logging if we have both a userId and the user is authenticated
+    if (userId && isAuthenticated) {
+      const logLogin = async () => {
         try {
           await logUserLogin(userId);
           console.log('User login logged for analytics');
         } catch (error) {
           console.error('Error logging user login:', error);
         }
-      }
-    };
-    
-    logLogin();
+      };
+      
+      logLogin();
+    }
   }, [userId, isAuthenticated]);
 }

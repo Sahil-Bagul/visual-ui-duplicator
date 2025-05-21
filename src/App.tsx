@@ -43,8 +43,6 @@ const AppInitializer: React.FC = () => {
       try {
         // Always initialize app data (courses)
         await initializeAppData();
-        
-        // Demo access code removed - now managed manually through database entries
       } catch (error) {
         console.error("Initialization error:", error);
       } finally {
@@ -62,7 +60,7 @@ const AppInitializer: React.FC = () => {
 const AppWithAuth = () => {
   const { user } = useAuth();
   
-  // Add the login logger hook to track user logins for analytics
+  // Always call the hook, regardless of conditions
   useLoginLogger(user?.id, !!user);
   
   return (
