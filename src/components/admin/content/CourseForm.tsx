@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -62,6 +62,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
       toast.success('Course created successfully');
+      setIsSubmitting(false);
       onSuccess();
     },
     onError: (error: any) => {
@@ -77,6 +78,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
       toast.success('Course updated successfully');
+      setIsSubmitting(false);
       onSuccess();
     },
     onError: (error: any) => {

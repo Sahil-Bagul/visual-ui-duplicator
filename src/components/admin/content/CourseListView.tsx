@@ -22,7 +22,6 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-  AlertDialogTrigger,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
@@ -34,6 +33,7 @@ interface CourseListViewProps {
 
 const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditCourse }) => {
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const queryClient = useQueryClient();
   
   // Fetch all courses
@@ -84,6 +84,7 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
     try {
       await deleteMutation.mutateAsync(courseToDelete.id);
       setCourseToDelete(null);
+      setDeleteDialogOpen(false);
     } catch (error) {
       console.error('Error deleting course:', error);
     }
@@ -158,28 +159,31 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
                 <TableCell>{course.price}</TableCell>
                 <TableCell>{course.referral_reward}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="bg-green-100">
-                    Active
+                  <Badge variant="outline" className={course.is_published ? "bg-green-100" : "bg-gray-100"}>
+                    {course.is_published ? "Published" : "Hidden"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handlePublishCourse(course.id)}
-                      title="Publish Course"
-                    >
-                      <Eye className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => handleUnpublishCourse(course.id)}
-                      title="Unpublish Course"
-                    >
-                      <EyeOff className="h-4 w-4" />
-                    </Button>
+                    {!course.is_published ? (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handlePublishCourse(course.id)}
+                        title="Publish Course"
+                      >
+                        <Eye className="h-4 w-4" />
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => handleUnpublishCourse(course.id)}
+                        title="Unpublish Course"
+                      >
+                        <EyeOff className="h-4 w-4" />
+                      </Button>
+                    )}
                     <Button
                       variant="ghost" 
                       size="icon"
@@ -188,39 +192,18 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
                     >
                       <Edit className="h-4 w-4" />
                     </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="text-red-500 hover:text-red-600"
-                          title="Delete Course"
-                        >
-                          <Trash className="h-4 w-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This action cannot be undone. This will permanently delete the course
-                            "{course.title}" and remove all associated data.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            className="bg-red-500 hover:bg-red-600"
-                            onClick={() => {
-                              setCourseToDelete(course);
-                              handleDeleteCourse();
-                            }}
-                          >
-                            Delete
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="text-red-500 hover:text-red-600"
+                      title="Delete Course"
+                      onClick={() => {
+                        setCourseToDelete(course);
+                        setDeleteDialogOpen(true);
+                      }}
+                    >
+                      <Trash className="h-4 w-4" />
+                    </Button>
                   </div>
                 </TableCell>
               </TableRow>
@@ -228,6 +211,27 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
           </TableBody>
         </Table>
       )}
+
+      <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the course
+              "{courseToDelete?.title}" and remove all associated data.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction 
+              className="bg-red-500 hover:bg-red-600"
+              onClick={handleDeleteCourse}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };

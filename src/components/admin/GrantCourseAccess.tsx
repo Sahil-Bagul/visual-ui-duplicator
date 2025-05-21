@@ -1,21 +1,32 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+import { Input } from '@/components/ui/input';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { grantCourseAccessToUser } from '@/utils/demoAccess';
+import { Loader2 } from 'lucide-react';
 
 const GrantCourseAccess: React.FC = () => {
+  const [userEmail, setUserEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
   const { toast } = useToast();
 
   const handleGrantAccess = async () => {
+    if (!userEmail.trim()) {
+      toast({
+        title: "Error",
+        description: "Please enter a valid email address",
+        variant: "destructive"
+      });
+      return;
+    }
+
     setIsLoading(true);
     setResult(null);
     
     try {
-      const userEmail = 'movieskatta7641@gmail.com';
       const courseIds = [
         'f9ef47ca-7003-4801-903a-79de8dd005aa', // AI Tools Mastery
         '46f0b0fa-6cc1-482e-adca-6d50eab9538f'  // Stock Market Fundamentals
@@ -27,9 +38,8 @@ const GrantCourseAccess: React.FC = () => {
         toast({
           title: "Success",
           description: message,
-          variant: "default", // Changed from "success" to "default"
         });
-        setResult(`Successfully granted access to ${purchases.length} courses for user ${userEmail}`);
+        setResult(`Successfully granted access to ${purchases ? purchases.length : 0} courses for user ${userEmail}`);
       } else {
         toast({
           title: "Error",
@@ -53,20 +63,45 @@ const GrantCourseAccess: React.FC = () => {
 
   return (
     <Card className="p-4 bg-white shadow-sm">
-      <h3 className="text-lg font-medium mb-4">Grant Course Access</h3>
-      <Button 
-        onClick={handleGrantAccess} 
-        disabled={isLoading}
-        className="bg-[#00C853] hover:bg-green-600"
-      >
-        {isLoading ? "Processing..." : "Grant Access to Specified User"}
-      </Button>
-      
-      {result && (
-        <div className="mt-4 p-3 bg-gray-50 rounded border text-sm">
-          {result}
+      <CardHeader className="p-4 pb-0">
+        <CardTitle className="text-lg font-medium">Grant Course Access</CardTitle>
+      </CardHeader>
+      <CardContent className="p-4 pt-2">
+        <div className="mb-4">
+          <label htmlFor="userEmail" className="block text-sm font-medium text-gray-700 mb-1">
+            User Email
+          </label>
+          <Input
+            id="userEmail"
+            type="email"
+            value={userEmail}
+            onChange={(e) => setUserEmail(e.target.value)}
+            placeholder="Enter user email"
+            className="w-full mb-4"
+          />
         </div>
-      )}
+        
+        <Button 
+          onClick={handleGrantAccess} 
+          disabled={isLoading}
+          className="bg-[#00C853] hover:bg-green-600 w-full"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Processing...
+            </>
+          ) : (
+            "Grant Access to Courses"
+          )}
+        </Button>
+        
+        {result && (
+          <div className="mt-4 p-3 bg-gray-50 rounded border text-sm">
+            {result}
+          </div>
+        )}
+      </CardContent>
     </Card>
   );
 };

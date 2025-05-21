@@ -11,6 +11,7 @@ export interface Course {
   price: number;
   referral_reward: number;
   pdf_url: string | null;
+  is_published?: boolean;
 }
 
 export interface Module {
@@ -78,9 +79,15 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
 // Create a new course
 export async function createCourse(course: Omit<Course, 'id'>): Promise<{ success: boolean; courseId?: string; error?: string }> {
   try {
+    // Set is_published to true by default
+    const courseData = {
+      ...course,
+      is_published: true
+    };
+
     const { data, error } = await supabase
       .from('courses')
-      .insert([course])
+      .insert([courseData])
       .select()
       .single();
 
@@ -97,7 +104,6 @@ export async function createCourse(course: Omit<Course, 'id'>): Promise<{ succes
       { title: course.title }
     );
 
-    toast.success('Course created successfully');
     return { success: true, courseId: data.id };
   } catch (error) {
     console.error('Exception creating course:', error);
@@ -126,7 +132,6 @@ export async function updateCourse(courseId: string, updates: Partial<Course>): 
       { updates }
     );
 
-    toast.success('Course updated successfully');
     return { success: true };
   } catch (error) {
     console.error('Exception updating course:', error);
@@ -155,7 +160,6 @@ export async function deleteCourse(courseId: string): Promise<{ success: boolean
       {}
     );
 
-    toast.success('Course deleted successfully');
     return { success: true };
   } catch (error) {
     console.error('Exception deleting course:', error);
@@ -409,8 +413,18 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
 // Publish a course (make it visible to users)
 export async function publishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // In a real implementation, you might have a published field to toggle
-    // For now, we'll just log the action
+    // Update the is_published field to true
+    const { error } = await supabase
+      .from('courses')
+      .update({ is_published: true })
+      .eq('id', courseId);
+      
+    if (error) {
+      console.error('Error publishing course:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Log the content management operation
     const result = await logContentManagement(
       'publish',
       'course',
@@ -418,12 +432,7 @@ export async function publishCourse(courseId: string): Promise<{ success: boolea
       { action: 'publish' }
     );
 
-    if (result) {
-      toast.success('Course published successfully');
-      return { success: true };
-    } else {
-      return { success: false, error: 'Failed to publish course' };
-    }
+    return { success: true };
   } catch (error) {
     console.error('Exception publishing course:', error);
     return { success: false, error: 'Failed to publish course' };
@@ -433,8 +442,18 @@ export async function publishCourse(courseId: string): Promise<{ success: boolea
 // Unpublish a course (hide it from users)
 export async function unpublishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // In a real implementation, you might have a published field to toggle
-    // For now, we'll just log the action
+    // Update the is_published field to false
+    const { error } = await supabase
+      .from('courses')
+      .update({ is_published: false })
+      .eq('id', courseId);
+      
+    if (error) {
+      console.error('Error unpublishing course:', error);
+      return { success: false, error: error.message };
+    }
+
+    // Log the content management operation
     const result = await logContentManagement(
       'unpublish',
       'course',
@@ -442,12 +461,7 @@ export async function unpublishCourse(courseId: string): Promise<{ success: bool
       { action: 'unpublish' }
     );
 
-    if (result) {
-      toast.success('Course unpublished successfully');
-      return { success: true };
-    } else {
-      return { success: false, error: 'Failed to unpublish course' };
-    }
+    return { success: true };
   } catch (error) {
     console.error('Exception unpublishing course:', error);
     return { success: false, error: 'Failed to unpublish course' };
