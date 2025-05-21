@@ -12,35 +12,214 @@ interface PayoutMethod {
   is_default: boolean;
 }
 
+interface UserInfo {
+  name: string | null;
+  email: string | null;
+}
+
+interface PayoutRecord {
+  id: string;
+  user_id: string;
+  amount: number;
+  status: string;
+}
+
+// CORS headers for cross-origin requests
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-serve(async (req) => {
-  // Handle CORS preflight requests
-  if (req.method === "OPTIONS") {
-    return new Response(null, {
-      headers: corsHeaders,
-    });
+/**
+ * Handle CORS preflight requests
+ */
+function handleCorsRequest(): Response {
+  return new Response(null, { headers: corsHeaders });
+}
+
+/**
+ * Create a Supabase client with service role
+ */
+function createSupabaseClient(): ReturnType<typeof createClient> {
+  const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
+  const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
+  
+  if (!supabaseUrl || !supabaseServiceKey) {
+    throw new Error("Required environment variables are missing");
   }
+  
+  return createClient(supabaseUrl, supabaseServiceKey);
+}
 
-  try {
-    // Create a Supabase client
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
-    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
-    const telegramChatId = Deno.env.get("TELEGRAM_CHAT_ID") || "";
+/**
+ * Check if user has sufficient balance for withdrawal
+ */
+async function checkUserBalance(supabase: ReturnType<typeof createClient>, userId: string): Promise<number> {
+  const { data: walletData, error: walletError } = await supabase
+    .from("wallet")
+    .select("balance")
+    .eq("user_id", userId)
+    .single();
     
-    if (!supabaseUrl || !supabaseServiceKey) {
-      throw new Error("Required environment variables are missing");
-    }
+  if (walletError) {
+    throw new Error(`Failed to fetch wallet: ${walletError.message}`);
+  }
+  
+  if (!walletData || walletData.balance < 250) {
+    throw new Error("Insufficient balance. Minimum withdrawal amount is ₹250.");
+  }
+  
+  return walletData.balance;
+}
 
-    if (!telegramBotToken || !telegramChatId) {
-      console.warn("Telegram credentials not set, notifications will not be sent");
-    }
+/**
+ * Get user's default payout method
+ */
+async function getDefaultPayoutMethod(
+  supabase: ReturnType<typeof createClient>, 
+  userId: string
+): Promise<PayoutMethod> {
+  const { data: payoutMethodData, error: payoutMethodError } = await supabase
+    .from("payout_methods")
+    .select("*")
+    .eq("user_id", userId)
+    .eq("is_default", true)
+    .single();
+    
+  if (payoutMethodError || !payoutMethodData) {
+    throw new Error("No default payout method found");
+  }
+  
+  return payoutMethodData as PayoutMethod;
+}
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+/**
+ * Get user information for notification
+ */
+async function getUserInfo(
+  supabase: ReturnType<typeof createClient>, 
+  userId: string
+): Promise<UserInfo> {
+  try {
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", userId)
+      .single();
+      
+    if (userError) {
+      console.warn(`Could not fetch user details: ${userError.message}`);
+      return { name: null, email: null };
+    }
+    
+    return userData as UserInfo;
+  } catch (error) {
+    console.warn(`Error fetching user info: ${error.message}`);
+    return { name: null, email: null };
+  }
+}
+
+/**
+ * Create payout record in the database
+ */
+async function createPayoutRecord(
+  supabase: ReturnType<typeof createClient>, 
+  userId: string,
+  balance: number,
+  payoutMethodId: string
+): Promise<PayoutRecord> {
+  const { data: payoutRecord, error: payoutInsertError } = await supabase
+    .from("payouts")
+    .insert({
+      user_id: userId,
+      amount: balance,
+      payout_method_id: payoutMethodId,
+      status: "pending",
+      created_at: new Date().toISOString()
+    })
+    .select()
+    .single();
+    
+  if (payoutInsertError || !payoutRecord) {
+    throw new Error(`Failed to create payout record: ${payoutInsertError?.message || "Unknown error"}`);
+  }
+  
+  return payoutRecord;
+}
+
+/**
+ * Send payout notification to Telegram
+ */
+async function sendTelegramNotification(
+  payoutRecord: PayoutRecord,
+  payoutMethod: PayoutMethod,
+  userInfo: UserInfo,
+  balance: number
+): Promise<void> {
+  const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
+  const telegramChatId = Deno.env.get("TELEGRAM_CHAT_ID") || "";
+  
+  if (!telegramBotToken || !telegramChatId) {
+    console.warn("Telegram credentials not set, notifications will not be sent");
+    return;
+  }
+  
+  try {
+    // Format payment details for Telegram message
+    const paymentDetails = payoutMethod.method_type === "UPI" 
+      ? `UPI ID: ${payoutMethod.upi_id}`
+      : `Bank Account: ${payoutMethod.account_number?.slice(-4).padStart(payoutMethod.account_number.length, '*')}\nIFSC: ${payoutMethod.ifsc_code}`;
+      
+    const userInfoText = userInfo.name || userInfo.email 
+      ? `User: ${userInfo.name || 'Unknown'} (${userInfo.email || 'No email'})`
+      : `User ID: ${payoutRecord.user_id}`;
+      
+    const telegramMessage = `
+🔔 *NEW PAYOUT REQUEST*
+
+${userInfoText}
+Amount: ₹${balance}
+${paymentDetails}
+
+*Payout ID:* \`${payoutRecord.id}\`
+
+To confirm after payment:
+\`/confirm_payout ${payoutRecord.id}\`
+    `.trim();
+    
+    const telegramResponse = await fetch(
+      `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: telegramChatId,
+          text: telegramMessage,
+          parse_mode: "Markdown",
+        }),
+      }
+    );
+    
+    if (!telegramResponse.ok) {
+      const errorData = await telegramResponse.json();
+      console.error("Telegram API error:", JSON.stringify(errorData));
+    } else {
+      console.log("Telegram notification sent successfully");
+    }
+  } catch (telegramError) {
+    console.error("Failed to send Telegram notification:", telegramError);
+    // Continue processing even if Telegram notification fails
+  }
+}
+
+/**
+ * Process payout request from user
+ */
+async function processPayout(req: Request): Promise<Response> {
+  try {
+    const supabase = createSupabaseClient();
     
     // Get user ID from request
     const { user_id } = await req.json();
@@ -50,122 +229,19 @@ serve(async (req) => {
     }
     
     // Check if user has sufficient balance
-    const { data: walletData, error: walletError } = await supabase
-      .from("wallet")
-      .select("balance")
-      .eq("user_id", user_id)
-      .single();
-      
-    if (walletError) {
-      throw new Error(`Failed to fetch wallet: ${walletError.message}`);
-    }
-    
-    if (!walletData || walletData.balance < 250) {
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          message: "Insufficient balance. Minimum withdrawal amount is ₹250." 
-        }),
-        { 
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-          status: 400 
-        }
-      );
-    }
+    const balance = await checkUserBalance(supabase, user_id);
     
     // Get user's default payout method
-    const { data: payoutMethodData, error: payoutMethodError } = await supabase
-      .from("payout_methods")
-      .select("*")
-      .eq("user_id", user_id)
-      .eq("is_default", true)
-      .single();
-      
-    if (payoutMethodError || !payoutMethodData) {
-      throw new Error("No default payout method found");
-    }
+    const payoutMethod = await getDefaultPayoutMethod(supabase, user_id);
     
-    const payoutMethod = payoutMethodData as PayoutMethod;
-
     // Get user info for the notification
-    const { data: userData, error: userError } = await supabase
-      .from("users")
-      .select("name, email")
-      .eq("id", user_id)
-      .single();
-      
-    if (userError) {
-      console.warn(`Could not fetch user details: ${userError.message}`);
-    }
+    const userInfo = await getUserInfo(supabase, user_id);
     
     // Create payout record with pending status
-    const { data: payoutRecord, error: payoutInsertError } = await supabase
-      .from("payouts")
-      .insert({
-        user_id,
-        amount: walletData.balance,
-        payout_method_id: payoutMethod.id,
-        status: "pending",
-        created_at: new Date().toISOString()
-      })
-      .select()
-      .single();
-      
-    if (payoutInsertError || !payoutRecord) {
-      throw new Error(`Failed to create payout record: ${payoutInsertError?.message}`);
-    }
-
+    const payoutRecord = await createPayoutRecord(supabase, user_id, balance, payoutMethod.id);
+    
     // Send notification to Telegram
-    if (telegramBotToken && telegramChatId) {
-      try {
-        // Format payment details for Telegram message
-        const paymentDetails = payoutMethod.method_type === "UPI" 
-          ? `UPI ID: ${payoutMethod.upi_id}`
-          : `Bank Account: ${payoutMethod.account_number?.slice(-4).padStart(payoutMethod.account_number.length, '*')}\nIFSC: ${payoutMethod.ifsc_code}`;
-          
-        const userInfo = userData 
-          ? `User: ${userData.name || 'Unknown'} (${userData.email || 'No email'})`
-          : `User ID: ${user_id}`;
-          
-        const telegramMessage = `
-🔔 *NEW PAYOUT REQUEST*
-
-${userInfo}
-Amount: ₹${walletData.balance}
-${paymentDetails}
-
-*Payout ID:* \`${payoutRecord.id}\`
-
-To confirm after payment:
-\`/confirm_payout ${payoutRecord.id}\`
-        `.trim();
-        
-        const telegramResponse = await fetch(
-          `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({
-              chat_id: telegramChatId,
-              text: telegramMessage,
-              parse_mode: "Markdown",
-            }),
-          }
-        );
-        
-        if (!telegramResponse.ok) {
-          const errorData = await telegramResponse.json();
-          console.error("Telegram API error:", JSON.stringify(errorData));
-        } else {
-          console.log("Telegram notification sent successfully");
-        }
-      } catch (telegramError) {
-        console.error("Failed to send Telegram notification:", telegramError);
-        // Continue processing even if Telegram notification fails
-      }
-    }
+    await sendTelegramNotification(payoutRecord, payoutMethod, userInfo, balance);
     
     return new Response(
       JSON.stringify({ 
@@ -188,8 +264,18 @@ To confirm after payment:
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 500 
+        status: error.message.includes("Insufficient balance") ? 400 : 500 
       }
     );
   }
+}
+
+// Main request handler
+serve(async (req) => {
+  // Handle CORS preflight requests
+  if (req.method === "OPTIONS") {
+    return handleCorsRequest();
+  }
+  
+  return await processPayout(req);
 });
