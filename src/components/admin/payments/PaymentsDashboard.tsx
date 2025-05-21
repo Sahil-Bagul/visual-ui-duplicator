@@ -40,8 +40,8 @@ interface Purchase {
   has_used_referral_code: boolean;
   used_referral_code: string | null;
   user: {
-    email: string;
-    name: string;
+    email: string | null;
+    name: string | null;
   };
   course: {
     title: string;
@@ -60,8 +60,8 @@ interface Payout {
   payout_method_id: string;
   failure_reason: string | null;
   user: {
-    email: string;
-    name: string;
+    email: string | null;
+    name: string | null;
   };
 }
 
@@ -83,16 +83,22 @@ const PaymentsDashboard: React.FC = () => {
         .from('purchases')
         .select(`
           *,
-          user:users(email, name),
-          course:courses(title, price, referral_reward)
+          user:user_id(email, name),
+          course:course_id(title, price, referral_reward)
         `)
         .order('purchased_at', { ascending: false });
       
       if (error) {
+        console.error("Error fetching purchases:", error);
         throw new Error(error.message);
       }
       
-      return data as Purchase[];
+      // Handle possible relation errors by providing default values
+      return (data || []).map(item => ({
+        ...item,
+        user: item.user || { email: 'Unknown User', name: 'Unknown' },
+        course: item.course || { title: 'Unknown Course', price: 0, referral_reward: 0 }
+      })) as Purchase[];
     },
     enabled: tab === 'purchases',
   });
@@ -105,15 +111,20 @@ const PaymentsDashboard: React.FC = () => {
         .from('payouts')
         .select(`
           *,
-          user:users(email, name)
+          user:user_id(email, name)
         `)
         .order('created_at', { ascending: false });
       
       if (error) {
+        console.error("Error fetching payouts:", error);
         throw new Error(error.message);
       }
       
-      return data as Payout[];
+      // Handle possible relation errors by providing default values
+      return (data || []).map(item => ({
+        ...item,
+        user: item.user || { email: 'Unknown User', name: 'Unknown' }
+      })) as Payout[];
     },
     enabled: tab === 'payouts',
   });
@@ -179,8 +190,8 @@ const PaymentsDashboard: React.FC = () => {
   // Filter purchases based on search term and date filter
   const filteredPurchases = purchases.filter(purchase => {
     const matchesSearch = !searchTerm || 
-      purchase.user.email.toLowerCase().includes(searchTerm.toLowerCase()) || 
-      purchase.course.title.toLowerCase().includes(searchTerm.toLowerCase());
+      (purchase.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+       purchase.course.title.toLowerCase().includes(searchTerm.toLowerCase()));
     
     let matchesDate = true;
     if (dateFilter === 'today') {
@@ -202,7 +213,7 @@ const PaymentsDashboard: React.FC = () => {
   // Filter payouts based on search term and status filter
   const filteredPayouts = payouts.filter(payout => {
     const matchesSearch = !searchTerm || 
-      payout.user.email.toLowerCase().includes(searchTerm.toLowerCase());
+      payout.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || payout.status === statusFilter;
     
@@ -381,7 +392,7 @@ const PaymentsDashboard: React.FC = () => {
                         <TableCell className="whitespace-nowrap">
                           {new Date(purchase.purchased_at).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>{purchase.user.email}</TableCell>
+                        <TableCell>{purchase.user?.email || 'Unknown'}</TableCell>
                         <TableCell>{purchase.course.title}</TableCell>
                         <TableCell>₹{purchase.course.price}</TableCell>
                         <TableCell>
@@ -492,7 +503,7 @@ const PaymentsDashboard: React.FC = () => {
                         <TableCell className="whitespace-nowrap">
                           {new Date(payout.created_at).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>{payout.user.email}</TableCell>
+                        <TableCell>{payout.user?.email || 'Unknown'}</TableCell>
                         <TableCell>₹{payout.amount}</TableCell>
                         <TableCell>
                           {getStatusBadge(payout.status)}
@@ -561,7 +572,7 @@ const PaymentsDashboard: React.FC = () => {
                 
                 <div className="flex justify-between items-center">
                   <span className="text-gray-500">User</span>
-                  <span>{selectedPayout.user.email}</span>
+                  <span>{selectedPayout.user?.email || 'Unknown'}</span>
                 </div>
                 
                 <div className="flex justify-between items-center">

@@ -44,6 +44,10 @@ interface FeedbackItem {
   submitted_at: string;
   responded_at: string | null;
   admin_response: string | null;
+  user?: {
+    email: string | null;
+    name: string | null;
+  };
 }
 
 const SupportDashboard: React.FC = () => {
@@ -61,14 +65,19 @@ const SupportDashboard: React.FC = () => {
     queryFn: async () => {
       const { data, error } = await supabase
         .from('feedback')
-        .select('*, users(email, name)')
+        .select(`*, user:user_id(email, name)`)
         .order('submitted_at', { ascending: false });
       
       if (error) {
+        console.error("Error fetching feedback:", error);
         throw new Error(error.message);
       }
       
-      return data as (FeedbackItem & { users: { email: string; name: string } })[];
+      // Handle possible relation errors by providing default values
+      return (data || []).map(item => ({
+        ...item,
+        user: item.user || { email: 'Unknown User', name: 'Unknown' }
+      })) as FeedbackItem[];
     },
   });
   
@@ -132,7 +141,7 @@ const SupportDashboard: React.FC = () => {
     const matchesSearch = !searchTerm || 
       (item.subject?.toLowerCase().includes(searchTerm.toLowerCase()) ||
        item.message?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-       item.users?.email?.toLowerCase().includes(searchTerm.toLowerCase()));
+       item.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()));
     
     return matchesStatus && matchesSearch;
   });
@@ -246,7 +255,7 @@ const SupportDashboard: React.FC = () => {
                     <TableCell className="whitespace-nowrap">
                       {new Date(item.submitted_at).toLocaleDateString()}
                     </TableCell>
-                    <TableCell>{item.users.email}</TableCell>
+                    <TableCell>{item.user?.email || 'Unknown'}</TableCell>
                     <TableCell>{item.subject}</TableCell>
                     <TableCell>
                       {getStatusBadge(item.status)}
@@ -310,7 +319,7 @@ const SupportDashboard: React.FC = () => {
                     <div className="flex justify-between">
                       <div>
                         <Label className="text-gray-500 text-xs">FROM</Label>
-                        <div className="font-medium">{selectedFeedback.users.email}</div>
+                        <div className="font-medium">{selectedFeedback.user?.email || 'Unknown'}</div>
                       </div>
                       <div className="text-right">
                         <Label className="text-gray-500 text-xs">SUBMITTED</Label>
