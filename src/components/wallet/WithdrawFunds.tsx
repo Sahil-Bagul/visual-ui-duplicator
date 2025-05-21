@@ -54,11 +54,11 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
       
       if (data.success) {
         toast({
-          title: 'Withdrawal Successful',
-          description: 'Your funds have been withdrawn and will be credited to your account shortly.',
+          title: 'Withdrawal Request Submitted',
+          description: 'Your withdrawal request has been received and will be processed within 24-48 hours.',
         });
         
-        // Notify parent component about successful withdrawal
+        // Notify parent component about successful withdrawal submission
         onWithdrawSuccess();
       } else {
         throw new Error(data.message || 'Failed to process withdrawal');

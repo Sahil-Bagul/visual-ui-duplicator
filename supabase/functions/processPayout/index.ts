@@ -2,26 +2,6 @@
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
-interface RazorpayPayout {
-  id: string;
-  entity: string;
-  fund_account_id: string;
-  amount: number;
-  currency: string;
-  notes: Record<string, string>;
-  fees: number;
-  tax: number;
-  status: string;
-  utr: string;
-  mode: string;
-  purpose: string;
-  reference_id: string;
-  narration: string;
-  batch_id: string;
-  failure_reason: string | null;
-  created_at: number;
-}
-
 interface PayoutMethod {
   id: string;
   user_id: string;
@@ -49,11 +29,15 @@ serve(async (req) => {
     // Create a Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || "";
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
-    const razorpayKeyId = Deno.env.get("RAZORPAY_KEY_ID") || "rzp_test_uMvpbB0vwPADDJ";
-    const razorpayKeySecret = Deno.env.get("RAZORPAY_KEY_SECRET") || "8duTFh22qI2D8gAL8ewUVVKs";
+    const telegramBotToken = Deno.env.get("TELEGRAM_BOT_TOKEN") || "";
+    const telegramChatId = Deno.env.get("TELEGRAM_CHAT_ID") || "";
     
     if (!supabaseUrl || !supabaseServiceKey) {
       throw new Error("Required environment variables are missing");
+    }
+
+    if (!telegramBotToken || !telegramChatId) {
+      console.warn("Telegram credentials not set, notifications will not be sent");
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -102,6 +86,17 @@ serve(async (req) => {
     }
     
     const payoutMethod = payoutMethodData as PayoutMethod;
+
+    // Get user info for the notification
+    const { data: userData, error: userError } = await supabase
+      .from("users")
+      .select("name, email")
+      .eq("id", user_id)
+      .single();
+      
+    if (userError) {
+      console.warn(`Could not fetch user details: ${userError.message}`);
+    }
     
     // Create payout record with pending status
     const { data: payoutRecord, error: payoutInsertError } = await supabase
@@ -120,180 +115,63 @@ serve(async (req) => {
       throw new Error(`Failed to create payout record: ${payoutInsertError?.message}`);
     }
 
-    let razorpayResponse: RazorpayPayout;
-    
-    // If Razorpay keys are available, create a real payout via the Razorpay API
-    if (razorpayKeyId && razorpayKeySecret) {
-      // Prepare the fund account based on the payout method
-      let fundAccountPayload;
-      
-      if (payoutMethod.method_type === "UPI" && payoutMethod.upi_id) {
-        fundAccountPayload = {
-          account_type: "vpa",
-          contact: {
-            name: "User", // Ideally fetch from user profile
-            email: "user@example.com", // Ideally fetch from auth
-            contact: "9999999999", // Ideally fetch from user profile
-            type: "customer",
-            reference_id: user_id
-          },
-          vpa: {
-            address: payoutMethod.upi_id
-          }
-        };
-      } else if (payoutMethod.method_type === "BANK" && payoutMethod.account_number && payoutMethod.ifsc_code) {
-        fundAccountPayload = {
-          account_type: "bank_account",
-          contact: {
-            name: "User", // Ideally fetch from user profile
-            email: "user@example.com", // Ideally fetch from auth
-            contact: "9999999999", // Ideally fetch from user profile
-            type: "customer",
-            reference_id: user_id
-          },
-          bank_account: {
-            name: "User", // Ideally fetch from user profile
-            ifsc: payoutMethod.ifsc_code,
-            account_number: payoutMethod.account_number
-          }
-        };
-      } else {
-        throw new Error("Invalid payout method details");
-      }
-      
-      // Create a fund account in Razorpay
-      const fundAccountResponse = await fetch("https://api.razorpay.com/v1/fund_accounts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`
-        },
-        body: JSON.stringify(fundAccountPayload)
-      });
-      
-      if (!fundAccountResponse.ok) {
-        const errorData = await fundAccountResponse.json();
-        throw new Error(`Failed to create fund account: ${JSON.stringify(errorData)}`);
-      }
-      
-      const fundAccount = await fundAccountResponse.json();
-      
-      // Create a payout in Razorpay
-      const payoutPayload = {
-        account_number: "2323230032510196", // Your Razorpay account number
-        fund_account_id: fundAccount.id,
-        amount: walletData.balance * 100, // Razorpay expects amount in paise
-        currency: "INR",
-        mode: payoutMethod.method_type === "UPI" ? "UPI" : "NEFT",
-        purpose: "payout",
-        queue_if_low_balance: true,
-        reference_id: payoutRecord.id,
-        narration: "Learn And Earn Payout",
-        notes: {
-          user_id,
-          payout_id: payoutRecord.id
-        }
-      };
-      
-      const payoutResponse = await fetch("https://api.razorpay.com/v1/payouts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "Authorization": `Basic ${btoa(`${razorpayKeyId}:${razorpayKeySecret}`)}`
-        },
-        body: JSON.stringify(payoutPayload)
-      });
-      
-      if (!payoutResponse.ok) {
-        const errorData = await payoutResponse.json();
-        
-        // Update payout record with failure status
-        await supabase
-          .from("payouts")
-          .update({
-            status: "failed",
-            failure_reason: `Razorpay API error: ${JSON.stringify(errorData)}`,
-            processed_at: new Date().toISOString()
-          })
-          .eq("id", payoutRecord.id);
+    // Send notification to Telegram
+    if (telegramBotToken && telegramChatId) {
+      try {
+        // Format payment details for Telegram message
+        const paymentDetails = payoutMethod.method_type === "UPI" 
+          ? `UPI ID: ${payoutMethod.upi_id}`
+          : `Bank Account: ${payoutMethod.account_number?.slice(-4).padStart(payoutMethod.account_number.length, '*')}\nIFSC: ${payoutMethod.ifsc_code}`;
           
-        throw new Error(`Failed to create payout: ${JSON.stringify(errorData)}`);
-      }
-      
-      razorpayResponse = await payoutResponse.json();
-      
-      // Update payout record with Razorpay payout ID and status
-      await supabase
-        .from("payouts")
-        .update({
-          razorpay_payout_id: razorpayResponse.id,
-          status: razorpayResponse.status === "processed" ? "success" : "pending",
-          processed_at: razorpayResponse.status === "processed" ? new Date().toISOString() : null
-        })
-        .eq("id", payoutRecord.id);
+        const userInfo = userData 
+          ? `User: ${userData.name || 'Unknown'} (${userData.email || 'No email'})`
+          : `User ID: ${user_id}`;
+          
+        const telegramMessage = `
+🔔 *NEW PAYOUT REQUEST*
+
+${userInfo}
+Amount: ₹${walletData.balance}
+${paymentDetails}
+
+*Payout ID:* \`${payoutRecord.id}\`
+
+To confirm after payment:
+\`/confirm_payout ${payoutRecord.id}\`
+        `.trim();
         
-      // Only deduct from wallet if the payout is processed instantly
-      if (razorpayResponse.status === "processed") {
-        await supabase
-          .from("wallet")
-          .update({
-            balance: 0,
-            last_updated: new Date().toISOString()
-          })
-          .eq("user_id", user_id);
+        const telegramResponse = await fetch(
+          `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              chat_id: telegramChatId,
+              text: telegramMessage,
+              parse_mode: "Markdown",
+            }),
+          }
+        );
+        
+        if (!telegramResponse.ok) {
+          const errorData = await telegramResponse.json();
+          console.error("Telegram API error:", JSON.stringify(errorData));
+        } else {
+          console.log("Telegram notification sent successfully");
+        }
+      } catch (telegramError) {
+        console.error("Failed to send Telegram notification:", telegramError);
+        // Continue processing even if Telegram notification fails
       }
-    } else {
-      // If Razorpay keys are not available, simulate a successful payout
-      console.log("Simulating payout until Razorpay KYC is complete");
-      
-      razorpayResponse = {
-        id: `payout_${Math.random().toString(36).substr(2, 9)}`,
-        entity: "payout",
-        fund_account_id: `fa_${Math.random().toString(36).substr(2, 9)}`,
-        amount: walletData.balance * 100, // Razorpay uses amount in paise
-        currency: "INR",
-        notes: {
-          user_id,
-          payout_id: payoutRecord.id,
-        },
-        fees: 0,
-        tax: 0,
-        status: "processed", // In real implementation, this would be "processing" initially
-        utr: Math.random().toString(36).substr(2, 9).toUpperCase(),
-        mode: payoutMethod.method_type === "UPI" ? "UPI" : "NEFT",
-        purpose: "payout",
-        reference_id: payoutRecord.id,
-        narration: "Learn And Earn Payout",
-        batch_id: `batch_${Math.random().toString(36).substr(2, 9)}`,
-        failure_reason: null,
-        created_at: Math.floor(Date.now() / 1000),
-      };
-      
-      // Update payout record with mock Razorpay payout ID
-      await supabase
-        .from("payouts")
-        .update({
-          razorpay_payout_id: razorpayResponse.id,
-          status: "success", // In real implementation, this would be updated after webhook confirmation
-          processed_at: new Date().toISOString(),
-        })
-        .eq("id", payoutRecord.id);
-      
-      // Update wallet balance to 0
-      await supabase
-        .from("wallet")
-        .update({
-          balance: 0,
-          last_updated: new Date().toISOString(),
-        })
-        .eq("user_id", user_id);
     }
     
     return new Response(
       JSON.stringify({ 
         success: true, 
-        message: "Payout processed successfully", 
-        payout: razorpayResponse 
+        message: "Payout request submitted and notification sent", 
+        payout_id: payoutRecord.id 
       }),
       { 
         headers: { ...corsHeaders, "Content-Type": "application/json" },

@@ -100,3 +100,12 @@ AS $$
   RETURNING *;
 $$;
 """
+
+# Configure the telegramWebhook endpoint as public (no JWT verification)
+# This is needed so Telegram can call it directly
+[functions.telegramWebhook]
+verify_jwt = false
+
+# The webhook setup function requires admin authentication
+[functions.setupTelegramWebhook]
+verify_jwt = true
