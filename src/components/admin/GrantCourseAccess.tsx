@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { grantCourseAccessToUser } from '@/utils/demoAccess';
 import { Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
 
 const GrantCourseAccess: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string>('');
@@ -32,6 +33,25 @@ const GrantCourseAccess: React.FC = () => {
         '46f0b0fa-6cc1-482e-adca-6d50eab9538f'  // Stock Market Fundamentals
       ];
       
+      // First, check if the user exists
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id')
+        .eq('email', userEmail)
+        .single();
+      
+      if (userError || !userData) {
+        toast({
+          title: "Error",
+          description: `User with email ${userEmail} not found. Please ensure they have registered.`,
+          variant: "destructive"
+        });
+        setResult(`Error: User with email ${userEmail} not found`);
+        setIsLoading(false);
+        return;
+      }
+      
+      // Call the function to grant access
       const { success, message, purchases } = await grantCourseAccessToUser(userEmail, courseIds);
       
       if (success) {

@@ -17,9 +17,16 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { Loader2, Save } from "lucide-react";
-import { toast } from "sonner";
 import { Switch } from "@/components/ui/switch";
+import { toast } from "sonner";
 
 const courseFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -36,12 +43,16 @@ interface CourseFormProps {
   course?: Course;
   onSuccess: () => void;
   onCancel: () => void;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
 const CourseForm: React.FC<CourseFormProps> = ({
   course,
   onSuccess,
   onCancel,
+  isOpen,
+  onOpenChange
 }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const queryClient = useQueryClient();
@@ -66,6 +77,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
       toast.success('Course created successfully');
       setIsSubmitting(false);
+      form.reset();
       onSuccess();
     },
     onError: (error: any) => {
@@ -80,6 +92,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       updateCourse(id, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+      queryClient.invalidateQueries({ queryKey: ['course-detail'] });
       toast.success('Course updated successfully');
       setIsSubmitting(false);
       onSuccess();
@@ -122,7 +135,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
     }
   };
   
-  return (
+  const formContent = (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
         <FormField
@@ -265,6 +278,23 @@ const CourseForm: React.FC<CourseFormProps> = ({
       </form>
     </Form>
   );
+  
+  // If we're using the dialog mode
+  if (typeof isOpen !== 'undefined' && onOpenChange) {
+    return (
+      <Dialog open={isOpen} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{isEditing ? `Edit Course: ${course.title}` : 'Create New Course'}</DialogTitle>
+          </DialogHeader>
+          {formContent}
+        </DialogContent>
+      </Dialog>
+    );
+  }
+  
+  // If we're using the inline mode
+  return formContent;
 };
 
 export default CourseForm;

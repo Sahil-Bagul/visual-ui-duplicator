@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 import { CourseStructure } from "@/types/course";
 import { toast } from "sonner";
@@ -186,6 +187,19 @@ export async function getModulesForCourse(courseId: string): Promise<Module[]> {
 // Create a module
 export async function createModule(module: Omit<Module, 'id'>): Promise<{ success: boolean; moduleId?: string; error?: string }> {
   try {
+    // If module_order is not specified, get the maximum order and add 1
+    if (!module.module_order) {
+      const { data: maxOrderData } = await supabase
+        .from('course_modules')
+        .select('module_order')
+        .eq('course_id', module.course_id)
+        .order('module_order', { ascending: false })
+        .limit(1);
+      
+      const maxOrder = maxOrderData?.length ? maxOrderData[0].module_order : 0;
+      module.module_order = maxOrder + 1;
+    }
+    
     const { data, error } = await supabase
       .from('course_modules')
       .insert([module])
@@ -297,6 +311,19 @@ export async function getLessonsForModule(moduleId: string): Promise<Lesson[]> {
 // Create a lesson
 export async function createLesson(lesson: Omit<Lesson, 'id'>): Promise<{ success: boolean; lessonId?: string; error?: string }> {
   try {
+    // If lesson_order is not specified, get the maximum order and add 1
+    if (!lesson.lesson_order) {
+      const { data: maxOrderData } = await supabase
+        .from('lessons')
+        .select('lesson_order')
+        .eq('module_id', lesson.module_id)
+        .order('lesson_order', { ascending: false })
+        .limit(1);
+      
+      const maxOrder = maxOrderData?.length ? maxOrderData[0].lesson_order : 0;
+      lesson.lesson_order = maxOrder + 1;
+    }
+    
     const { data, error } = await supabase
       .from('lessons')
       .insert([lesson])

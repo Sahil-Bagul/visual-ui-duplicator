@@ -10,6 +10,8 @@ import InitializationButton from '@/components/admin/InitializationButton';
 import ContentManagement from '@/components/admin/ContentManagement';
 import AdminManagement from '@/components/admin/AdminManagement';
 import AnalyticsDashboard from '@/components/admin/analytics/AnalyticsDashboard';
+import SupportDashboard from '@/components/admin/support/SupportDashboard';
+import PaymentsDashboard from '@/components/admin/payments/PaymentsDashboard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -76,7 +78,7 @@ const AdminPanel: React.FC = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="content" className="w-full">
+        <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-7 gap-2">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
@@ -94,11 +96,11 @@ const AdminPanel: React.FC = () => {
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="flex items-center gap-2" disabled>
+            <TabsTrigger value="support" className="flex items-center gap-2">
               <MessageSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Support</span>
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2" disabled>
+            <TabsTrigger value="payments" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Payments</span>
             </TabsTrigger>
@@ -136,20 +138,39 @@ const AdminPanel: React.FC = () => {
             <ContentManagement />
           </TabsContent>
           
-          {/* Placeholder for future tabs */}
-          {['users', 'support', 'payments', 'messaging'].map(tab => (
-            <TabsContent key={tab} value={tab} className="py-12 flex items-center justify-center">
-              <div className="text-center">
-                <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
-                  <Settings className="h-8 w-8 text-gray-500" />
-                </div>
-                <h3 className="text-xl font-medium mb-2">Coming Soon</h3>
-                <p className="text-gray-500 max-w-md mx-auto">
-                  This feature is planned for a future update. Check back later or contact the developer for more information.
-                </p>
+          <TabsContent value="support">
+            <SupportDashboard />
+          </TabsContent>
+          
+          <TabsContent value="payments">
+            <PaymentsDashboard />
+          </TabsContent>
+          
+          {/* Placeholder for Users tab */}
+          <TabsContent value="users" className="py-12 flex items-center justify-center">
+            <div className="text-center">
+              <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
+                <Users className="h-8 w-8 text-gray-500" />
               </div>
-            </TabsContent>
-          ))}
+              <h3 className="text-xl font-medium mb-2">Coming Soon</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                User management features are planned for a future update.
+              </p>
+            </div>
+          </TabsContent>
+          
+          {/* Placeholder for Messaging tab */}
+          <TabsContent value="messaging" className="py-12 flex items-center justify-center">
+            <div className="text-center">
+              <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
+                <MessageCircle className="h-8 w-8 text-gray-500" />
+              </div>
+              <h3 className="text-xl font-medium mb-2">Coming Soon</h3>
+              <p className="text-gray-500 max-w-md mx-auto">
+                Messaging features are planned for a future update.
+              </p>
+            </div>
+          </TabsContent>
         </Tabs>
       </main>
       <Footer />

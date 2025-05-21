@@ -1,3 +1,4 @@
+
 import React, { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { 
@@ -16,9 +17,7 @@ import {
 } from "@/components/ui/dialog";
 
 import { getContentManagementLogs, ContentManagementLog } from "@/services/contentManagementService";
-import { Course } from "@/services/courseManagementService";
 import CourseListView from "./content/CourseListView";
-import CourseForm from "./content/CourseForm";
 import { Edit, Trash, Plus, File, FolderClosed, Book, Eye, EyeOff, Calendar } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -124,30 +123,10 @@ const LogsTable: React.FC<LogsTableProps> = ({ logs, isLoading }) => {
 };
 
 const ContentManagement: React.FC = () => {
-  const [dialogOpen, setDialogOpen] = useState(false);
-  const [dialogTitle, setDialogTitle] = useState("Create New Course");
-  const [selectedCourse, setSelectedCourse] = useState<Course | undefined>(undefined);
-  
   const { data: logs = [], isLoading } = useQuery({
     queryKey: ['contentManagementLogs'],
     queryFn: () => getContentManagementLogs(100),
   });
-
-  const handleCreateCourse = () => {
-    setSelectedCourse(undefined);
-    setDialogTitle("Create New Course");
-    setDialogOpen(true);
-  };
-
-  const handleEditCourse = (course: Course) => {
-    setSelectedCourse(course);
-    setDialogTitle(`Edit Course: ${course.title}`);
-    setDialogOpen(true);
-  };
-
-  const handleDialogClose = () => {
-    setDialogOpen(false);
-  };
 
   return (
     <Card>
@@ -161,48 +140,17 @@ const ContentManagement: React.FC = () => {
         <Tabs defaultValue="courses">
           <TabsList>
             <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="modules">Modules</TabsTrigger>
-            <TabsTrigger value="lessons">Lessons</TabsTrigger>
             <TabsTrigger value="history">History</TabsTrigger>
           </TabsList>
           
           <TabsContent value="courses" className="mt-4">
-            <CourseListView 
-              onCreateCourse={handleCreateCourse}
-              onEditCourse={handleEditCourse}
-            />
-          </TabsContent>
-          
-          <TabsContent value="modules" className="mt-4">
-            <div className="text-sm text-gray-500 py-8 text-center">
-              Module management interface to be implemented
-            </div>
-          </TabsContent>
-          
-          <TabsContent value="lessons" className="mt-4">
-            <div className="text-sm text-gray-500 py-8 text-center">
-              Lesson management interface to be implemented
-            </div>
+            <CourseListView />
           </TabsContent>
           
           <TabsContent value="history" className="mt-4">
             <LogsTable logs={logs} isLoading={isLoading} />
           </TabsContent>
         </Tabs>
-        
-        {/* Course Edit/Create Dialog */}
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogContent className="max-w-lg">
-            <DialogHeader>
-              <DialogTitle>{dialogTitle}</DialogTitle>
-            </DialogHeader>
-            <CourseForm 
-              course={selectedCourse}
-              onSuccess={handleDialogClose}
-              onCancel={handleDialogClose}
-            />
-          </DialogContent>
-        </Dialog>
       </CardContent>
     </Card>
   );

@@ -70,6 +70,147 @@ export async function generateTestData(): Promise<{ success: boolean, message: s
   }
 }
 
+export async function fetchDashboardSummary(): Promise<{
+  totalUsers: number;
+  totalRevenue: number;
+  totalCourses: number;
+  totalPurchases: number;
+  activeUsers: { current: number; previous: number; percentChange: number };
+  newSignups: { current: number; previous: number; percentChange: number };
+  revenue: { current: number; previous: number; percentChange: number };
+  referrals: { current: number; previous: number; percentChange: number };
+}> {
+  try {
+    // Get current date and date 14 days ago
+    const currentDate = new Date();
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(currentDate.getDate() - 14);
+    
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(currentDate.getDate() - 7);
+    
+    // Format dates for comparison
+    const currentDateStr = currentDate.toISOString().split('T')[0];
+    const twoWeeksAgoStr = twoWeeksAgo.toISOString().split('T')[0];
+    const oneWeekAgoStr = oneWeekAgo.toISOString().split('T')[0];
+    
+    // Fetch analytics metrics
+    const { data: metricsData } = await supabase
+      .from('analytics_daily_metrics')
+      .select('*')
+      .gte('date', twoWeeksAgoStr)
+      .lte('date', currentDateStr)
+      .order('date', { ascending: true });
+    
+    // Fetch total users
+    const { count: totalUsers } = await supabase
+      .from('users')
+      .select('*', { count: 'exact', head: true });
+    
+    // Fetch total revenue from purchases
+    const { data: purchasesData } = await supabase
+      .from('purchases')
+      .select(`
+        course:courses(price)
+      `);
+    
+    const totalRevenue = purchasesData?.reduce((sum, purchase) => {
+      return sum + (purchase.course?.price || 0);
+    }, 0) || 0;
+    
+    // Fetch total courses
+    const { count: totalCourses } = await supabase
+      .from('courses')
+      .select('*', { count: 'exact', head: true });
+    
+    // Fetch total purchases
+    const { count: totalPurchases } = await supabase
+      .from('purchases')
+      .select('*', { count: 'exact', head: true });
+    
+    // Calculate metrics for current week and previous week
+    const currentWeekMetrics = metricsData?.filter(
+      (metric) => new Date(metric.date) >= oneWeekAgo
+    ) || [];
+    
+    const previousWeekMetrics = metricsData?.filter(
+      (metric) => new Date(metric.date) >= twoWeeksAgo && new Date(metric.date) < oneWeekAgo
+    ) || [];
+    
+    // Calculate sums for metrics
+    const sumMetric = (metrics: DailyMetric[], field: keyof DailyMetric): number => {
+      return metrics.reduce((sum, metric) => sum + (Number(metric[field]) || 0), 0);
+    };
+    
+    // Calculate active users
+    const currentActiveUsers = sumMetric(currentWeekMetrics, 'active_users');
+    const previousActiveUsers = sumMetric(previousWeekMetrics, 'active_users');
+    const activeUsersPercentChange = previousActiveUsers > 0 
+      ? ((currentActiveUsers - previousActiveUsers) / previousActiveUsers) * 100
+      : currentActiveUsers > 0 ? 100 : 0;
+    
+    // Calculate new signups
+    const currentSignups = sumMetric(currentWeekMetrics, 'new_signups');
+    const previousSignups = sumMetric(previousWeekMetrics, 'new_signups');
+    const signupsPercentChange = previousSignups > 0
+      ? ((currentSignups - previousSignups) / previousSignups) * 100
+      : currentSignups > 0 ? 100 : 0;
+    
+    // Calculate revenue
+    const currentRevenue = sumMetric(currentWeekMetrics, 'total_revenue');
+    const previousRevenue = sumMetric(previousWeekMetrics, 'total_revenue');
+    const revenuePercentChange = previousRevenue > 0
+      ? ((currentRevenue - previousRevenue) / previousRevenue) * 100
+      : currentRevenue > 0 ? 100 : 0;
+    
+    // Calculate referrals
+    const currentReferrals = sumMetric(currentWeekMetrics, 'referral_count');
+    const previousReferrals = sumMetric(previousWeekMetrics, 'referral_count');
+    const referralsPercentChange = previousReferrals > 0
+      ? ((currentReferrals - previousReferrals) / previousReferrals) * 100
+      : currentReferrals > 0 ? 100 : 0;
+    
+    return {
+      totalUsers: totalUsers || 0,
+      totalRevenue,
+      totalCourses: totalCourses || 0,
+      totalPurchases: totalPurchases || 0,
+      activeUsers: {
+        current: currentActiveUsers,
+        previous: previousActiveUsers,
+        percentChange: parseFloat(activeUsersPercentChange.toFixed(2))
+      },
+      newSignups: {
+        current: currentSignups,
+        previous: previousSignups,
+        percentChange: parseFloat(signupsPercentChange.toFixed(2))
+      },
+      revenue: {
+        current: currentRevenue,
+        previous: previousRevenue,
+        percentChange: parseFloat(revenuePercentChange.toFixed(2))
+      },
+      referrals: {
+        current: currentReferrals,
+        previous: previousReferrals,
+        percentChange: parseFloat(referralsPercentChange.toFixed(2))
+      }
+    };
+  } catch (error) {
+    console.error('Error fetching dashboard summary:', error);
+    return {
+      totalUsers: 0,
+      totalRevenue: 0,
+      totalCourses: 0,
+      totalPurchases: 0,
+      activeUsers: { current: 0, previous: 0, percentChange: 0 },
+      newSignups: { current: 0, previous: 0, percentChange: 0 },
+      revenue: { current: 0, previous: 0, percentChange: 0 },
+      referrals: { current: 0, previous: 0, percentChange: 0 }
+    };
+  }
+}
+
 export async function logUserLogin(userId: string): Promise<void> {
   const { error } = await supabase.rpc('log_user_login', {
     user_id_param: userId

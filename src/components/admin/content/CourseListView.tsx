@@ -3,7 +3,8 @@ import React, { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Course, getAllCourses, deleteCourse, publishCourse, unpublishCourse } from "@/services/courseManagementService";
 import { Button } from "@/components/ui/button";
-import { Trash, Edit, EyeOff, Eye, Loader2, Plus } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Trash, Edit, EyeOff, Eye, Loader2, Plus, Search } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -25,15 +26,21 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import CourseForm from "./CourseForm";
+import CourseDetailView from "./CourseDetailView";
 
 interface CourseListViewProps {
-  onCreateCourse: () => void;
-  onEditCourse: (course: Course) => void;
+  onCreateCourse?: () => void;
+  onEditCourse?: (course: Course) => void;
 }
 
 const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditCourse }) => {
   const [courseToDelete, setCourseToDelete] = useState<Course | null>(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [selectedCourseId, setSelectedCourseId] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  
   const queryClient = useQueryClient();
   
   // Fetch all courses
@@ -41,6 +48,14 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
     queryKey: ['admin-courses'],
     queryFn: getAllCourses,
   });
+  
+  // Filter courses based on search term
+  const filteredCourses = searchTerm
+    ? courses.filter(course => 
+        course.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        course.description?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    : courses;
   
   // Delete course mutation
   const deleteMutation = useMutation({
@@ -105,6 +120,21 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
       console.error('Error unpublishing course:', error);
     }
   };
+
+  const handleCreateSuccess = () => {
+    setCreateDialogOpen(false);
+    queryClient.invalidateQueries({ queryKey: ['admin-courses'] });
+  };
+  
+  // If a course is selected, show the detail view
+  if (selectedCourseId) {
+    return (
+      <CourseDetailView 
+        courseId={selectedCourseId} 
+        onBack={() => setSelectedCourseId(null)} 
+      />
+    );
+  }
   
   if (isLoading) {
     return (
@@ -125,9 +155,17 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
   return (
     <div>
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-medium">Courses</h3>
+        <div className="relative w-64">
+          <Input
+            placeholder="Search courses..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-9"
+          />
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+        </div>
         <Button 
-          onClick={onCreateCourse}
+          onClick={() => setCreateDialogOpen(true)}
           size="sm" 
           className="gap-1"
         >
@@ -136,9 +174,11 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
         </Button>
       </div>
       
-      {courses.length === 0 ? (
+      {filteredCourses.length === 0 ? (
         <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-md">
-          No courses available. Create your first course to get started.
+          {searchTerm ? 
+            'No courses match your search.' : 
+            'No courses available. Create your first course to get started.'}
         </div>
       ) : (
         <Table>
@@ -153,8 +193,12 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
             </TableRow>
           </TableHeader>
           <TableBody>
-            {courses.map((course) => (
-              <TableRow key={course.id}>
+            {filteredCourses.map((course) => (
+              <TableRow 
+                key={course.id}
+                className="cursor-pointer hover:bg-gray-50"
+                onClick={() => setSelectedCourseId(course.id)}
+              >
                 <TableCell className="font-medium">{course.title}</TableCell>
                 <TableCell>{course.price}</TableCell>
                 <TableCell>{course.referral_reward}</TableCell>
@@ -164,7 +208,7 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
-                  <div className="flex justify-end gap-2">
+                  <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
                     {!course.is_published ? (
                       <Button
                         variant="ghost"
@@ -187,7 +231,7 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
                     <Button
                       variant="ghost" 
                       size="icon"
-                      onClick={() => onEditCourse(course)}
+                      onClick={() => setSelectedCourseId(course.id)}
                       title="Edit Course"
                     >
                       <Edit className="h-4 w-4" />
@@ -212,6 +256,7 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
         </Table>
       )}
 
+      {/* Delete Confirmation Dialog */}
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
@@ -232,6 +277,14 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+      
+      {/* Create Course Dialog */}
+      <CourseForm 
+        isOpen={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={handleCreateSuccess}
+        onCancel={() => setCreateDialogOpen(false)}
+      />
     </div>
   );
 };
