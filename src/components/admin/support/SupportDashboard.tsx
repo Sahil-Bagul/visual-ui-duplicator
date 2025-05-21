@@ -29,7 +29,6 @@ import {
 } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Loader2, MessageCircle, CheckCircle, XCircle, Send } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -59,25 +58,68 @@ const SupportDashboard: React.FC = () => {
   
   const queryClient = useQueryClient();
   
-  // Fetch all feedback/support items
+  // Fetch all feedback/support items with user info joined
   const { data: feedbackItems = [], isLoading } = useQuery({
     queryKey: ['admin-support-requests'],
     queryFn: async () => {
-      const { data, error } = await supabase
+      // First try the .join approach
+      const { data: joinData, error: joinError } = await supabase
         .from('feedback')
-        .select(`*, user:user_id(email, name)`)
+        .select(`
+          *,
+          user:users!feedback_user_id_fkey(email, name)
+        `)
         .order('submitted_at', { ascending: false });
-      
-      if (error) {
-        console.error("Error fetching feedback:", error);
-        throw new Error(error.message);
+        
+      if (!joinError && joinData) {
+        return joinData as FeedbackItem[];
       }
       
-      // Handle possible relation errors by providing default values
-      return (data || []).map(item => ({
-        ...item,
-        user: item.user || { email: 'Unknown User', name: 'Unknown' }
-      })) as FeedbackItem[];
+      // If the join approach fails, fall back to separate queries
+      console.error("Join error, falling back to separate queries:", joinError);
+      
+      const { data: feedbackData, error: feedbackError } = await supabase
+        .from('feedback')
+        .select('*')
+        .order('submitted_at', { ascending: false });
+      
+      if (feedbackError) {
+        console.error("Error fetching feedback:", feedbackError);
+        throw feedbackError;
+      }
+      
+      // Now get user information for each feedback item
+      const feedbackWithUsers: FeedbackItem[] = await Promise.all(
+        (feedbackData || []).map(async (item: any) => {
+          if (!item.user_id) {
+            return {
+              ...item,
+              user: { email: 'Anonymous', name: 'Anonymous' }
+            };
+          }
+          
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('email, name')
+            .eq('id', item.user_id)
+            .single();
+          
+          if (userError || !userData) {
+            console.warn(`Could not find user for ID ${item.user_id}:`, userError);
+            return {
+              ...item,
+              user: { email: 'Unknown User', name: 'Unknown' }
+            };
+          }
+          
+          return {
+            ...item,
+            user: userData
+          };
+        })
+      );
+      
+      return feedbackWithUsers;
     },
   });
   

@@ -12,6 +12,7 @@ import AdminManagement from '@/components/admin/AdminManagement';
 import AnalyticsDashboard from '@/components/admin/analytics/AnalyticsDashboard';
 import SupportDashboard from '@/components/admin/support/SupportDashboard';
 import PaymentsDashboard from '@/components/admin/payments/PaymentsDashboard';
+import TelegramBotGuide from '@/components/admin/TelegramBotGuide';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -28,7 +29,7 @@ import {
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
   
-  // Fetch admin status from the database
+  // Fetch admin status from the database - use suspense to ensure we have the data before rendering
   const { data: isAdmin, isLoading } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
@@ -45,11 +46,12 @@ const AdminPanel: React.FC = () => {
       
       return data || false;
     },
-    enabled: !!user
+    enabled: !!user,
+    staleTime: 60000, // Cache for 1 minute to prevent excessive checks
   });
   
   if (!user) {
-    return <Navigate to="/" />;
+    return <Navigate to="/" replace />;
   }
   
   if (isLoading) {
@@ -64,7 +66,7 @@ const AdminPanel: React.FC = () => {
   }
   
   if (!isAdmin) {
-    return <Navigate to="/dashboard" />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
@@ -127,6 +129,11 @@ const AdminPanel: React.FC = () => {
                   <AdminManagement currentAdminId={user.id} />
                 </div>
               </div>
+            </div>
+            
+            <div className="pt-4">
+              <h2 className="text-xl font-semibold mb-4">Telegram Bot Setup</h2>
+              <TelegramBotGuide />
             </div>
           </TabsContent>
           

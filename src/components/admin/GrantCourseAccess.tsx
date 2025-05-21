@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { useToast } from '@/hooks/use-toast';
+import { toast } from 'sonner';
 import { grantCourseAccessToUser } from '@/utils/demoAccess';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,15 +12,10 @@ const GrantCourseAccess: React.FC = () => {
   const [userEmail, setUserEmail] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [result, setResult] = useState<string | null>(null);
-  const { toast } = useToast();
 
   const handleGrantAccess = async () => {
     if (!userEmail.trim()) {
-      toast({
-        title: "Error",
-        description: "Please enter a valid email address",
-        variant: "destructive"
-      });
+      toast.error("Please enter a valid email address");
       return;
     }
 
@@ -33,49 +28,20 @@ const GrantCourseAccess: React.FC = () => {
         '46f0b0fa-6cc1-482e-adca-6d50eab9538f'  // Stock Market Fundamentals
       ];
       
-      // First, check if the user exists
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', userEmail)
-        .single();
-      
-      if (userError || !userData) {
-        toast({
-          title: "Error",
-          description: `User with email ${userEmail} not found. Please ensure they have registered.`,
-          variant: "destructive"
-        });
-        setResult(`Error: User with email ${userEmail} not found`);
-        setIsLoading(false);
-        return;
-      }
-      
       // Call the function to grant access
       const { success, message, purchases } = await grantCourseAccessToUser(userEmail, courseIds);
       
       if (success) {
-        toast({
-          title: "Success",
-          description: message,
-        });
-        setResult(`Successfully granted access to ${purchases ? purchases.length : 0} courses for user ${userEmail}`);
+        toast.success(message);
+        setResult(`Successfully granted access to ${purchases ? purchases.length : 'all'} courses for user ${userEmail}`);
         setUserEmail(''); // Clear the input field on success
       } else {
-        toast({
-          title: "Error",
-          description: message,
-          variant: "destructive",
-        });
+        toast.error(message);
         setResult(`Error: ${message}`);
       }
     } catch (error) {
       console.error("Error in grant access handler:", error);
-      toast({
-        title: "Error",
-        description: "Failed to grant course access",
-        variant: "destructive",
-      });
+      toast.error("Failed to grant course access");
       setResult(`Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     } finally {
       setIsLoading(false);

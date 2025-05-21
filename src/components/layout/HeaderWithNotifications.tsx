@@ -14,7 +14,7 @@ const HeaderWithNotifications: React.FC = () => {
   const location = useLocation();
   
   // Check if the user is an admin
-  const { data: isAdmin } = useQuery({
+  const { data: isAdmin = false } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;

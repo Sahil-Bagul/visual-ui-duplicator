@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
+import { supabase } from '@/integrations/supabase/client';
+import { CreditCard, ArrowUpRight, ArrowDownLeft, HelpCircle, Loader2 } from 'lucide-react';
 import {
   Table,
   TableBody,
@@ -12,25 +13,17 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Loader2, Search, Download, CreditCard, CheckCircle2, AlertTriangle, X, MoreHorizontal } from 'lucide-react';
-import { supabase } from '@/integrations/supabase/client';
-import { toast } from 'sonner';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface Purchase {
   id: string;
@@ -39,14 +32,13 @@ interface Purchase {
   purchased_at: string;
   has_used_referral_code: boolean;
   used_referral_code: string | null;
-  user: {
-    email: string | null;
-    name: string | null;
-  };
-  course: {
+  course?: {
     title: string;
     price: number;
-    referral_reward: number;
+  };
+  user?: {
+    email: string | null;
+    name: string | null;
   };
 }
 
@@ -54,70 +46,66 @@ interface Payout {
   id: string;
   user_id: string;
   amount: number;
-  status: 'pending' | 'processing' | 'completed' | 'failed';
+  status: string;
   created_at: string;
   processed_at: string | null;
   payout_method_id: string;
+  razorpay_payout_id: string | null;
   failure_reason: string | null;
-  user: {
+  user?: {
     email: string | null;
     name: string | null;
   };
 }
 
 const PaymentsDashboard: React.FC = () => {
-  const [tab, setTab] = useState('purchases');
-  const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
-  const [selectedPayout, setSelectedPayout] = useState<Payout | null>(null);
-  const [payoutDetailsOpen, setPayoutDetailsOpen] = useState(false);
+  const [detailsDialog, setDetailsDialog] = useState<{ open: boolean, data: any | null }>({ 
+    open: false, 
+    data: null 
+  });
   
-  const queryClient = useQueryClient();
-  
-  // Fetch purchases
-  const { data: purchases = [], isLoading: isPurchasesLoading } = useQuery({
+  // Fetch purchases data
+  const { data: purchases = [], isLoading: loadingPurchases } = useQuery({
     queryKey: ['admin-purchases'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('purchases')
         .select(`
           *,
-          user:user_id(email, name),
-          course:course_id(title, price, referral_reward)
+          course:courses(title, price),
+          user:users(email, name)
         `)
         .order('purchased_at', { ascending: false });
-      
+        
       if (error) {
         console.error("Error fetching purchases:", error);
-        throw new Error(error.message);
+        throw error;
       }
       
       // Handle possible relation errors by providing default values
       return (data || []).map(item => ({
         ...item,
-        user: item.user || { email: 'Unknown User', name: 'Unknown' },
-        course: item.course || { title: 'Unknown Course', price: 0, referral_reward: 0 }
+        course: item.course || { title: 'Unknown Course', price: 0 },
+        user: item.user || { email: 'Unknown User', name: 'Unknown' }
       })) as Purchase[];
     },
-    enabled: tab === 'purchases',
   });
   
-  // Fetch payouts
-  const { data: payouts = [], isLoading: isPayoutsLoading } = useQuery({
+  // Fetch payouts data
+  const { data: payouts = [], isLoading: loadingPayouts } = useQuery({
     queryKey: ['admin-payouts'],
     queryFn: async () => {
       const { data, error } = await supabase
         .from('payouts')
         .select(`
           *,
-          user:user_id(email, name)
+          user:users(email, name)
         `)
         .order('created_at', { ascending: false });
-      
+        
       if (error) {
         console.error("Error fetching payouts:", error);
-        throw new Error(error.message);
+        throw error;
       }
       
       // Handle possible relation errors by providing default values
@@ -126,256 +114,124 @@ const PaymentsDashboard: React.FC = () => {
         user: item.user || { email: 'Unknown User', name: 'Unknown' }
       })) as Payout[];
     },
-    enabled: tab === 'payouts',
   });
   
-  // Process payout mutation
-  const processPayoutMutation = useMutation({
-    mutationFn: async (payoutId: string) => {
-      const { data, error } = await supabase
-        .from('payouts')
-        .update({
-          status: 'processing',
-        })
-        .eq('id', payoutId)
-        .select();
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      // In a real application, you would call a serverless function here
-      // to process the payout via your payment provider
-      
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-payouts'] });
-      toast.success('Payout marked as processing');
-      setPayoutDetailsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to process payout: ${error.message}`);
-    },
-  });
-  
-  // Complete payout mutation
-  const completePayoutMutation = useMutation({
-    mutationFn: async (payoutId: string) => {
-      const { data, error } = await supabase
-        .from('payouts')
-        .update({
-          status: 'completed',
-          processed_at: new Date().toISOString(),
-        })
-        .eq('id', payoutId)
-        .select();
-      
-      if (error) {
-        throw new Error(error.message);
-      }
-      
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['admin-payouts'] });
-      toast.success('Payout marked as completed');
-      setPayoutDetailsOpen(false);
-    },
-    onError: (error) => {
-      toast.error(`Failed to complete payout: ${error.message}`);
-    },
-  });
-  
-  // Filter purchases based on search term and date filter
-  const filteredPurchases = purchases.filter(purchase => {
-    const matchesSearch = !searchTerm || 
-      (purchase.user?.email?.toLowerCase().includes(searchTerm.toLowerCase()) || 
-       purchase.course.title.toLowerCase().includes(searchTerm.toLowerCase()));
-    
-    let matchesDate = true;
-    if (dateFilter === 'today') {
-      const today = new Date().toISOString().split('T')[0];
-      matchesDate = purchase.purchased_at.startsWith(today);
-    } else if (dateFilter === 'week') {
-      const weekAgo = new Date();
-      weekAgo.setDate(weekAgo.getDate() - 7);
-      matchesDate = new Date(purchase.purchased_at) >= weekAgo;
-    } else if (dateFilter === 'month') {
-      const monthAgo = new Date();
-      monthAgo.setMonth(monthAgo.getMonth() - 1);
-      matchesDate = new Date(purchase.purchased_at) >= monthAgo;
-    }
-    
-    return matchesSearch && matchesDate;
-  });
-  
-  // Filter payouts based on search term and status filter
-  const filteredPayouts = payouts.filter(payout => {
-    const matchesSearch = !searchTerm || 
-      payout.user?.email?.toLowerCase().includes(searchTerm.toLowerCase());
-    
-    const matchesStatus = statusFilter === 'all' || payout.status === statusFilter;
-    
-    return matchesSearch && matchesStatus;
-  });
-  
-  // Calculate total amounts
-  const totalRevenue = filteredPurchases.reduce((sum, purchase) => sum + purchase.course.price, 0);
-  const totalReferralAmount = filteredPurchases
-    .filter(p => p.has_used_referral_code)
-    .reduce((sum, purchase) => sum + purchase.course.referral_reward, 0);
-  const totalPayoutsAmount = filteredPayouts.reduce((sum, payout) => sum + payout.amount, 0);
-  
-  // Get counts by status for payouts
-  const pendingPayouts = payouts.filter(p => p.status === 'pending').length;
-  const processingPayouts = payouts.filter(p => p.status === 'processing').length;
-  const completedPayouts = payouts.filter(p => p.status === 'completed').length;
-  const failedPayouts = payouts.filter(p => p.status === 'failed').length;
+  // Calculate summary metrics
+  const totalPurchaseAmount = purchases.reduce((sum, p) => sum + (p.course?.price || 0), 0);
+  const totalPaidOut = payouts
+    .filter(p => p.status === 'success')
+    .reduce((sum, p) => sum + p.amount, 0);
+  const pendingPayouts = payouts
+    .filter(p => p.status === 'pending')
+    .reduce((sum, p) => sum + p.amount, 0);
   
   const getStatusBadge = (status: string) => {
     switch (status) {
+      case 'success':
+        return <Badge className="bg-green-100 text-green-800 border-green-300">Successful</Badge>;
       case 'pending':
-        return <Badge variant="outline" className="bg-yellow-100">Pending</Badge>;
-      case 'processing':
-        return <Badge variant="outline" className="bg-blue-100">Processing</Badge>;
-      case 'completed':
-        return <Badge variant="outline" className="bg-green-100">Completed</Badge>;
+        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">Pending</Badge>;
       case 'failed':
-        return <Badge variant="outline" className="bg-red-100">Failed</Badge>;
+        return <Badge className="bg-red-100 text-red-800 border-red-300">Failed</Badge>;
       default:
-        return <Badge variant="outline">{status}</Badge>;
+        return <Badge>{status}</Badge>;
     }
   };
   
-  const handleProcessPayout = async (payoutId: string) => {
-    await processPayoutMutation.mutateAsync(payoutId);
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      maximumFractionDigits: 0
+    }).format(amount);
   };
-  
-  const handleCompletePayout = async (payoutId: string) => {
-    await completePayoutMutation.mutateAsync(payoutId);
-  };
-  
+
   return (
     <Card>
       <CardHeader>
         <CardTitle>Payments Dashboard</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        <Tabs value={tab} onValueChange={setTab}>
-          <div className="flex justify-between items-center">
-            <TabsList>
-              <TabsTrigger value="purchases">Purchases</TabsTrigger>
-              <TabsTrigger value="payouts">Payouts</TabsTrigger>
-            </TabsList>
-            
-            <div className="flex items-center gap-3">
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-400" />
-                <Input 
-                  placeholder="Search by email or title..." 
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="pl-9 w-[250px]"
-                />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500">Total Revenue</p>
+                  <h3 className="text-2xl font-bold">{formatCurrency(totalPurchaseAmount)}</h3>
+                </div>
+                <div className="p-2 rounded-full bg-green-50">
+                  <ArrowUpRight className="h-5 w-5 text-green-500" />
+                </div>
               </div>
-              
-              {tab === 'purchases' && (
-                <Select value={dateFilter} onValueChange={setDateFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by date" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Time</SelectItem>
-                    <SelectItem value="today">Today</SelectItem>
-                    <SelectItem value="week">Last 7 Days</SelectItem>
-                    <SelectItem value="month">Last 30 Days</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              
-              {tab === 'payouts' && (
-                <Select value={statusFilter} onValueChange={setStatusFilter}>
-                  <SelectTrigger className="w-[180px]">
-                    <SelectValue placeholder="Filter by status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Status</SelectItem>
-                    <SelectItem value="pending">Pending ({pendingPayouts})</SelectItem>
-                    <SelectItem value="processing">Processing ({processingPayouts})</SelectItem>
-                    <SelectItem value="completed">Completed ({completedPayouts})</SelectItem>
-                    <SelectItem value="failed">Failed ({failedPayouts})</SelectItem>
-                  </SelectContent>
-                </Select>
-              )}
-              
-              <Button variant="outline" size="icon">
-                <Download className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
           
-          <TabsContent value="purchases" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Total Revenue</p>
-                      <h3 className="text-2xl font-bold mt-1">₹{totalRevenue.toLocaleString()}</h3>
-                    </div>
-                    <div className="p-3 bg-green-50 rounded-full">
-                      <CreditCard className="h-5 w-5 text-green-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Purchases</p>
-                      <h3 className="text-2xl font-bold mt-1">{filteredPurchases.length}</h3>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-full">
-                      <CheckCircle2 className="h-5 w-5 text-blue-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Referral Rewards</p>
-                      <h3 className="text-2xl font-bold mt-1">₹{totalReferralAmount.toLocaleString()}</h3>
-                    </div>
-                    <div className="p-3 bg-purple-50 rounded-full">
-                      <AlertTriangle className="h-5 w-5 text-purple-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500">Total Payouts</p>
+                  <h3 className="text-2xl font-bold">{formatCurrency(totalPaidOut)}</h3>
+                </div>
+                <div className="p-2 rounded-full bg-blue-50">
+                  <ArrowDownLeft className="h-5 w-5 text-blue-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500">Pending Payouts</p>
+                  <h3 className="text-2xl font-bold">{formatCurrency(pendingPayouts)}</h3>
+                </div>
+                <div className="p-2 rounded-full bg-yellow-50">
+                  <HelpCircle className="h-5 w-5 text-yellow-500" />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+        
+        <Tabs defaultValue="purchases" className="w-full">
+          <TabsList className="mb-4">
+            <TabsTrigger value="purchases">Purchases</TabsTrigger>
+            <TabsTrigger value="payouts">Payouts</TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="purchases" className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">Purchase History</h2>
+              <div className="flex space-x-2">
+                <Input placeholder="Search..." className="w-[200px]" />
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Purchases</SelectItem>
+                    <SelectItem value="referral">With Referral</SelectItem>
+                    <SelectItem value="no-referral">No Referral</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            {isPurchasesLoading ? (
+            {loadingPurchases ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
-            ) : filteredPurchases.length === 0 ? (
+            ) : purchases.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <CreditCard className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <h3 className="text-lg font-medium text-gray-700 mb-1">No purchase records found</h3>
-                <p className="text-gray-500">
-                  {searchTerm || dateFilter !== 'all' ? 
-                    'Try adjusting your filters' : 
-                    'When users purchase courses, they will appear here'}
-                </p>
+                <h3 className="text-lg font-medium text-gray-700 mb-1">No purchases found</h3>
+                <p className="text-gray-500">When users make purchases, they will appear here</p>
               </div>
             ) : (
-              <div className="border rounded-md overflow-hidden">
+              <div className="border rounded-md overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -383,26 +239,36 @@ const PaymentsDashboard: React.FC = () => {
                       <TableHead>User</TableHead>
                       <TableHead>Course</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Referral Used</TableHead>
+                      <TableHead>Referral</TableHead>
+                      <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPurchases.map((purchase) => (
+                    {purchases.map((purchase) => (
                       <TableRow key={purchase.id}>
                         <TableCell className="whitespace-nowrap">
                           {new Date(purchase.purchased_at).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>{purchase.user?.email || 'Unknown'}</TableCell>
-                        <TableCell>{purchase.course.title}</TableCell>
-                        <TableCell>₹{purchase.course.price}</TableCell>
+                        <TableCell>{purchase.user?.email || 'Unknown User'}</TableCell>
+                        <TableCell>{purchase.course?.title || 'Unknown Course'}</TableCell>
+                        <TableCell>{formatCurrency(purchase.course?.price || 0)}</TableCell>
                         <TableCell>
                           {purchase.has_used_referral_code ? (
-                            <Badge variant="outline" className="bg-green-50">
-                              Yes - ₹{purchase.course.referral_reward}
+                            <Badge className="bg-blue-50 text-blue-700 border-blue-200">
+                              {purchase.used_referral_code || 'Referral Used'}
                             </Badge>
                           ) : (
-                            <Badge variant="outline" className="bg-gray-50">No</Badge>
+                            <span className="text-gray-500">-</span>
                           )}
+                        </TableCell>
+                        <TableCell>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setDetailsDialog({ open: true, data: purchase })}
+                          >
+                            Details
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -412,81 +278,37 @@ const PaymentsDashboard: React.FC = () => {
             )}
           </TabsContent>
           
-          <TabsContent value="payouts" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Total Payouts</p>
-                      <h3 className="text-2xl font-bold mt-1">₹{totalPayoutsAmount.toLocaleString()}</h3>
-                    </div>
-                    <div className="p-3 bg-blue-50 rounded-full">
-                      <CreditCard className="h-5 w-5 text-blue-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Pending</p>
-                      <h3 className="text-2xl font-bold mt-1">{pendingPayouts}</h3>
-                    </div>
-                    <div className="p-3 bg-yellow-50 rounded-full">
-                      <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Processing</p>
-                      <h3 className="text-2xl font-bold mt-1">{processingPayouts}</h3>
-                    </div>
-                    <div className="p-3 bg-orange-50 rounded-full">
-                      <AlertTriangle className="h-5 w-5 text-orange-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="p-6">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-sm font-medium text-gray-500">Completed</p>
-                      <h3 className="text-2xl font-bold mt-1">{completedPayouts}</h3>
-                    </div>
-                    <div className="p-3 bg-green-50 rounded-full">
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+          <TabsContent value="payouts" className="space-y-4">
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-lg font-medium">Payout History</h2>
+              <div className="flex space-x-2">
+                <Input placeholder="Search..." className="w-[200px]" />
+                <Select defaultValue="all">
+                  <SelectTrigger className="w-[140px]">
+                    <SelectValue placeholder="Filter" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Statuses</SelectItem>
+                    <SelectItem value="success">Successful</SelectItem>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="failed">Failed</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
             
-            {isPayoutsLoading ? (
+            {loadingPayouts ? (
               <div className="flex items-center justify-center py-12">
                 <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
               </div>
-            ) : filteredPayouts.length === 0 ? (
+            ) : payouts.length === 0 ? (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <CreditCard className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <h3 className="text-lg font-medium text-gray-700 mb-1">No payout records found</h3>
-                <p className="text-gray-500">
-                  {searchTerm || statusFilter !== 'all' ? 
-                    'Try adjusting your filters' : 
-                    'When users request payouts, they will appear here'}
-                </p>
+                <h3 className="text-lg font-medium text-gray-700 mb-1">No payouts found</h3>
+                <p className="text-gray-500">Requested payouts will appear here</p>
               </div>
             ) : (
-              <div className="border rounded-md overflow-hidden">
+              <div className="border rounded-md overflow-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -494,53 +316,32 @@ const PaymentsDashboard: React.FC = () => {
                       <TableHead>User</TableHead>
                       <TableHead>Amount</TableHead>
                       <TableHead>Status</TableHead>
+                      <TableHead>Processed On</TableHead>
                       <TableHead>Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredPayouts.map((payout) => (
+                    {payouts.map((payout) => (
                       <TableRow key={payout.id}>
                         <TableCell className="whitespace-nowrap">
                           {new Date(payout.created_at).toLocaleDateString()}
                         </TableCell>
-                        <TableCell>{payout.user?.email || 'Unknown'}</TableCell>
-                        <TableCell>₹{payout.amount}</TableCell>
+                        <TableCell>{payout.user?.email || 'Unknown User'}</TableCell>
+                        <TableCell>{formatCurrency(payout.amount)}</TableCell>
+                        <TableCell>{getStatusBadge(payout.status)}</TableCell>
                         <TableCell>
-                          {getStatusBadge(payout.status)}
+                          {payout.processed_at ? 
+                            new Date(payout.processed_at).toLocaleDateString() : 
+                            '-'}
                         </TableCell>
                         <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => {
-                                setSelectedPayout(payout);
-                                setPayoutDetailsOpen(true);
-                              }}
-                            >
-                              <MoreHorizontal className="h-4 w-4 mr-1" />
-                              Details
-                            </Button>
-                            
-                            {payout.status === 'pending' && (
-                              <Button
-                                size="sm"
-                                onClick={() => handleProcessPayout(payout.id)}
-                              >
-                                Process
-                              </Button>
-                            )}
-                            
-                            {payout.status === 'processing' && (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => handleCompletePayout(payout.id)}
-                              >
-                                Mark Complete
-                              </Button>
-                            )}
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="sm"
+                            onClick={() => setDetailsDialog({ open: true, data: payout })}
+                          >
+                            Details
+                          </Button>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -551,93 +352,110 @@ const PaymentsDashboard: React.FC = () => {
           </TabsContent>
         </Tabs>
         
-        {/* Payout Details Dialog */}
-        {selectedPayout && (
-          <Dialog open={payoutDetailsOpen} onOpenChange={setPayoutDetailsOpen}>
-            <DialogContent className="max-w-md">
-              <DialogHeader>
-                <DialogTitle>Payout Details</DialogTitle>
-              </DialogHeader>
-              
-              <div className="space-y-4">
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Status</span>
-                  <span>{getStatusBadge(selectedPayout.status)}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Amount</span>
-                  <span className="font-bold">₹{selectedPayout.amount}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">User</span>
-                  <span>{selectedPayout.user?.email || 'Unknown'}</span>
-                </div>
-                
-                <div className="flex justify-between items-center">
-                  <span className="text-gray-500">Requested On</span>
-                  <span>{new Date(selectedPayout.created_at).toLocaleString()}</span>
-                </div>
-                
-                {selectedPayout.processed_at && (
-                  <div className="flex justify-between items-center">
-                    <span className="text-gray-500">Processed On</span>
-                    <span>{new Date(selectedPayout.processed_at).toLocaleString()}</span>
-                  </div>
-                )}
-                
-                {selectedPayout.failure_reason && (
-                  <div className="bg-red-50 p-3 rounded-md">
-                    <span className="text-gray-500 block">Failure Reason:</span>
-                    <span className="text-red-600">{selectedPayout.failure_reason}</span>
-                  </div>
+        {/* Details Dialog */}
+        <Dialog open={detailsDialog.open} onOpenChange={() => setDetailsDialog({ open: false, data: null })}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {detailsDialog.data && 'course_id' in detailsDialog.data 
+                  ? 'Purchase Details' 
+                  : 'Payout Details'}
+              </DialogTitle>
+            </DialogHeader>
+            
+            {detailsDialog.data && (
+              <div className="space-y-4 text-sm">
+                {'course_id' in detailsDialog.data ? (
+                  /* Purchase Details */
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="font-medium">ID:</div>
+                      <div>{detailsDialog.data.id}</div>
+                      
+                      <div className="font-medium">Date:</div>
+                      <div>{new Date(detailsDialog.data.purchased_at).toLocaleString()}</div>
+                      
+                      <div className="font-medium">User:</div>
+                      <div>
+                        {detailsDialog.data.user?.name || 'Unknown'} <br />
+                        <span className="text-gray-500 text-xs">{detailsDialog.data.user?.email || 'No email'}</span>
+                      </div>
+                      
+                      <div className="font-medium">Course:</div>
+                      <div>{detailsDialog.data.course?.title || 'Unknown Course'}</div>
+                      
+                      <div className="font-medium">Amount:</div>
+                      <div>{formatCurrency(detailsDialog.data.course?.price || 0)}</div>
+                      
+                      <div className="font-medium">Referral Used:</div>
+                      <div>
+                        {detailsDialog.data.has_used_referral_code 
+                          ? detailsDialog.data.used_referral_code || 'Yes'
+                          : 'No'}
+                      </div>
+                    </div>
+                  </>
+                ) : (
+                  /* Payout Details */
+                  <>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div className="font-medium">ID:</div>
+                      <div>{detailsDialog.data.id}</div>
+                      
+                      <div className="font-medium">Date Requested:</div>
+                      <div>{new Date(detailsDialog.data.created_at).toLocaleString()}</div>
+                      
+                      <div className="font-medium">User:</div>
+                      <div>
+                        {detailsDialog.data.user?.name || 'Unknown'} <br />
+                        <span className="text-gray-500 text-xs">{detailsDialog.data.user?.email || 'No email'}</span>
+                      </div>
+                      
+                      <div className="font-medium">Amount:</div>
+                      <div>{formatCurrency(detailsDialog.data.amount)}</div>
+                      
+                      <div className="font-medium">Status:</div>
+                      <div>{getStatusBadge(detailsDialog.data.status)}</div>
+                      
+                      {detailsDialog.data.processed_at && (
+                        <>
+                          <div className="font-medium">Processed On:</div>
+                          <div>{new Date(detailsDialog.data.processed_at).toLocaleString()}</div>
+                        </>
+                      )}
+                      
+                      {detailsDialog.data.razorpay_payout_id && (
+                        <>
+                          <div className="font-medium">Payment ID:</div>
+                          <div className="break-all">{detailsDialog.data.razorpay_payout_id}</div>
+                        </>
+                      )}
+                      
+                      {detailsDialog.data.failure_reason && (
+                        <>
+                          <div className="font-medium">Failure Reason:</div>
+                          <div className="text-red-600">{detailsDialog.data.failure_reason}</div>
+                        </>
+                      )}
+                    </div>
+                    
+                    {detailsDialog.data.status === 'pending' && (
+                      <div className="pt-2">
+                        <DialogDescription className="text-xs text-gray-500 mb-2">
+                          Pending payouts can be confirmed through the Telegram bot using the payout ID.
+                        </DialogDescription>
+                        <div className="bg-gray-100 p-2 rounded font-mono text-xs">
+                          /confirm_payout {detailsDialog.data.id}
+                        </div>
+                      </div>
+                    )}
+                  </>
                 )}
               </div>
-              
-              <DialogFooter className="gap-2">
-                <Button 
-                  variant="outline" 
-                  onClick={() => setPayoutDetailsOpen(false)}
-                >
-                  Close
-                </Button>
-                
-                {selectedPayout.status === 'pending' && (
-                  <Button 
-                    onClick={() => handleProcessPayout(selectedPayout.id)}
-                    disabled={processPayoutMutation.isPending}
-                  >
-                    {processPayoutMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Processing...
-                      </>
-                    ) : (
-                      'Process Payout'
-                    )}
-                  </Button>
-                )}
-                
-                {selectedPayout.status === 'processing' && (
-                  <Button 
-                    onClick={() => handleCompletePayout(selectedPayout.id)}
-                    disabled={completePayoutMutation.isPending}
-                  >
-                    {completePayoutMutation.isPending ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Completing...
-                      </>
-                    ) : (
-                      'Mark as Completed'
-                    )}
-                  </Button>
-                )}
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        )}
+            )}
+          </DialogContent>
+        </Dialog>
+        
       </CardContent>
     </Card>
   );
