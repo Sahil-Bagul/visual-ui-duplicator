@@ -13,6 +13,27 @@ interface AdminResult {
   user_id?: string;
 }
 
+// Helper function to validate and convert data to AdminResult
+function toAdminResult(data: unknown): AdminResult {
+  // Default result if data is invalid
+  const defaultResult: AdminResult = {
+    success: false,
+    message: "Invalid response format"
+  };
+  
+  // Check if data is an object and has the required properties
+  if (data && typeof data === 'object' && 'success' in data && 'message' in data) {
+    const typedData = data as { success: boolean; message: string; user_id?: string };
+    return {
+      success: !!typedData.success, // Convert to boolean
+      message: String(typedData.message), // Convert to string
+      user_id: typedData.user_id ? String(typedData.user_id) : undefined
+    };
+  }
+  
+  return defaultResult;
+}
+
 interface AdminManagementProps {
   currentAdminId: string;
 }
@@ -45,8 +66,8 @@ const AdminManagement = ({ currentAdminId }: AdminManagementProps) => {
       
       if (error) throw error;
       
-      // Cast the data to the AdminResult type since we know the structure
-      const adminResult = data as AdminResult;
+      // Safely convert the data to AdminResult type
+      const adminResult = toAdminResult(data);
       setResult(adminResult);
       
       if (adminResult.success) {
@@ -112,8 +133,8 @@ const AdminManagement = ({ currentAdminId }: AdminManagementProps) => {
       
       if (error) throw error;
       
-      // Cast the data to the AdminResult type since we know the structure
-      const adminResult = data as AdminResult;
+      // Safely convert the data to AdminResult type
+      const adminResult = toAdminResult(data);
       setResult(adminResult);
       
       if (adminResult.success) {
