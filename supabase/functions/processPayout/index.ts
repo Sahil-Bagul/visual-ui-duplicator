@@ -2,6 +2,7 @@
 import { serve } from "https://deno.land/std@0.131.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2.7.1";
 
+// Type definitions for improved readability and type safety
 interface PayoutMethod {
   id: string;
   user_id: string;
@@ -22,6 +23,10 @@ interface PayoutRecord {
   user_id: string;
   amount: number;
   status: string;
+}
+
+interface PayoutRequest {
+  user_id: string;
 }
 
 // CORS headers for cross-origin requests
@@ -54,7 +59,10 @@ function createSupabaseClient(): ReturnType<typeof createClient> {
 /**
  * Check if user has sufficient balance for withdrawal
  */
-async function checkUserBalance(supabase: ReturnType<typeof createClient>, userId: string): Promise<number> {
+async function checkUserBalance(
+  supabase: ReturnType<typeof createClient>, 
+  userId: string
+): Promise<number> {
   const { data: walletData, error: walletError } = await supabase
     .from("wallet")
     .select("balance")
@@ -148,6 +156,56 @@ async function createPayoutRecord(
 }
 
 /**
+ * Format payment details for Telegram message
+ */
+function formatPaymentDetails(payoutMethod: PayoutMethod): string {
+  if (payoutMethod.method_type === "UPI") {
+    return `UPI ID: ${payoutMethod.upi_id}`;
+  } else {
+    const maskedAccount = payoutMethod.account_number
+      ? `${payoutMethod.account_number?.slice(-4).padStart(payoutMethod.account_number.length, '*')}`
+      : 'Unknown';
+      
+    return `Bank Account: ${maskedAccount}\nIFSC: ${payoutMethod.ifsc_code}`;
+  }
+}
+
+/**
+ * Format user info text for Telegram message
+ */
+function formatUserInfo(userInfo: UserInfo, userId: string): string {
+  return userInfo.name || userInfo.email 
+    ? `User: ${userInfo.name || 'Unknown'} (${userInfo.email || 'No email'})`
+    : `User ID: ${userId}`;
+}
+
+/**
+ * Create Telegram message for payout notification
+ */
+function createTelegramMessage(
+  payoutRecord: PayoutRecord,
+  payoutMethod: PayoutMethod,
+  userInfo: UserInfo,
+  balance: number
+): string {
+  const paymentDetails = formatPaymentDetails(payoutMethod);
+  const userInfoText = formatUserInfo(userInfo, payoutRecord.user_id);
+  
+  return `
+🔔 *NEW PAYOUT REQUEST*
+
+${userInfoText}
+Amount: ₹${balance}
+${paymentDetails}
+
+*Payout ID:* \`${payoutRecord.id}\`
+
+To confirm after payment:
+\`/confirm_payout ${payoutRecord.id}\`
+  `.trim();
+}
+
+/**
  * Send payout notification to Telegram
  */
 async function sendTelegramNotification(
@@ -165,27 +223,7 @@ async function sendTelegramNotification(
   }
   
   try {
-    // Format payment details for Telegram message
-    const paymentDetails = payoutMethod.method_type === "UPI" 
-      ? `UPI ID: ${payoutMethod.upi_id}`
-      : `Bank Account: ${payoutMethod.account_number?.slice(-4).padStart(payoutMethod.account_number.length, '*')}\nIFSC: ${payoutMethod.ifsc_code}`;
-      
-    const userInfoText = userInfo.name || userInfo.email 
-      ? `User: ${userInfo.name || 'Unknown'} (${userInfo.email || 'No email'})`
-      : `User ID: ${payoutRecord.user_id}`;
-      
-    const telegramMessage = `
-🔔 *NEW PAYOUT REQUEST*
-
-${userInfoText}
-Amount: ₹${balance}
-${paymentDetails}
-
-*Payout ID:* \`${payoutRecord.id}\`
-
-To confirm after payment:
-\`/confirm_payout ${payoutRecord.id}\`
-    `.trim();
+    const telegramMessage = createTelegramMessage(payoutRecord, payoutMethod, userInfo, balance);
     
     const telegramResponse = await fetch(
       `https://api.telegram.org/bot${telegramBotToken}/sendMessage`,
@@ -215,14 +253,50 @@ To confirm after payment:
 }
 
 /**
+ * Create successful response
+ */
+function createSuccessResponse(payoutId: string): Response {
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      message: "Payout request submitted and notification sent", 
+      payout_id: payoutId 
+    }),
+    { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: 200 
+    }
+  );
+}
+
+/**
+ * Create error response
+ */
+function createErrorResponse(error: Error): Response {
+  console.error("Payout processing error:", error.message);
+  
+  return new Response(
+    JSON.stringify({ 
+      success: false, 
+      message: error.message 
+    }),
+    { 
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      status: error.message.includes("Insufficient balance") ? 400 : 500 
+    }
+  );
+}
+
+/**
  * Process payout request from user
  */
 async function processPayout(req: Request): Promise<Response> {
   try {
     const supabase = createSupabaseClient();
     
-    // Get user ID from request
-    const { user_id } = await req.json();
+    // Parse request payload
+    const payload = await req.json() as PayoutRequest;
+    const { user_id } = payload;
     
     if (!user_id) {
       throw new Error("User ID is required");
@@ -243,30 +317,9 @@ async function processPayout(req: Request): Promise<Response> {
     // Send notification to Telegram
     await sendTelegramNotification(payoutRecord, payoutMethod, userInfo, balance);
     
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "Payout request submitted and notification sent", 
-        payout_id: payoutRecord.id 
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: 200 
-      }
-    );
+    return createSuccessResponse(payoutRecord.id);
   } catch (error) {
-    console.error("Payout processing error:", error.message);
-    
-    return new Response(
-      JSON.stringify({ 
-        success: false, 
-        message: error.message 
-      }),
-      { 
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-        status: error.message.includes("Insufficient balance") ? 400 : 500 
-      }
-    );
+    return createErrorResponse(error);
   }
 }
 
