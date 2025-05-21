@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link } from 'react-router-dom';
-import learnandearnLogo from '@/assets/learnandearn-logo.png';
+import learnandearnLogo from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png';
 
 const Footer: React.FC = () => {
   return (
@@ -13,7 +13,11 @@ const Footer: React.FC = () => {
               <img 
                 src={learnandearnLogo} 
                 alt="Learn and Earn Logo" 
-                className="h-8 w-auto mr-2" 
+                className="h-8 w-auto mr-2"
+                onError={(e) => {
+                  const target = e.currentTarget as HTMLImageElement;
+                  target.style.display = 'none';
+                }}
               />
             </Link>
           </div>

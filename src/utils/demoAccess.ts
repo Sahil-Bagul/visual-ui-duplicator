@@ -2,8 +2,8 @@
 import { supabase } from '@/integrations/supabase/client';
 
 // This email will be granted special access to all courses without payment
-// Replace with the actual demo email for Razorpay KYC
-const DEMO_USER_EMAIL = "demo@learnandearn.in";
+// Using the email provided for Razorpay KYC testing
+const DEMO_USER_EMAIL = "movieskatta7641@gmail.com";
 
 /**
  * Checks if the current user is the demo user with special access
