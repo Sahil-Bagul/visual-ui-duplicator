@@ -34,7 +34,7 @@ const queryClient = new QueryClient({
 });
 
 // AppInitializer component to handle initialization after auth is loaded
-const AppInitializer: React.FC = () => {
+const AppInitializer = () => {
   const { user } = useAuth();
   const [initialized, setInitialized] = useState(false);
 
@@ -90,6 +90,7 @@ const AppWithAuth = () => {
   );
 };
 
+// Main App component - Make sure all React hooks are called inside a proper component function
 function App() {
   const [isInitializing, setIsInitializing] = useState(true);
 
