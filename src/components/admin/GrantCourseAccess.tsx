@@ -40,6 +40,7 @@ const GrantCourseAccess: React.FC = () => {
           description: message,
         });
         setResult(`Successfully granted access to ${purchases ? purchases.length : 0} courses for user ${userEmail}`);
+        setUserEmail(''); // Clear the input field on success
       } else {
         toast({
           title: "Error",

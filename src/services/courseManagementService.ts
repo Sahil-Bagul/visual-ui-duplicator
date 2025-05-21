@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CourseStructure } from "@/types/course";
 import { toast } from "sonner";
@@ -11,7 +10,7 @@ export interface Course {
   price: number;
   referral_reward: number;
   pdf_url: string | null;
-  is_published?: boolean;
+  is_published: boolean;
 }
 
 export interface Module {
@@ -79,15 +78,9 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
 // Create a new course
 export async function createCourse(course: Omit<Course, 'id'>): Promise<{ success: boolean; courseId?: string; error?: string }> {
   try {
-    // Set is_published to true by default
-    const courseData = {
-      ...course,
-      is_published: true
-    };
-
     const { data, error } = await supabase
       .from('courses')
-      .insert([courseData])
+      .insert([course])
       .select()
       .single();
 
@@ -425,7 +418,7 @@ export async function publishCourse(courseId: string): Promise<{ success: boolea
     }
 
     // Log the content management operation
-    const result = await logContentManagement(
+    await logContentManagement(
       'publish',
       'course',
       courseId,
@@ -454,7 +447,7 @@ export async function unpublishCourse(courseId: string): Promise<{ success: bool
     }
 
     // Log the content management operation
-    const result = await logContentManagement(
+    await logContentManagement(
       'unpublish',
       'course',
       courseId,

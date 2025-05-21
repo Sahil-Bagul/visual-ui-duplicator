@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/form";
 import { Loader2, Save } from "lucide-react";
 import { toast } from "sonner";
+import { Switch } from "@/components/ui/switch";
 
 const courseFormSchema = z.object({
   title: z.string().min(3, "Title must be at least 3 characters"),
@@ -26,6 +27,7 @@ const courseFormSchema = z.object({
   price: z.coerce.number().min(0, "Price must be a positive number"),
   referral_reward: z.coerce.number().min(0, "Referral reward must be a positive number"),
   pdf_url: z.string().url("PDF URL must be a valid URL").optional().or(z.literal("")),
+  is_published: z.boolean().default(true),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -53,6 +55,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       price: course?.price || 0,
       referral_reward: course?.referral_reward || 0,
       pdf_url: course?.pdf_url || "",
+      is_published: course?.is_published ?? true,
     },
   });
   
@@ -100,6 +103,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
             price: data.price,
             referral_reward: data.referral_reward,
             pdf_url: data.pdf_url || null,
+            is_published: data.is_published,
           }
         });
       } else {
@@ -109,6 +113,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
           price: data.price,
           referral_reward: data.referral_reward,
           pdf_url: data.pdf_url || null,
+          is_published: data.is_published,
         });
       }
     } catch (error) {
@@ -206,6 +211,30 @@ const CourseForm: React.FC<CourseFormProps> = ({
               <FormDescription>
                 Link to the course PDF content
               </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
+        <FormField
+          control={form.control}
+          name="is_published"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">
+                  Published
+                </FormLabel>
+                <FormDescription>
+                  When enabled, the course will be visible to all users
+                </FormDescription>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

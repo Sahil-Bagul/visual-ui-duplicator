@@ -120,6 +120,7 @@ export type Database = {
         Row: {
           description: string | null
           id: string
+          is_published: boolean | null
           pdf_url: string | null
           price: number
           referral_reward: number
@@ -128,6 +129,7 @@ export type Database = {
         Insert: {
           description?: string | null
           id?: string
+          is_published?: boolean | null
           pdf_url?: string | null
           price: number
           referral_reward: number
@@ -136,6 +138,7 @@ export type Database = {
         Update: {
           description?: string | null
           id?: string
+          is_published?: boolean | null
           pdf_url?: string | null
           price?: number
           referral_reward?: number

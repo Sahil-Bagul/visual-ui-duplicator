@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from "@/components/ui/button";
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
@@ -11,6 +11,7 @@ import { supabase } from '@/integrations/supabase/client';
 const HeaderWithNotifications: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const location = useLocation();
   
   // Check if the user is an admin
   const { data: isAdmin } = useQuery({
@@ -42,12 +43,15 @@ const HeaderWithNotifications: React.FC = () => {
     navigate('/');
   };
 
+  // Check if we're on the admin page already
+  const isOnAdminPage = location.pathname === '/admin';
+
   return (
     <header className="bg-white border-b sticky top-0 z-10">
       <div className="max-w-[993px] mx-auto flex justify-between items-center p-4">
         <Link to="/dashboard" className="flex items-center gap-2">
           <img
-            src="/public/assets/learnandearn-logo.png"
+            src="/assets/learnandearn-logo.png"
             alt="Learn & Earn"
             className="h-8"
           />
@@ -60,10 +64,10 @@ const HeaderWithNotifications: React.FC = () => {
           {isAdmin && (
             <Link to="/admin">
               <Button 
-                variant="ghost" 
+                variant={isOnAdminPage ? "default" : "ghost"}
                 size="icon"
                 title="Admin Dashboard"
-                className="text-[#00C853]"
+                className={isOnAdminPage ? "bg-[#00C853] hover:bg-[#00A846]" : "text-[#00C853]"}
               >
                 <Shield className="h-5 w-5" />
               </Button>
@@ -82,7 +86,7 @@ const HeaderWithNotifications: React.FC = () => {
             onClick={handleSignOut}
             title="Sign Out"
           >
-            <LogOut className="h-5 w-5" />
+            <LogOut className="h-5 w-4" />
           </Button>
         </div>
       </div>
