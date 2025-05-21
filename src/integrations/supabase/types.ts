@@ -9,6 +9,45 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      analytics_daily_metrics: {
+        Row: {
+          active_users: number | null
+          course_completion_rate: number | null
+          course_enrollments: number | null
+          date: string
+          id: string
+          lesson_completions: number | null
+          new_signups: number | null
+          referral_commissions: number | null
+          referral_count: number | null
+          total_revenue: number | null
+        }
+        Insert: {
+          active_users?: number | null
+          course_completion_rate?: number | null
+          course_enrollments?: number | null
+          date: string
+          id?: string
+          lesson_completions?: number | null
+          new_signups?: number | null
+          referral_commissions?: number | null
+          referral_count?: number | null
+          total_revenue?: number | null
+        }
+        Update: {
+          active_users?: number | null
+          course_completion_rate?: number | null
+          course_enrollments?: number | null
+          date?: string
+          id?: string
+          lesson_completions?: number | null
+          new_signups?: number | null
+          referral_commissions?: number | null
+          referral_count?: number | null
+          total_revenue?: number | null
+        }
+        Relationships: []
+      }
       course_modules: {
         Row: {
           content: string
@@ -306,6 +345,33 @@ export type Database = {
           },
         ]
       }
+      user_activity_logs: {
+        Row: {
+          activity_type: string
+          created_at: string
+          id: string
+          metadata: Json | null
+          resource_id: string | null
+          user_id: string
+        }
+        Insert: {
+          activity_type: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          user_id: string
+        }
+        Update: {
+          activity_type?: string
+          created_at?: string
+          id?: string
+          metadata?: Json | null
+          resource_id?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_progress: {
         Row: {
           completed: boolean
@@ -409,6 +475,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      aggregate_daily_metrics: {
+        Args: { target_date: string }
+        Returns: undefined
+      }
+      generate_test_analytics_data: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       get_course_structure: {
         Args: { course_id_param: string }
         Returns: {
@@ -443,6 +517,10 @@ export type Database = {
       is_user_admin: {
         Args: { user_id: string }
         Returns: boolean
+      }
+      log_user_login: {
+        Args: { user_id_param: string }
+        Returns: undefined
       }
       revoke_admin_privileges: {
         Args: { admin_email: string }

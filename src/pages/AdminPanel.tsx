@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
@@ -7,6 +8,7 @@ import GrantAccessForm from '@/components/admin/GrantAccessForm';
 import GrantCourseAccess from '@/components/admin/GrantCourseAccess';
 import InitializationButton from '@/components/admin/InitializationButton';
 import AdminManagement from '@/components/admin/AdminManagement';
+import AnalyticsDashboard from '@/components/admin/analytics/AnalyticsDashboard';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -73,13 +75,13 @@ const AdminPanel: React.FC = () => {
           </div>
         </div>
         
-        <Tabs defaultValue="tools" className="w-full">
+        <Tabs defaultValue="analytics" className="w-full">
           <TabsList className="mb-6 grid grid-cols-3 md:grid-cols-7 gap-2">
             <TabsTrigger value="tools" className="flex items-center gap-2">
               <Settings className="h-4 w-4" />
               <span className="hidden sm:inline">Tools</span>
             </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2" disabled>
+            <TabsTrigger value="analytics" className="flex items-center gap-2">
               <Activity className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
@@ -125,8 +127,12 @@ const AdminPanel: React.FC = () => {
             </div>
           </TabsContent>
           
+          <TabsContent value="analytics">
+            <AnalyticsDashboard />
+          </TabsContent>
+          
           {/* Placeholder for future tabs */}
-          {['analytics', 'users', 'content', 'support', 'payments', 'messaging'].map(tab => (
+          {['users', 'content', 'support', 'payments', 'messaging'].map(tab => (
             <TabsContent key={tab} value={tab} className="py-12 flex items-center justify-center">
               <div className="text-center">
                 <div className="bg-gray-100 p-4 rounded-full inline-block mb-4">
