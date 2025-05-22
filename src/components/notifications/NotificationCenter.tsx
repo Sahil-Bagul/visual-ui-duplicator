@@ -27,8 +27,8 @@ import {
 } from "@/services/notificationService";
 import { cn } from "@/lib/utils";
 
-// Define the component as a named export
-export const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
+// Only use one export statement for the component
+const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
   const [open, setOpen] = useState(false);
   
   const { 
@@ -184,4 +184,5 @@ export const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }
   );
 };
 
-// No need for a second export here - we're already exporting the component above
+// Export only once at the end of the file
+export { NotificationCenter };
