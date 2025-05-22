@@ -35,14 +35,11 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
-    // Now we can safely access data since we've checked it's not null
-    // Handle different response formats
+    // Now that we've checked for null, we can safely access data properties
     if (typeof data === 'object' && 'success' in data) {
-      // Safely access success property after confirming it exists
       const successValue = data.success;
       
       if (successValue === true) {
-        // Safely check if purchases exists and is an array
         const hasPurchases = 'purchases' in data;
         const purchases = hasPurchases && Array.isArray(data.purchases) ? data.purchases : [];
         
@@ -52,7 +49,6 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
           purchases: purchases
         };
       } else {
-        // Safely check if message exists and is a string
         const hasMessage = 'message' in data;
         const message = hasMessage && typeof data.message === 'string' 
           ? data.message 
