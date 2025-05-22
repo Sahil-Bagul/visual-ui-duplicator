@@ -35,13 +35,16 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
+    // Now we can safely access data since we've checked it's not null
     // Handle different response formats
     if (typeof data === 'object' && 'success' in data) {
-      // We know 'success' is a property of data at this point
+      // Safely access success property after confirming it exists
       const successValue = data.success;
+      
       if (successValue === true) {
-        // Check if data.purchases exists and is an array
-        const purchases = 'purchases' in data && Array.isArray(data.purchases) ? data.purchases : [];
+        // Safely check if purchases exists and is an array
+        const hasPurchases = 'purchases' in data;
+        const purchases = hasPurchases && Array.isArray(data.purchases) ? data.purchases : [];
         
         return {
           success: true,
@@ -49,7 +52,9 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
           purchases: purchases
         };
       } else {
-        const message = 'message' in data && typeof data.message === 'string' 
+        // Safely check if message exists and is a string
+        const hasMessage = 'message' in data;
+        const message = hasMessage && typeof data.message === 'string' 
           ? data.message 
           : `Failed to grant access to user ${userEmail}`;
           
