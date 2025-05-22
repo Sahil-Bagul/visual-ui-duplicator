@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, Menu, X } from 'lucide-react';
@@ -16,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 const HeaderWithNotifications: React.FC = () => {
   const { user, signOut, isAdmin } = useAuth();

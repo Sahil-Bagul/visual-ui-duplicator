@@ -27,7 +27,8 @@ import {
 } from "@/services/notificationService";
 import { cn } from "@/lib/utils";
 
-export const NotificationCenter: React.FC = () => {
+// Changed from export const to explicitly make it a named export
+export const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
   const [open, setOpen] = useState(false);
   
   const { 
@@ -182,3 +183,6 @@ export const NotificationCenter: React.FC = () => {
     </Popover>
   );
 };
+
+// Export the NotificationCenter component as a named export
+export { NotificationCenter };
