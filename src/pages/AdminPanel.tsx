@@ -41,17 +41,31 @@ const AdminPanel: React.FC = () => {
       try {
         console.log('Checking admin status for user:', user.id);
         
-        const { data, error } = await supabase.rpc('is_user_admin', {
-          user_id: user.id
-        });
+        // First check the users table for is_admin flag
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
         
-        if (error) {
-          console.error('Error checking admin status:', error);
-          throw error;
+        if (userError) {
+          console.error('Error checking admin status from users table:', userError);
+          // Fall back to RPC if direct table access fails
+          const { data: rpcData, error: rpcError } = await supabase.rpc('is_user_admin', {
+            user_id: user.id
+          });
+          
+          if (rpcError) {
+            console.error('Error checking admin status from RPC:', rpcError);
+            throw rpcError;
+          }
+          
+          console.log('Admin status result from RPC:', rpcData);
+          return rpcData || false;
         }
         
-        console.log('Admin status result:', data);
-        return data || false;
+        console.log('Admin status result from users table:', userData);
+        return userData?.is_admin || false;
       } catch (error) {
         console.error('Exception checking admin status:', error);
         throw error;
@@ -71,7 +85,7 @@ const AdminPanel: React.FC = () => {
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600">Checking permissions...</p>
+          <p className="text-gray-600">Checking admin permissions...</p>
         </div>
       </div>
     );
@@ -96,7 +110,22 @@ const AdminPanel: React.FC = () => {
   }
   
   if (!isAdmin) {
-    return <Navigate to="/dashboard" replace />;
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <HeaderWithNotifications />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <Alert variant="destructive">
+            <ShieldAlert className="h-5 w-5" />
+            <AlertTitle>Access Denied</AlertTitle>
+            <AlertDescription>
+              You do not have admin permissions to access this page.
+              Please contact an administrator if you believe this is a mistake.
+            </AlertDescription>
+          </Alert>
+        </main>
+        <Footer />
+      </div>
+    );
   }
 
   return (

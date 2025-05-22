@@ -18,22 +18,34 @@ const HeaderWithNotifications: React.FC = () => {
   const { data: isAdmin = false, error: adminCheckError } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
-      if (!user?.id) return false;
+      if (!user) return false;
       
       try {
         console.log('Checking admin status for user:', user.id);
-        const { data, error } = await supabase.rpc('is_user_admin', {
-          user_id: user.id
-        });
         
-        if (error) {
-          console.error('Error checking admin status:', error);
-          // Don't show toast here to avoid spamming users
-          return false;
+        // First check the users table directly
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', user.id)
+          .single();
+        
+        if (userError) {
+          console.error('Error checking admin status from users table:', userError);
+          // Fall back to RPC if direct table access fails
+          const { data: rpcData, error: rpcError } = await supabase.rpc('is_user_admin', {
+            user_id: user.id
+          });
+          
+          if (rpcError) {
+            console.error('Error checking admin status from RPC:', rpcError);
+            return false;
+          }
+          
+          return rpcData || false;
         }
         
-        console.log('Admin status result:', data);
-        return data || false;
+        return userData?.is_admin || false;
       } catch (error) {
         console.error('Exception checking admin status:', error);
         return false;

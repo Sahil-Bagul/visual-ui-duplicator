@@ -29,6 +29,10 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      // Add better error handling
+      onError: (error) => {
+        console.error("Query error:", error);
+      }
     },
   },
 });
@@ -58,10 +62,22 @@ const AppInitializer = () => {
 
 // Main App component wrapped with AuthProvider
 const AppWithAuth = () => {
-  const { user } = useAuth();
+  const { user, isLoading: authLoading } = useAuth();
   
   // Always call the hook, regardless of conditions
   useLoginLogger(user?.id, !!user);
+
+  // Show a loading indicator while auth is being checked
+  if (authLoading) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-600">Checking authentication...</p>
+        </div>
+      </div>
+    );
+  }
   
   return (
     <Routes>

@@ -57,7 +57,7 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       const hasSuccessProperty = 'success' in data;
       
       if (hasSuccessProperty) {
-        const responseWithSuccess = data as { success: boolean; message?: string; purchases?: any[] };
+        const responseWithSuccess = data as SuccessResponse;
         const successValue = responseWithSuccess.success;
         
         if (successValue === true) {
