@@ -16,7 +16,39 @@ export const supabase = createClient<Database>(
     auth: {
       persistSession: true,
       autoRefreshToken: true,
-      detectSessionInUrl: true
-    }
+      detectSessionInUrl: true,
+      storage: localStorage, // Explicitly set storage
+      storageKey: 'supabase.auth.token', // Set a specific key for storage
+    },
+    global: {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    },
+    db: {
+      schema: 'public',
+    },
+    // Disable realtime subscriptions if not explicitly used
+    realtime: {
+      params: {
+        eventsPerSecond: 10,
+      },
+    },
   }
 );
+
+// Helper function to handle Supabase errors consistently
+export const handleSupabaseError = (error: any, context: string = 'operation') => {
+  if (error) {
+    console.error(`Supabase error during ${context}:`, error);
+    
+    // Log specific error codes for debugging
+    if (error.code) {
+      console.error(`Error code: ${error.code}`);
+    }
+    
+    // Return user-friendly message
+    return error.message || `An error occurred during ${context}`;
+  }
+  return null;
+};

@@ -87,7 +87,7 @@ const AppWithAuth = () => {
       <Route path="/" element={<Auth />} />
       <Route path="/policies" element={<Policies />} />
       
-      {/* Protected routes */}
+      {/* Protected routes - regular user access */}
       <Route element={<ProtectedRoute />}>
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/my-courses" element={<MyCourses />} />
@@ -99,6 +99,10 @@ const AppWithAuth = () => {
         <Route path="/profile" element={<Profile />} />
         <Route path="/wallet" element={<Wallet />} />
         <Route path="/feedback" element={<Feedback />} />
+      </Route>
+      
+      {/* Protected routes - admin only access */}
+      <Route element={<ProtectedRoute requireAdmin={true} />}>
         <Route path="/admin" element={<AdminPanel />} />
       </Route>
       

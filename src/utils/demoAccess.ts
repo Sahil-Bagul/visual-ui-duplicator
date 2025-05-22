@@ -53,14 +53,11 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     
     // Check if data is an object (excluding arrays)
     if (typeof data === 'object' && !Array.isArray(data)) {
-      // Type guard to check if object has success property
-      const hasSuccessProperty = 'success' in data;
-      
-      if (hasSuccessProperty) {
+      // Type guard to check if the object has a success property
+      if ('success' in data) {
         const responseWithSuccess = data as SuccessResponse;
-        const successValue = responseWithSuccess.success;
         
-        if (successValue === true) {
+        if (responseWithSuccess.success === true) {
           // Check if purchases property exists and is an array
           const purchases = 'purchases' in responseWithSuccess && 
                             Array.isArray(responseWithSuccess.purchases) ? 
