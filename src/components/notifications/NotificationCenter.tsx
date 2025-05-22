@@ -27,7 +27,7 @@ import {
 } from "@/services/notificationService";
 import { cn } from "@/lib/utils";
 
-// Changed from export const to explicitly make it a named export
+// Define the component as a named export
 export const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
   const [open, setOpen] = useState(false);
   
@@ -184,5 +184,4 @@ export const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }
   );
 };
 
-// Export the NotificationCenter component as a named export
-export { NotificationCenter };
+// No need for a second export here - we're already exporting the component above
