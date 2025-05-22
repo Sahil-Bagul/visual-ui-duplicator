@@ -7,6 +7,13 @@ export interface GrantCourseResult {
   purchases?: any[];  // Array to store purchase records
 }
 
+// Define expected response types to help TypeScript
+interface SuccessResponse {
+  success: boolean;
+  message?: string;
+  purchases?: any[];
+}
+
 // Function to grant course access to a user
 export async function grantCourseAccessToUser(userEmail: string, courseIds: string[]): Promise<GrantCourseResult> {
   try {
@@ -35,8 +42,6 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
-    // Now we're sure data is not null
-    
     // Check if data is a string (some RPCs might return a text message)
     if (typeof data === 'string') {
       const isSuccess = data.includes('✅') || data.toLowerCase().includes('success');
@@ -46,14 +51,20 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
-    // Check if data is an object with a success property
-    if (typeof data === 'object') {
-      if ('success' in data) {
-        const successValue = data.success;
+    // Check if data is an object (excluding arrays)
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      // Type guard to check if object has success property
+      const hasSuccessProperty = 'success' in data;
+      
+      if (hasSuccessProperty) {
+        const responseWithSuccess = data as { success: boolean; message?: string; purchases?: any[] };
+        const successValue = responseWithSuccess.success;
         
         if (successValue === true) {
           // Check if purchases property exists and is an array
-          const purchases = 'purchases' in data && Array.isArray(data.purchases) ? data.purchases : [];
+          const purchases = 'purchases' in responseWithSuccess && 
+                            Array.isArray(responseWithSuccess.purchases) ? 
+                            responseWithSuccess.purchases : [];
           
           return {
             success: true,
@@ -62,9 +73,10 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
           };
         } else {
           // Check if message property exists
-          const message = 'message' in data && typeof data.message === 'string' 
-            ? data.message 
-            : `Failed to grant access to user ${userEmail}`;
+          const message = 'message' in responseWithSuccess && 
+                          typeof responseWithSuccess.message === 'string' ? 
+                          responseWithSuccess.message : 
+                          `Failed to grant access to user ${userEmail}`;
             
           return {
             success: false,
@@ -72,15 +84,15 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
           };
         }
       }
-      
-      // Handle case where data is an array (possibly containing purchase records)
-      if (Array.isArray(data)) {
-        return {
-          success: true,
-          message: `Successfully granted access to courses for user ${userEmail}`,
-          purchases: data
-        };
-      }
+    }
+    
+    // Handle case where data is an array (possibly containing purchase records)
+    if (Array.isArray(data)) {
+      return {
+        success: true,
+        message: `Successfully granted access to courses for user ${userEmail}`,
+        purchases: data
+      };
     }
 
     // If we reached here, assume success if there was no error and data is not null
