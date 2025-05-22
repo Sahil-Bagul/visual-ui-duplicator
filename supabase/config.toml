@@ -33,5 +33,8 @@ enabled = true
 [functions]
 enabled = true
 
+[functions.sendTelegramPayout]
+verify_jwt = true
+
 [functions.telegram-test]
 verify_jwt = true

@@ -414,6 +414,47 @@ export type Database = {
           },
         ]
       }
+      support_tickets: {
+        Row: {
+          admin_response: string | null
+          created_at: string | null
+          id: string
+          message: string
+          responded_at: string | null
+          status: string | null
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          admin_response?: string | null
+          created_at?: string | null
+          id?: string
+          message: string
+          responded_at?: string | null
+          status?: string | null
+          subject: string
+          user_id: string
+        }
+        Update: {
+          admin_response?: string | null
+          created_at?: string | null
+          id?: string
+          message?: string
+          responded_at?: string | null
+          status?: string | null
+          subject?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       user_activity_logs: {
         Row: {
           activity_type: string
@@ -491,6 +532,7 @@ export type Database = {
           email: string | null
           id: string
           is_admin: boolean
+          is_suspended: boolean | null
           joined_at: string | null
           name: string | null
         }
@@ -498,6 +540,7 @@ export type Database = {
           email?: string | null
           id: string
           is_admin?: boolean
+          is_suspended?: boolean | null
           joined_at?: string | null
           name?: string | null
         }
@@ -505,6 +548,7 @@ export type Database = {
           email?: string | null
           id?: string
           is_admin?: boolean
+          is_suspended?: boolean | null
           joined_at?: string | null
           name?: string | null
         }
@@ -548,6 +592,42 @@ export type Database = {
         Args: { target_date: string }
         Returns: undefined
       }
+      bytea_to_text: {
+        Args: { data: string }
+        Returns: string
+      }
+      create_course: {
+        Args: {
+          admin_id: string
+          course_title: string
+          course_price: number
+          course_referral_reward: number
+          course_pdf_url: string
+          course_description: string
+        }
+        Returns: string
+      }
+      create_course_module: {
+        Args: {
+          admin_id: string
+          course_id: string
+          title: string
+          content: string
+          module_order: number
+          description: string
+        }
+        Returns: string
+      }
+      create_lesson: {
+        Args: {
+          admin_id: string
+          module_id: string
+          title: string
+          content: string
+          lesson_order: number
+        }
+        Returns: string
+      }
       create_user_notification: {
         Args: {
           user_id_param: string
@@ -578,6 +658,20 @@ export type Database = {
           lesson_order: number
         }[]
       }
+      get_recent_analytics_metrics: {
+        Args: { days_back?: number }
+        Returns: {
+          date: string
+          active_users: number
+          new_signups: number
+          course_enrollments: number
+          lesson_completions: number
+          total_revenue: number
+          referral_commissions: number
+          referral_count: number
+          course_completion_rate: number
+        }[]
+      }
       get_user_course_progress: {
         Args: { user_id_param: string; course_id_param: string }
         Returns: {
@@ -593,6 +687,57 @@ export type Database = {
       grant_one_time_access_to_user: {
         Args: { user_email: string }
         Returns: Json
+      }
+      http: {
+        Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_delete: {
+        Args:
+          | { uri: string }
+          | { uri: string; content: string; content_type: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_get: {
+        Args: { uri: string } | { uri: string; data: Json }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_head: {
+        Args: { uri: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_header: {
+        Args: { field: string; value: string }
+        Returns: Database["public"]["CompositeTypes"]["http_header"]
+      }
+      http_list_curlopt: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          curlopt: string
+          value: string
+        }[]
+      }
+      http_patch: {
+        Args: { uri: string; content: string; content_type: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_post: {
+        Args:
+          | { uri: string; content: string; content_type: string }
+          | { uri: string; data: Json }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_put: {
+        Args: { uri: string; content: string; content_type: string }
+        Returns: Database["public"]["CompositeTypes"]["http_response"]
+      }
+      http_reset_curlopt: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
+      http_set_curlopt: {
+        Args: { curlopt: string; value: string }
+        Returns: boolean
       }
       is_user_admin: {
         Args: { user_id: string }
@@ -620,16 +765,60 @@ export type Database = {
         Args: { notification_id_param: string }
         Returns: boolean
       }
+      respond_to_support_ticket: {
+        Args: {
+          ticket_id_param: string
+          status_param: string
+          admin_response_param: string
+        }
+        Returns: undefined
+      }
       revoke_admin_privileges: {
         Args: { admin_email: string }
         Returns: Json
+      }
+      send_telegram_test_message: {
+        Args: Record<PropertyKey, never>
+        Returns: Json
+      }
+      submit_support_ticket: {
+        Args: { subject_param: string; message_param: string }
+        Returns: string
+      }
+      text_to_bytea: {
+        Args: { data: string }
+        Returns: string
+      }
+      toggle_user_suspension: {
+        Args: { admin_id: string; target_user_id: string; suspend: boolean }
+        Returns: Json
+      }
+      urlencode: {
+        Args: { data: Json } | { string: string } | { string: string }
+        Returns: string
       }
     }
     Enums: {
       [_ in never]: never
     }
     CompositeTypes: {
-      [_ in never]: never
+      http_header: {
+        field: string | null
+        value: string | null
+      }
+      http_request: {
+        method: unknown | null
+        uri: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content_type: string | null
+        content: string | null
+      }
+      http_response: {
+        status: number | null
+        content_type: string | null
+        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
+        content: string | null
+      }
     }
   }
 }

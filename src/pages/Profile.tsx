@@ -12,6 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { MessageCircle, LogOut, HelpCircle } from 'lucide-react';
 import ContactSupportButton from '@/components/support/ContactSupportButton';
+import { useQuery } from '@tanstack/react-query';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -19,35 +20,34 @@ const Profile = () => {
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const [isAdmin, setIsAdmin] = useState(false);
+  
+  // Use React Query to fetch user profile data
+  const { data: userData, isLoading: isUserLoading, error: userError } = useQuery({
+    queryKey: ['user-profile', user?.id],
+    queryFn: async () => {
+      if (!user) throw new Error('Not authenticated');
+      
+      const { data, error } = await supabase
+        .from('users')
+        .select('name, email, is_admin')
+        .eq('id', user.id)
+        .single();
 
-  useEffect(() => {
-    const fetchUserProfile = async () => {
-      if (!user) return;
-
-      try {
-        const { data, error } = await supabase
-          .from('users')
-          .select('name, email, is_admin')
-          .eq('id', user.id)
-          .single();
-
-        if (error) {
-          throw error;
-        }
-
-        if (data) {
-          setName(data.name || '');
-          setEmail(data.email || '');
-          setIsAdmin(data.is_admin || false);
-        }
-      } catch (error) {
-        console.error('Error fetching user profile:', error);
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!user,
+    onSuccess: (data) => {
+      if (data) {
+        setName(data.name || '');
+        setEmail(data.email || '');
       }
-    };
-
-    fetchUserProfile();
-  }, [user]);
+    },
+    onError: (error) => {
+      console.error('Error fetching user profile:', error);
+      toast.error('Failed to load user profile data');
+    }
+  });
 
   const handleUpdateProfile = async () => {
     if (!user) return;
@@ -71,8 +71,14 @@ const Profile = () => {
   };
 
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      toast.success('You have been signed out successfully');
+      navigate('/');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out');
+    }
   };
 
   if (!user) {
@@ -87,6 +93,8 @@ const Profile = () => {
       </div>
     );
   }
+
+  const isAdmin = userData?.is_admin || false;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -112,13 +120,21 @@ const Profile = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 className="w-full"
+                disabled={isUserLoading}
               />
             </div>
             <div>
               <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                 Email
               </label>
-              <Input id="email" type="email" value={email} readOnly disabled className="w-full bg-gray-50" />
+              <Input 
+                id="email" 
+                type="email" 
+                value={email} 
+                readOnly 
+                disabled 
+                className="w-full bg-gray-50" 
+              />
               <p className="mt-1 text-xs text-gray-500">Email address cannot be changed</p>
             </div>
 
@@ -141,7 +157,7 @@ const Profile = () => {
             <Button
               className="bg-[#00C853] hover:bg-green-600"
               onClick={handleUpdateProfile}
-              disabled={isLoading}
+              disabled={isLoading || isUserLoading}
             >
               {isLoading ? 'Saving...' : 'Save Changes'}
             </Button>
@@ -153,11 +169,11 @@ const Profile = () => {
         <div className="space-y-4">
           <h2 className="text-lg font-medium">Help & Support</h2>
           
-          <div className="flex space-x-4">
+          <div className="flex flex-col space-y-3">
             <ContactSupportButton />
             
             <Link to="/feedback">
-              <Button variant="outline" className="flex items-center gap-2">
+              <Button variant="outline" className="flex items-center gap-2 w-full">
                 <HelpCircle className="h-4 w-4" />
                 Send Feedback
               </Button>

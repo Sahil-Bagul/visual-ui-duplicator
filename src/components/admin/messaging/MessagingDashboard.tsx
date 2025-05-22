@@ -1,97 +1,69 @@
 
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Loader2, MessageCircle, Send } from 'lucide-react';
-import TelegramBotGuide from './TelegramBotGuide';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import NotificationComposer from './NotificationComposer';
-import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
+import TelegramBot from './TelegramBot';
 
 const MessagingDashboard: React.FC = () => {
-  const [sendingTestMessage, setSendingTestMessage] = useState(false);
-  
-  const sendTelegramTestMessage = async () => {
-    setSendingTestMessage(true);
-    
-    try {
-      // Call the serverless function to send a test message
-      const response = await supabase.functions.invoke('telegram-test', {
-        method: 'POST',
-        body: { 
-          message: "This is a test notification from Learn & Earn Admin Dashboard." 
-        }
-      });
-      
-      if (response.error) {
-        console.error('Error sending test message:', response.error);
-        toast.error(`Failed to send test message: ${response.error.message}`);
-        return;
-      }
-      
-      console.log('Test message response:', response.data);
-      toast.success('Test message sent successfully to your Telegram bot');
-    } catch (error) {
-      console.error('Exception sending test message:', error);
-      toast.error('An error occurred while sending the test message');
-    } finally {
-      setSendingTestMessage(false);
-    }
-  };
-  
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>Messaging Center</CardTitle>
-        <CardDescription>
-          Manage notifications and messages to users
-        </CardDescription>
-      </CardHeader>
+    <div className="space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold mb-1">Messaging Dashboard</h2>
+        <p className="text-gray-500">Manage notifications and messaging to users</p>
+      </div>
       
-      <CardContent>
-        <Tabs defaultValue="notifications" className="space-y-4">
-          <TabsList>
-            <TabsTrigger value="notifications">In-App Notifications</TabsTrigger>
-            <TabsTrigger value="telegram">Telegram Bot</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="notifications">
-            <NotificationComposer />
-          </TabsContent>
-          
-          <TabsContent value="telegram">
-            <div className="space-y-4">
-              <div className="p-4 bg-blue-50 rounded-lg border border-blue-100">
-                <h3 className="text-lg font-medium flex items-center gap-2 text-blue-800">
-                  <MessageCircle className="h-5 w-5" />
-                  Telegram Bot Status
-                </h3>
-                <p className="mt-2 text-blue-700">
-                  Your Telegram bot is configured and ready to use. You can send test messages and trigger payout notifications.
-                </p>
-                <div className="mt-4">
-                  <Button 
-                    onClick={sendTelegramTestMessage}
-                    disabled={sendingTestMessage}
-                    className="gap-2"
-                  >
-                    {sendingTestMessage ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                    Send Test Message
-                  </Button>
-                </div>
-              </div>
-              
-              <TelegramBotGuide />
+      <Tabs defaultValue="notifications">
+        <TabsList className="mb-4">
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          <TabsTrigger value="telegram">Telegram Bot</TabsTrigger>
+        </TabsList>
+        
+        <TabsContent value="notifications">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div>
+              <NotificationComposer />
             </div>
-          </TabsContent>
-        </Tabs>
-      </CardContent>
-    </Card>
+            
+            <div className="space-y-6">
+              <Card>
+                <CardHeader>
+                  <CardTitle>Notification Guide</CardTitle>
+                  <CardDescription>Tips for effective notifications</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <h3 className="font-medium">When to send notifications</h3>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      <li>Important system announcements</li>
+                      <li>New course launches</li>
+                      <li>Special offers or promotions</li>
+                      <li>Updates to course content</li>
+                      <li>Reminders for users with incomplete lessons</li>
+                    </ul>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <h3 className="font-medium">Best practices</h3>
+                    <ul className="list-disc list-inside text-sm space-y-1">
+                      <li>Keep titles short and clear</li>
+                      <li>Use appropriate notification types</li>
+                      <li>Include specific details in the message</li>
+                      <li>Add action buttons when relevant</li>
+                      <li>Don't overuse notifications</li>
+                    </ul>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
+        </TabsContent>
+        
+        <TabsContent value="telegram">
+          <TelegramBot />
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 };
 

@@ -3,41 +3,68 @@ import { supabase } from '@/integrations/supabase/client';
 
 export interface Notification {
   id: string;
-  user_id: string;
   title: string;
   message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'payment' | 'referral';
+  type: string;
+  created_at: string;
+  read: boolean;
   action_url?: string;
   action_text?: string;
-  read: boolean;
-  created_at: string;
 }
 
-export interface CreateNotificationParams {
-  title: string;
-  message: string;
-  type: 'info' | 'success' | 'warning' | 'error' | 'payment' | 'referral';
-  actionUrl?: string;
-  actionText?: string;
-  userEmail?: string; // If specified, send to specific user; otherwise, send to all
-}
-
-export async function getUserNotifications(limit: number = 10): Promise<Notification[]> {
+// Create a new notification
+export async function createNotification(
+  userId: string, 
+  title: string, 
+  message: string, 
+  type: string = 'info',
+  actionUrl?: string,
+  actionText?: string
+): Promise<{ success: boolean; notification_id?: string; error?: string }> {
   try {
-    console.log(`Fetching notifications with limit: ${limit}`);
-    const { data: userData } = await supabase.auth.getUser();
+    console.log(`Creating notification for user ${userId}: ${title}`);
     
-    if (!userData.user) {
-      console.warn('No authenticated user found when fetching notifications');
-      return [];
+    // Call the RPC function to create a notification
+    const { data, error } = await supabase.rpc('create_user_notification', {
+      user_id_param: userId,
+      title_param: title,
+      message_param: message,
+      type_param: type,
+      action_url_param: actionUrl || null,
+      action_text_param: actionText || null
+    });
+    
+    if (error) {
+      console.error('Error creating notification:', error);
+      return {
+        success: false,
+        error: error.message
+      };
     }
+    
+    console.log('Notification created successfully:', data);
+    return {
+      success: true,
+      notification_id: data as string
+    };
+  } catch (error) {
+    console.error('Exception creating notification:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred'
+    };
+  }
+}
+
+// Get user notifications
+export async function getUserNotifications(): Promise<Notification[]> {
+  try {
+    console.log('Fetching user notifications');
     
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .eq('user_id', userData.user.id)
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
     
     if (error) {
       console.error('Error fetching notifications:', error);
@@ -52,38 +79,11 @@ export async function getUserNotifications(limit: number = 10): Promise<Notifica
   }
 }
 
-export async function getUnreadNotificationCount(): Promise<number> {
-  try {
-    console.log('Fetching unread notification count');
-    const { data: userData } = await supabase.auth.getUser();
-    
-    if (!userData.user) {
-      console.warn('No authenticated user found when fetching unread count');
-      return 0;
-    }
-    
-    const { count, error } = await supabase
-      .from('notifications')
-      .select('*', { count: 'exact', head: true })
-      .eq('user_id', userData.user.id)
-      .eq('read', false);
-    
-    if (error) {
-      console.error('Error fetching unread notification count:', error);
-      return 0;
-    }
-    
-    console.log(`Unread notification count: ${count || 0}`);
-    return count || 0;
-  } catch (error) {
-    console.error('Exception fetching unread notification count:', error);
-    return 0;
-  }
-}
-
+// Mark notification as read
 export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
   try {
-    console.log(`Marking notification as read: ${notificationId}`);
+    console.log(`Marking notification ${notificationId} as read`);
+    
     const { data, error } = await supabase.rpc('mark_notification_as_read', {
       notification_id_param: notificationId
     });
@@ -94,25 +94,20 @@ export async function markNotificationAsRead(notificationId: string): Promise<bo
     }
     
     console.log('Notification marked as read:', data);
-    return true;
+    return data as boolean;
   } catch (error) {
     console.error('Exception marking notification as read:', error);
     return false;
   }
 }
 
-export async function markAllNotificationsAsRead(): Promise<number> {
+// Mark all notifications as read
+export async function markAllNotificationsAsRead(userId: string): Promise<number> {
   try {
-    console.log('Marking all notifications as read');
-    const { data: userData } = await supabase.auth.getUser();
-    
-    if (!userData.user) {
-      console.warn('No authenticated user found when marking all as read');
-      return 0;
-    }
+    console.log(`Marking all notifications as read for user ${userId}`);
     
     const { data, error } = await supabase.rpc('mark_all_notifications_as_read', {
-      user_id_param: userData.user.id
+      user_id_param: userId
     });
     
     if (error) {
@@ -120,7 +115,7 @@ export async function markAllNotificationsAsRead(): Promise<number> {
       return 0;
     }
     
-    console.log(`Marked ${data || 0} notifications as read`);
+    console.log(`Marked ${data} notifications as read`);
     return data as number;
   } catch (error) {
     console.error('Exception marking all notifications as read:', error);
@@ -128,86 +123,55 @@ export async function markAllNotificationsAsRead(): Promise<number> {
   }
 }
 
-export async function createNotification(params: CreateNotificationParams): Promise<{ success: boolean; error?: string }> {
+// Create a notification for all users
+export async function createNotificationForAll(
+  title: string,
+  message: string,
+  type: string = 'info',
+  actionUrl?: string,
+  actionText?: string
+): Promise<{ success: boolean; count?: number; error?: string }> {
   try {
-    console.log('Creating notification:', params);
-    const { title, message, type, actionUrl, actionText, userEmail } = params;
+    console.log(`Creating notification for all users: ${title}`);
     
-    // If userEmail is provided, fetch the user ID
-    if (userEmail) {
-      // First get the user ID for the specified email
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('id')
-        .eq('email', userEmail)
-        .single();
-      
-      if (userError || !userData) {
-        console.error('Error finding user by email:', userError);
-        return { 
-          success: false, 
-          error: `User with email ${userEmail} not found` 
-        };
-      }
-      
-      // Create notification for the specific user
-      const { data, error } = await supabase.rpc('create_user_notification', {
-        user_id_param: userData.id,
-        title_param: title,
-        message_param: message,
-        type_param: type,
-        action_url_param: actionUrl || null,
-        action_text_param: actionText || null
-      });
-      
-      if (error) {
-        console.error('Error creating notification for specific user:', error);
-        return { 
-          success: false, 
-          error: `Failed to create notification: ${error.message}` 
-        };
-      }
-      
-      console.log('Notification created for specific user:', data);
-      return { success: true };
-    } else {
-      // Send to all users - get all user IDs
-      const { data: allUsers, error: usersError } = await supabase
-        .from('users')
-        .select('id');
-      
-      if (usersError || !allUsers) {
-        console.error('Error fetching all users:', usersError);
-        return { 
-          success: false, 
-          error: 'Failed to fetch users for sending notifications' 
-        };
-      }
-      
-      // Create a notification for each user
-      // Note: In a production system, this would be better handled by a backend batch process
-      const promises = allUsers.map(user => 
-        supabase.rpc('create_user_notification', {
-          user_id_param: user.id,
-          title_param: title,
-          message_param: message,
-          type_param: type,
-          action_url_param: actionUrl || null,
-          action_text_param: actionText || null
-        })
+    // Get all users
+    const { data: users, error: usersError } = await supabase
+      .from('users')
+      .select('id');
+    
+    if (usersError) {
+      console.error('Error fetching users for notifications:', usersError);
+      return {
+        success: false,
+        error: usersError.message
+      };
+    }
+    
+    // Create a notification for each user
+    let successCount = 0;
+    for (const user of users) {
+      const { success } = await createNotification(
+        user.id, 
+        title, 
+        message, 
+        type,
+        actionUrl,
+        actionText
       );
       
-      // Wait for all notifications to be created
-      await Promise.all(promises);
-      console.log(`Created notifications for ${allUsers.length} users`);
-      
-      return { success: true };
+      if (success) successCount++;
     }
+    
+    console.log(`Created notifications for ${successCount}/${users.length} users`);
+    return {
+      success: true,
+      count: successCount
+    };
   } catch (error) {
-    console.error('Exception creating notification:', error);
-    return { 
-      success: false, 
-      error: `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}` 
+    console.error('Exception creating notifications for all users:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'An unexpected error occurred'
     };
   }
 }

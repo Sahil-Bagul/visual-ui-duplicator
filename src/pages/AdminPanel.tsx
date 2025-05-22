@@ -25,33 +25,41 @@ import {
   MessageSquare,
   CreditCard,
   MessageCircle,
+  ShieldAlert,
 } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AdminPanel: React.FC = () => {
   const { user } = useAuth();
   
-  // Fetch admin status from the database
-  const { data: isAdmin, isLoading } = useQuery({
+  // Fetch admin status from the database with improved error handling
+  const { data: isAdmin, isLoading, error } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
       
-      console.log('Checking admin status for user:', user.id);
-      
-      const { data, error } = await supabase.rpc('is_user_admin', {
-        user_id: user.id
-      });
-      
-      if (error) {
-        console.error('Error checking admin status:', error);
-        return false;
+      try {
+        console.log('Checking admin status for user:', user.id);
+        
+        const { data, error } = await supabase.rpc('is_user_admin', {
+          user_id: user.id
+        });
+        
+        if (error) {
+          console.error('Error checking admin status:', error);
+          throw error;
+        }
+        
+        console.log('Admin status result:', data);
+        return data || false;
+      } catch (error) {
+        console.error('Exception checking admin status:', error);
+        throw error;
       }
-      
-      console.log('Admin status result:', data);
-      return data || false;
     },
     enabled: !!user,
     staleTime: 60000, // Cache for 1 minute to prevent excessive checks
+    retry: 2, // Retry twice if failed
   });
   
   if (!user) {
@@ -65,6 +73,24 @@ const AdminPanel: React.FC = () => {
           <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
           <p className="text-gray-600">Checking permissions...</p>
         </div>
+      </div>
+    );
+  }
+  
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <HeaderWithNotifications />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <Alert variant="destructive">
+            <ShieldAlert className="h-5 w-5" />
+            <AlertTitle>Authentication Error</AlertTitle>
+            <AlertDescription>
+              Failed to verify admin permissions. Please try refreshing the page or contact support.
+            </AlertDescription>
+          </Alert>
+        </main>
+        <Footer />
       </div>
     );
   }

@@ -1,59 +1,66 @@
 
 import React, { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
-import { 
+import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
-  SelectValue
+  SelectValue,
 } from '@/components/ui/select';
-import { Loader2, Send } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card';
+import { useAuth } from '@/context/AuthContext';
+import { createNotificationForAll } from '@/services/notificationService';
+import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { createNotification } from '@/services/notificationService';
 
 const NotificationComposer: React.FC = () => {
+  const { user } = useAuth();
   const [title, setTitle] = useState('');
   const [message, setMessage] = useState('');
-  const [type, setType] = useState<'info' | 'success' | 'warning' | 'error'>('info');
-  const [actionText, setActionText] = useState('');
+  const [type, setType] = useState<string>('info');
   const [actionUrl, setActionUrl] = useState('');
-  const [userEmail, setUserEmail] = useState('');
+  const [actionText, setActionText] = useState('');
+  const [includeAction, setIncludeAction] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!title.trim() || !message.trim()) {
-      toast.error('Title and message are required');
+      toast.error('Please provide both title and message');
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      const result = await createNotification({
+      const result = await createNotificationForAll(
         title,
         message,
         type,
-        actionText: actionText || undefined,
-        actionUrl: actionUrl || undefined,
-        userEmail: userEmail || undefined
-      });
+        includeAction ? actionUrl : undefined,
+        includeAction ? actionText : undefined
+      );
       
       if (result.success) {
-        toast.success(`Notification sent successfully${userEmail ? ' to ' + userEmail : ' to all users'}`);
-        
-        // Reset the form
+        toast.success(`Notification sent to ${result.count} users`);
+        // Reset form
         setTitle('');
         setMessage('');
         setType('info');
-        setActionText('');
         setActionUrl('');
-        setUserEmail('');
+        setActionText('');
+        setIncludeAction(false);
       } else {
         toast.error(result.error || 'Failed to send notification');
       }
@@ -68,37 +75,51 @@ const NotificationComposer: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-xl">Send Notifications</CardTitle>
+        <CardTitle>Send Notification</CardTitle>
+        <CardDescription>Create and send a notification to all users</CardDescription>
       </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Recipient (optional)
+      <form onSubmit={handleSubmit}>
+        <CardContent className="space-y-4">
+          <div className="space-y-2">
+            <label htmlFor="title" className="text-sm font-medium">
+              Title
             </label>
             <Input
-              type="email"
-              value={userEmail}
-              onChange={(e) => setUserEmail(e.target.value)}
-              placeholder="Email address (leave empty to send to all users)"
+              id="title"
+              placeholder="Notification title"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
               disabled={isSubmitting}
+              required
             />
-            <p className="text-xs text-gray-500 mt-1">
-              Leave empty to send to all users
-            </p>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Notification Type
+          <div className="space-y-2">
+            <label htmlFor="message" className="text-sm font-medium">
+              Message
+            </label>
+            <Textarea
+              id="message"
+              placeholder="Notification message"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="min-h-[100px]"
+              disabled={isSubmitting}
+              required
+            />
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="type" className="text-sm font-medium">
+              Type
             </label>
             <Select
               value={type}
-              onValueChange={(value: 'info' | 'success' | 'warning' | 'error') => setType(value)}
+              onValueChange={(value) => setType(value)}
               disabled={isSubmitting}
             >
-              <SelectTrigger>
-                <SelectValue placeholder="Select notification type" />
+              <SelectTrigger id="type">
+                <SelectValue placeholder="Select type" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="info">Information</SelectItem>
@@ -109,78 +130,70 @@ const NotificationComposer: React.FC = () => {
             </Select>
           </div>
           
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Title
-            </label>
-            <Input
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="Notification title"
+          <div className="flex items-center space-x-2">
+            <input
+              id="includeAction"
+              type="checkbox"
+              checked={includeAction}
+              onChange={() => setIncludeAction(!includeAction)}
+              className="rounded border-gray-300"
               disabled={isSubmitting}
-              required
             />
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Message
+            <label htmlFor="includeAction" className="text-sm font-medium">
+              Include action button
             </label>
-            <Textarea
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              placeholder="Notification message"
-              rows={4}
-              disabled={isSubmitting}
-              required
-            />
           </div>
           
-          <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Action Text (optional)
-              </label>
-              <Input
-                value={actionText}
-                onChange={(e) => setActionText(e.target.value)}
-                placeholder="e.g., View Details"
-                disabled={isSubmitting}
-              />
+          {includeAction && (
+            <div className="space-y-4 pl-6 border-l-2 border-gray-100">
+              <div className="space-y-2">
+                <label htmlFor="actionUrl" className="text-sm font-medium">
+                  Action URL
+                </label>
+                <Input
+                  id="actionUrl"
+                  placeholder="https://example.com"
+                  value={actionUrl}
+                  onChange={(e) => setActionUrl(e.target.value)}
+                  disabled={isSubmitting}
+                  required={includeAction}
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label htmlFor="actionText" className="text-sm font-medium">
+                  Button Text
+                </label>
+                <Input
+                  id="actionText"
+                  placeholder="View Details"
+                  value={actionText}
+                  onChange={(e) => setActionText(e.target.value)}
+                  disabled={isSubmitting}
+                  required={includeAction}
+                />
+              </div>
             </div>
-            
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                Action URL (optional)
-              </label>
-              <Input
-                value={actionUrl}
-                onChange={(e) => setActionUrl(e.target.value)}
-                placeholder="e.g., /dashboard"
-                disabled={isSubmitting}
-              />
-            </div>
-          </div>
-          
+          )}
+        </CardContent>
+        
+        <CardFooter>
           <Button 
             type="submit" 
-            className="w-full gap-2 bg-[#00C853] hover:bg-green-600"
+            className="w-full bg-[#00C853] hover:bg-[#00A846]"
             disabled={isSubmitting}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="h-4 w-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Sending...
               </>
             ) : (
-              <>
-                <Send className="h-4 w-4" />
-                Send Notification
-              </>
+              'Send Notification'
             )}
           </Button>
-        </form>
-      </CardContent>
+        </CardFooter>
+      </form>
     </Card>
   );
 };

@@ -7,14 +7,15 @@ import { NotificationCenter } from '@/components/notifications/NotificationCente
 import { UserCircle2, LogOut, Shield } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const HeaderWithNotifications: React.FC = () => {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   
-  // Check if the user is an admin
-  const { data: isAdmin = false } = useQuery({
+  // Check if the user is an admin with improved error handling
+  const { data: isAdmin = false, error: adminCheckError } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
@@ -27,6 +28,7 @@ const HeaderWithNotifications: React.FC = () => {
         
         if (error) {
           console.error('Error checking admin status:', error);
+          // Don't show toast here to avoid spamming users
           return false;
         }
         
@@ -38,11 +40,26 @@ const HeaderWithNotifications: React.FC = () => {
       }
     },
     enabled: !!user?.id,
+    staleTime: 60000, // Cache for 1 minute
+    retry: 1, // Only retry once to avoid spamming console with errors
   });
   
+  // If there was an error checking admin status, log it but don't show to user
+  React.useEffect(() => {
+    if (adminCheckError) {
+      console.error('Error checking admin status:', adminCheckError);
+    }
+  }, [adminCheckError]);
+  
   const handleSignOut = async () => {
-    await signOut();
-    navigate('/');
+    try {
+      await signOut();
+      navigate('/');
+      toast.success('You have been signed out successfully');
+    } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out. Please try again.');
+    }
   };
 
   // Check if we're on the admin page already

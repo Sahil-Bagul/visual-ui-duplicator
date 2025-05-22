@@ -1,27 +1,26 @@
 
 import React from 'react';
-import { format, parseISO } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { 
-  ResponsiveContainer,
-  AreaChart, 
-  Area, 
-  BarChart, 
-  Bar,
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import {
   LineChart,
   Line,
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip 
+  BarChart,
+  Bar,
+  AreaChart,
+  Area,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer,
+  TooltipProps
 } from 'recharts';
 import { DailyMetric } from '@/services/analyticsService';
-
-type ChartType = 'area' | 'bar' | 'line';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataKey {
-  key: keyof DailyMetric;
+  key: string;
   name: string;
   color: string;
 }
@@ -30,146 +29,148 @@ interface AnalyticsChartProps {
   title: string;
   description?: string;
   data: DailyMetric[];
-  type?: ChartType;
+  type: 'line' | 'bar' | 'area';
   dataKeys: DataKey[];
   loading?: boolean;
   height?: number;
-  showGrid?: boolean;
 }
 
 const AnalyticsChart: React.FC<AnalyticsChartProps> = ({
   title,
   description,
   data,
-  type = 'line',
+  type,
   dataKeys,
   loading = false,
   height = 300,
-  showGrid = true
 }) => {
-  const chartConfig = dataKeys.reduce((config, dataKey) => {
-    return {
-      ...config,
-      [dataKey.key]: {
-        label: dataKey.name,
-        color: dataKey.color,
-      },
-    };
-  }, {});
-
-  const formatXAxis = (dateStr: string) => {
-    try {
-      return format(parseISO(dateStr), 'MM/dd');
-    } catch {
-      return dateStr;
-    }
+  const dateFormatter = (date: string) => {
+    return new Date(date).toLocaleDateString('en-IN', { 
+      day: '2-digit',
+      month: 'short'
+    });
   };
-
+  
   const renderChart = () => {
     if (loading) {
       return (
-        <div className="animate-pulse flex flex-col h-64 justify-center items-center">
-          <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mb-4"></div>
-          <div className="text-gray-500">Loading chart data...</div>
+        <div className="w-full" style={{ height }}>
+          <Skeleton className="w-full h-full" />
         </div>
       );
     }
-
-    const commonProps = {
+    
+    const chartProps = {
       data,
-      margin: { top: 5, right: 20, bottom: 20, left: 0 },
+      margin: { top: 10, right: 30, left: 0, bottom: 0 },
     };
-
+    
+    const commonProps = {
+      strokeWidth: 2,
+      dot: { strokeWidth: 2, r: 3 },
+    };
+    
     switch (type) {
-      case 'area':
+      case 'line':
         return (
-          <AreaChart {...commonProps}>
-            {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.2} />}
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={formatXAxis}
-              tick={{ fontSize: 12 }}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            {dataKeys.map((dataKey) => (
-              <Area
-                key={String(dataKey.key)}
-                type="monotone"
-                dataKey={String(dataKey.key)}
-                name={dataKey.name}
-                stroke={dataKey.color}
-                fill={dataKey.color}
-                fillOpacity={0.1}
+          <ResponsiveContainer width="100%" height={height}>
+            <LineChart {...chartProps}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={dateFormatter} 
+                tick={{ fontSize: 12 }}
+                stroke="#888"
               />
-            ))}
-          </AreaChart>
+              <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+              <Tooltip formatter={(value: any) => [value, '']} labelFormatter={(label) => dateFormatter(String(label))} />
+              <Legend />
+              {dataKeys.map((dk) => (
+                <Line
+                  key={dk.key}
+                  type="monotone"
+                  dataKey={dk.key}
+                  name={dk.name}
+                  stroke={dk.color}
+                  {...commonProps}
+                />
+              ))}
+            </LineChart>
+          </ResponsiveContainer>
         );
+      
       case 'bar':
         return (
-          <BarChart {...commonProps}>
-            {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.2} />}
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={formatXAxis}
-              tick={{ fontSize: 12 }}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            {dataKeys.map((dataKey) => (
-              <Bar
-                key={String(dataKey.key)}
-                dataKey={String(dataKey.key)}
-                name={dataKey.name}
-                fill={dataKey.color}
+          <ResponsiveContainer width="100%" height={height}>
+            <BarChart {...chartProps}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={dateFormatter} 
+                tick={{ fontSize: 12 }}
+                stroke="#888"
               />
-            ))}
-          </BarChart>
+              <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+              <Tooltip formatter={(value: any) => [value, '']} labelFormatter={(label) => dateFormatter(String(label))} />
+              <Legend />
+              {dataKeys.map((dk, index) => (
+                <Bar
+                  key={dk.key}
+                  dataKey={dk.key}
+                  name={dk.name}
+                  fill={dk.color}
+                  barSize={20}
+                  radius={[4, 4, 0, 0]}
+                />
+              ))}
+            </BarChart>
+          </ResponsiveContainer>
         );
-      case 'line':
-      default:
+      
+      case 'area':
         return (
-          <LineChart {...commonProps}>
-            {showGrid && <CartesianGrid strokeDasharray="3 3" opacity={0.2} />}
-            <XAxis 
-              dataKey="date" 
-              tickFormatter={formatXAxis}
-              tick={{ fontSize: 12 }}
-            />
-            <YAxis tick={{ fontSize: 12 }} />
-            <ChartTooltip content={<ChartTooltipContent />} />
-            {dataKeys.map((dataKey) => (
-              <Line
-                key={String(dataKey.key)}
-                type="monotone"
-                dataKey={String(dataKey.key)}
-                name={dataKey.name}
-                stroke={dataKey.color}
-                strokeWidth={2}
-                dot={{ r: 3 }}
-                activeDot={{ r: 6 }}
+          <ResponsiveContainer width="100%" height={height}>
+            <AreaChart {...chartProps}>
+              <CartesianGrid strokeDasharray="3 3" opacity={0.2} />
+              <XAxis 
+                dataKey="date" 
+                tickFormatter={dateFormatter} 
+                tick={{ fontSize: 12 }}
+                stroke="#888"
               />
-            ))}
-          </LineChart>
+              <YAxis tick={{ fontSize: 12 }} stroke="#888" />
+              <Tooltip formatter={(value: any) => [value, '']} labelFormatter={(label) => dateFormatter(String(label))} />
+              <Legend />
+              {dataKeys.map((dk) => (
+                <Area
+                  key={dk.key}
+                  type="monotone"
+                  dataKey={dk.key}
+                  name={dk.name}
+                  stroke={dk.color}
+                  fill={dk.color}
+                  fillOpacity={0.2}
+                  {...commonProps}
+                />
+              ))}
+            </AreaChart>
+          </ResponsiveContainer>
         );
+      
+      default:
+        return null;
     }
   };
-
+  
   return (
-    <Card className="w-full">
-      <CardHeader className="px-6 pt-6 pb-0">
+    <Card>
+      <CardHeader className="pb-2">
         <CardTitle className="text-lg font-medium">{title}</CardTitle>
-        {description && <p className="text-sm text-gray-500">{description}</p>}
+        {description && (
+          <CardDescription>{description}</CardDescription>
+        )}
       </CardHeader>
-      <CardContent className="p-6">
-        <div style={{ width: '100%', height }}>
-          <ChartContainer config={chartConfig}>
-            <ResponsiveContainer width="100%" height="100%">
-              {renderChart()}
-            </ResponsiveContainer>
-          </ChartContainer>
-        </div>
-      </CardContent>
+      <CardContent className="p-2 pt-0">{renderChart()}</CardContent>
     </Card>
   );
 };
