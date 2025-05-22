@@ -599,32 +599,39 @@ export type Database = {
       create_course: {
         Args: {
           admin_id: string
-          course_title: string
-          course_price: number
-          course_referral_reward: number
-          course_pdf_url: string
-          course_description: string
+          title: string
+          price: number
+          referral_reward: number
+          description: string
+          pdf_url: string
         }
         Returns: string
       }
       create_course_module: {
-        Args: {
-          admin_id: string
-          course_id: string
-          title: string
-          content: string
-          module_order: number
-          description: string
-        }
+        Args:
+          | {
+              admin_id: string
+              course_id: string
+              title: string
+              content: string
+              module_order: number
+              description: string
+            }
+          | {
+              admin_id: string
+              course_id: string
+              title: string
+              description: string
+              module_order: number
+            }
         Returns: string
       }
       create_lesson: {
         Args: {
-          admin_id: string
           module_id: string
           title: string
           content: string
-          lesson_order: number
+          lesson_index: number
         }
         Returns: string
       }
@@ -634,8 +641,8 @@ export type Database = {
           title_param: string
           message_param: string
           type_param: string
-          action_url_param?: string
-          action_text_param?: string
+          action_url_param: string
+          action_text_param: string
         }
         Returns: string
       }
@@ -686,7 +693,7 @@ export type Database = {
       }
       grant_one_time_access_to_user: {
         Args: { user_email: string }
-        Returns: Json
+        Returns: string
       }
       http: {
         Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
@@ -771,7 +778,7 @@ export type Database = {
           status_param: string
           admin_response_param: string
         }
-        Returns: undefined
+        Returns: string
       }
       revoke_admin_privileges: {
         Args: { admin_email: string }
@@ -779,7 +786,7 @@ export type Database = {
       }
       send_telegram_test_message: {
         Args: Record<PropertyKey, never>
-        Returns: Json
+        Returns: string
       }
       submit_support_ticket: {
         Args: { subject_param: string; message_param: string }
@@ -791,7 +798,7 @@ export type Database = {
       }
       toggle_user_suspension: {
         Args: { admin_id: string; target_user_id: string; suspend: boolean }
-        Returns: Json
+        Returns: string
       }
       urlencode: {
         Args: { data: Json } | { string: string } | { string: string }
