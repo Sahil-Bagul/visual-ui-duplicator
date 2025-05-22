@@ -5,201 +5,143 @@ export interface Notification {
   id: string;
   title: string;
   message: string;
-  type: string;
-  created_at: string;
+  type: 'info' | 'success' | 'warning' | 'error' | 'payment' | 'referral'; 
   read: boolean;
-  action_url?: string;
-  action_text?: string;
+  created_at: string;
+  action_url?: string | null;
+  action_text?: string | null;
 }
 
-// Create a new notification
-export async function createNotification(
-  userId: string, 
-  title: string, 
-  message: string, 
-  type: string = 'info',
-  actionUrl?: string,
-  actionText?: string
-): Promise<{ success: boolean; notification_id?: string; error?: string }> {
+// Get all notifications for the current user
+export const getUserNotifications = async (): Promise<Notification[]> => {
   try {
-    console.log(`Creating notification for user ${userId}: ${title}`);
-    
-    // Call the RPC function to create a notification
-    const { data, error } = await supabase.rpc('create_user_notification', {
-      user_id_param: userId,
-      title_param: title,
-      message_param: message,
-      type_param: type,
-      action_url_param: actionUrl || null,
-      action_text_param: actionText || null
-    });
-    
-    if (error) {
-      console.error('Error creating notification:', error);
-      return {
-        success: false,
-        error: error.message
-      };
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error("Authentication error:", authError);
+      return [];
     }
-    
-    console.log('Notification created successfully:', data);
-    return {
-      success: true,
-      notification_id: data as string
-    };
-  } catch (error) {
-    console.error('Exception creating notification:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred'
-    };
-  }
-}
 
-// Get user notifications with optional limit
-export async function getUserNotifications(limit: number = 20): Promise<Notification[]> {
-  try {
-    console.log('Fetching user notifications with limit:', limit);
-    
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .order('created_at', { ascending: false })
-      .limit(limit);
-    
+      .eq('user_id', authData.user.id)
+      .order('created_at', { ascending: false });
+
     if (error) {
-      console.error('Error fetching notifications:', error);
+      console.error("Error fetching notifications:", error);
       return [];
     }
-    
-    console.log(`Retrieved ${data?.length || 0} notifications`);
+
     return data as Notification[];
   } catch (error) {
-    console.error('Exception fetching notifications:', error);
+    console.error("Exception fetching notifications:", error);
     return [];
   }
-}
+};
 
-// Get unread notification count
-export async function getUnreadNotificationCount(): Promise<number> {
+// Get count of unread notifications
+export const getUnreadNotificationCount = async (): Promise<number> => {
   try {
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error("Authentication error:", authError);
+      return 0;
+    }
+
     const { count, error } = await supabase
       .from('notifications')
       .select('*', { count: 'exact', head: true })
+      .eq('user_id', authData.user.id)
       .eq('read', false);
-    
+
     if (error) {
-      console.error('Error counting unread notifications:', error);
+      console.error("Error fetching notification count:", error);
       return 0;
     }
-    
+
     return count || 0;
   } catch (error) {
-    console.error('Exception counting unread notifications:', error);
+    console.error("Exception fetching notification count:", error);
     return 0;
   }
-}
+};
 
-// Mark notification as read
-export async function markNotificationAsRead(notificationId: string): Promise<boolean> {
+// Mark a notification as read
+export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
   try {
-    console.log(`Marking notification ${notificationId} as read`);
-    
-    const { data, error } = await supabase.rpc('mark_notification_as_read', {
-      notification_id_param: notificationId
-    });
-    
+    const { data, error } = await supabase.rpc(
+      'mark_notification_as_read', 
+      { notification_id_param: notificationId }
+    );
+
     if (error) {
-      console.error('Error marking notification as read:', error);
+      console.error("Error marking notification as read:", error);
       return false;
     }
-    
-    console.log('Notification marked as read:', data);
-    return data as boolean;
+
+    return data === true;
   } catch (error) {
-    console.error('Exception marking notification as read:', error);
+    console.error("Exception marking notification as read:", error);
     return false;
   }
-}
+};
 
 // Mark all notifications as read
-export async function markAllNotificationsAsRead(): Promise<number> {
+export const markAllNotificationsAsRead = async (): Promise<number> => {
   try {
-    console.log(`Marking all notifications as read`);
-    
-    // Get current user ID from Supabase auth
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      console.error('No authenticated user found');
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error("Authentication error:", authError);
       return 0;
     }
-    
-    const { data, error } = await supabase.rpc('mark_all_notifications_as_read', {
-      user_id_param: user.id
-    });
-    
+
+    const { data, error } = await supabase.rpc(
+      'mark_all_notifications_as_read',
+      { user_id_param: authData.user.id }
+    );
+
     if (error) {
-      console.error('Error marking all notifications as read:', error);
+      console.error("Error marking all notifications as read:", error);
       return 0;
     }
-    
-    console.log(`Marked ${data} notifications as read`);
+
     return data as number;
   } catch (error) {
-    console.error('Exception marking all notifications as read:', error);
+    console.error("Exception marking all notifications as read:", error);
     return 0;
   }
-}
+};
 
-// Create a notification for all users
-export async function createNotificationForAll(
+// Create a new notification
+export const createNotification = async (
+  userId: string,
   title: string,
   message: string,
-  type: string = 'info',
+  type: Notification['type'] = 'info',
   actionUrl?: string,
   actionText?: string
-): Promise<{ success: boolean; count?: number; error?: string }> {
+): Promise<string | null> => {
   try {
-    console.log(`Creating notification for all users: ${title}`);
-    
-    // Get all users
-    const { data: users, error: usersError } = await supabase
-      .from('users')
-      .select('id');
-    
-    if (usersError) {
-      console.error('Error fetching users for notifications:', usersError);
-      return {
-        success: false,
-        error: usersError.message
-      };
+    const { data, error } = await supabase.rpc(
+      'create_user_notification',
+      {
+        user_id_param: userId,
+        title_param: title,
+        message_param: message,
+        type_param: type,
+        action_url_param: actionUrl || null,
+        action_text_param: actionText || null
+      }
+    );
+
+    if (error) {
+      console.error("Error creating notification:", error);
+      return null;
     }
-    
-    // Create a notification for each user
-    let successCount = 0;
-    for (const user of users) {
-      const { success } = await createNotification(
-        user.id, 
-        title, 
-        message, 
-        type,
-        actionUrl,
-        actionText
-      );
-      
-      if (success) successCount++;
-    }
-    
-    console.log(`Created notifications for ${successCount}/${users.length} users`);
-    return {
-      success: true,
-      count: successCount
-    };
+
+    return data as string;
   } catch (error) {
-    console.error('Exception creating notifications for all users:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred'
-    };
+    console.error("Exception creating notification:", error);
+    return null;
   }
-}
+};

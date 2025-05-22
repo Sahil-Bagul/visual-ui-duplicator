@@ -13,6 +13,7 @@ interface AuthContextType {
   signIn: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUp: (email: string, password: string, name: string) => Promise<{ error: Error | null }>;
   isAdmin: boolean;
+  refreshAuth: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType>({
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   signIn: async () => ({ error: null }),
   signUp: async () => ({ error: null }),
   isAdmin: false,
+  refreshAuth: async () => {},
 });
 
 export const useAuth = () => useContext(AuthContext);
@@ -36,8 +38,9 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Check if a user is an admin
   const checkAdminStatus = async (userId: string) => {
     try {
-      const { data, error } = await supabase.rpc('is_user_admin', {
-        user_id: userId
+      // Use the improved function that won't cause recursion
+      const { data, error } = await supabase.rpc('is_user_admin_safe', {
+        user_id_param: userId
       });
       
       if (error) {
@@ -49,6 +52,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } catch (error) {
       console.error('Exception checking admin status:', error);
       return false;
+    }
+  };
+
+  // Function to refresh auth state that can be called from outside
+  const refreshAuth = async () => {
+    try {
+      setIsLoading(true);
+      const { data: { session }, error } = await supabase.auth.getSession();
+      
+      if (error) {
+        handleSupabaseError(error, 'refreshing auth');
+        return;
+      }
+      
+      setSession(session);
+      setUser(session?.user ?? null);
+      
+      if (session?.user) {
+        const adminStatus = await checkAdminStatus(session.user.id);
+        setIsAdmin(adminStatus);
+      } else {
+        setIsAdmin(false);
+      }
+    } catch (error) {
+      console.error('Auth refresh error:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -187,6 +217,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     signIn,
     signUp,
     isAdmin,
+    refreshAuth
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

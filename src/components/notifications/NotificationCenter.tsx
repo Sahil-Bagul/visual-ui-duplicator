@@ -27,25 +27,31 @@ import {
 } from "@/services/notificationService";
 import { cn } from "@/lib/utils";
 
-// Only use one export statement for the component
 const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
   const [open, setOpen] = useState(false);
   
   const { 
     data: notifications = [],
     refetch: refetchNotifications,
-    isLoading 
+    isLoading,
+    isError,
+    error 
   } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => getUserNotifications(),
+    queryFn: getUserNotifications,
+    retry: 2,
+    refetchOnWindowFocus: false
   });
   
   const { 
     data: unreadCount = 0,
-    refetch: refetchCount
+    refetch: refetchCount,
+    isError: isCountError
   } = useQuery({
     queryKey: ['notificationsCount'],
     queryFn: getUnreadNotificationCount,
+    retry: 2,
+    refetchOnWindowFocus: false
   });
   
   useEffect(() => {
@@ -54,20 +60,38 @@ const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
       refetchCount();
     }
   }, [open, refetchCount]);
+
+  useEffect(() => {
+    // Log any errors for debugging
+    if (isError) {
+      console.error("Error fetching notifications:", error);
+    }
+    if (isCountError) {
+      console.error("Error fetching notification count");
+    }
+  }, [isError, isCountError, error]);
   
   const handleMarkAllAsRead = async () => {
-    const markedCount = await markAllNotificationsAsRead();
-    if (markedCount > 0) {
-      refetchNotifications();
-      refetchCount();
+    try {
+      const markedCount = await markAllNotificationsAsRead();
+      if (markedCount > 0) {
+        refetchNotifications();
+        refetchCount();
+      }
+    } catch (err) {
+      console.error("Failed to mark notifications as read:", err);
     }
   };
   
   const handleMarkAsRead = async (notificationId: string) => {
-    const success = await markNotificationAsRead(notificationId);
-    if (success) {
-      refetchNotifications();
-      refetchCount();
+    try {
+      const success = await markNotificationAsRead(notificationId);
+      if (success) {
+        refetchNotifications();
+        refetchCount();
+      }
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
     }
   };
   
@@ -112,7 +136,7 @@ const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
             variant="ghost" 
             size="sm" 
             onClick={handleMarkAllAsRead}
-            disabled={!unreadCount}
+            disabled={!unreadCount || isLoading}
             className="h-auto py-1 px-2 text-xs"
           >
             Mark all as read
@@ -123,6 +147,19 @@ const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
           {isLoading ? (
             <div className="flex items-center justify-center p-6">
               <div className="w-6 h-6 border-2 border-t-[#00C853] border-gray-200 rounded-full animate-spin" />
+            </div>
+          ) : isError ? (
+            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
+              <AlertCircle className="h-10 w-10 text-red-400 mb-2" />
+              <p className="text-sm text-gray-600">Error loading notifications</p>
+              <Button 
+                variant="ghost" 
+                size="sm" 
+                onClick={() => refetchNotifications()} 
+                className="mt-2 text-xs"
+              >
+                Try again
+              </Button>
             </div>
           ) : notifications.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
@@ -184,5 +221,4 @@ const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
   );
 };
 
-// Export only once at the end of the file
 export { NotificationCenter };

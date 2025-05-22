@@ -679,6 +679,17 @@ export type Database = {
           course_completion_rate: number
         }[]
       }
+      get_user_by_id_safe: {
+        Args: { user_id_param: string }
+        Returns: {
+          email: string | null
+          id: string
+          is_admin: boolean
+          is_suspended: boolean | null
+          joined_at: string | null
+          name: string | null
+        }[]
+      }
       get_user_course_progress: {
         Args: { user_id_param: string; course_id_param: string }
         Returns: {
@@ -748,6 +759,10 @@ export type Database = {
       }
       is_user_admin: {
         Args: { user_id: string }
+        Returns: boolean
+      }
+      is_user_admin_safe: {
+        Args: { user_id_param: string }
         Returns: boolean
       }
       log_content_management: {

@@ -1,6 +1,4 @@
-
 import { supabase } from "@/integrations/supabase/client";
-import { PostgrestResponse } from "@supabase/supabase-js";
 
 export interface User {
   id: string;
@@ -46,10 +44,9 @@ export async function getUserById(userId: string): Promise<User | null> {
   try {
     if (!userId) return null;
 
+    // Use RPC function to avoid recursion issues with RLS
     const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", userId)
+      .rpc('get_user_by_id_safe', { user_id_param: userId })
       .single();
 
     if (error) {
@@ -69,21 +66,10 @@ export async function getCurrentUser(): Promise<User | null> {
   try {
     // First get the authenticated user ID
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) return null;
+    if (!authData?.user) return null;
 
-    // Then fetch the user details from the users table
-    const { data, error } = await supabase
-      .from("users")
-      .select("*")
-      .eq("id", authData.user.id)
-      .single();
-
-    if (error) {
-      console.error("Error fetching current user:", error);
-      return null;
-    }
-
-    return data as User;
+    // Use the userId to get the user details
+    return await getUserById(authData.user.id);
   } catch (error) {
     console.error("Exception fetching current user:", error);
     return null;
@@ -190,7 +176,7 @@ export async function toggleUserSuspension(
   try {
     // Get the current user's ID to use as admin_id
     const { data: authData } = await supabase.auth.getUser();
-    if (!authData.user) {
+    if (!authData?.user) {
       return { success: false, message: "Not authenticated" };
     }
 
