@@ -137,11 +137,16 @@ export async function fetchDashboardSummary(): Promise<DashboardSummary> {
     // Calculate total revenue from purchases (simplified)
     const totalRevenue = metrics.reduce((sum, day) => sum + day.total_revenue, 0);
     
+    // Fix: Access count properly from Supabase response
+    const totalUsers = usersData?.count || 0;
+    const totalCourses = coursesData?.count || 0;
+    const totalPurchases = purchasesData?.count || 0;
+    
     return {
-      totalUsers: usersData?.count || 0,
+      totalUsers,
       totalRevenue,
-      totalCourses: coursesData?.count || 0,
-      totalPurchases: purchasesData?.count || 0,
+      totalCourses,
+      totalPurchases,
       activeUsers,
       newSignups,
       revenue,
