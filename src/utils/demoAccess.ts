@@ -35,17 +35,17 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
-    // Now that we've checked for null, data is guaranteed to be non-null
-    // TypeScript might still show errors, so we'll use a non-null assertion or type guards
+    // At this point, data is definitely not null
+    const nonNullData = data;
     
     // Check if data is an object with a success property
-    if (typeof data === 'object' && 'success' in data) {
-      const successValue = data.success;
+    if (typeof nonNullData === 'object' && 'success' in nonNullData) {
+      const successValue = nonNullData.success;
       
       if (successValue === true) {
         // Check if purchases property exists and is an array
-        const hasPurchases = 'purchases' in data;
-        const purchases = hasPurchases && Array.isArray(data.purchases) ? data.purchases : [];
+        const hasPurchases = 'purchases' in nonNullData;
+        const purchases = hasPurchases && Array.isArray(nonNullData.purchases) ? nonNullData.purchases : [];
         
         return {
           success: true,
@@ -54,9 +54,9 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
         };
       } else {
         // Check if message property exists and is a string
-        const hasMessage = 'message' in data;
-        const message = hasMessage && typeof data.message === 'string' 
-          ? data.message 
+        const hasMessage = 'message' in nonNullData;
+        const message = hasMessage && typeof nonNullData.message === 'string' 
+          ? nonNullData.message 
           : `Failed to grant access to user ${userEmail}`;
           
         return {
@@ -70,7 +70,7 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     return {
       success: true,
       message: `Successfully granted access to courses for user ${userEmail}`,
-      purchases: Array.isArray(data) ? data : []
+      purchases: Array.isArray(nonNullData) ? nonNullData : []
     };
   } catch (error) {
     console.error("Error granting course access:", error);
