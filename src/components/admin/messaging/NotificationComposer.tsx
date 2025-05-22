@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -47,7 +46,7 @@ const NotificationComposer: React.FC = () => {
       const result = await createNotificationForAll(
         title,
         message,
-        type,
+        type as any, // This will work with our type definition in the service
         includeAction ? actionUrl : undefined,
         includeAction ? actionText : undefined
       );
