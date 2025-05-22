@@ -17,8 +17,8 @@ export interface SupportTicket {
   };
 }
 
-// Submit a new support ticket
-export async function submitSupportTicket(
+// Create a new support ticket
+export async function createSupportTicket(
   subject: string,
   message: string
 ): Promise<{
@@ -27,8 +27,9 @@ export async function submitSupportTicket(
   error?: string;
 }> {
   try {
-    console.log(`Submitting support ticket: ${subject}`);
+    console.log(`Creating support ticket: ${subject}`);
     
+    // Call the database function to submit a new ticket
     const { data, error } = await supabase.rpc('submit_support_ticket', {
       subject_param: subject,
       message_param: message
@@ -54,6 +55,9 @@ export async function submitSupportTicket(
     };
   }
 }
+
+// Submit a new support ticket (alias for createSupportTicket)
+export const submitSupportTicket = createSupportTicket;
 
 // Get support tickets for the current user
 export async function getUserSupportTickets(): Promise<SupportTicket[]> {

@@ -28,18 +28,21 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     console.log("RPC response data:", data);
     
     // Check if the data is valid and has the success property
-    if (data && typeof data === 'object' && 'success' in data) {
-      if (data.success) {
-        return {
-          success: true,
-          message: `Successfully granted access to courses for user ${userEmail}`,
-          purchases: Array.isArray(data) ? data : []
-        };
-      } else {
-        return {
-          success: false,
-          message: data.message || `Failed to grant access to user ${userEmail}`
-        };
+    if (data && typeof data === 'object') {
+      // Handle different response formats
+      if ('success' in data) {
+        if (data.success === true) {
+          return {
+            success: true,
+            message: `Successfully granted access to courses for user ${userEmail}`,
+            purchases: Array.isArray(data) ? data : []
+          };
+        } else {
+          return {
+            success: false,
+            message: typeof data.message === 'string' ? data.message : `Failed to grant access to user ${userEmail}`
+          };
+        }
       }
     }
 

@@ -16,7 +16,7 @@ import {
   ResponsiveContainer,
   TooltipProps
 } from 'recharts';
-import { DailyMetric } from '@/services/analyticsService';
+import { AnalyticsMetric } from '@/services/analyticsService';
 import { Skeleton } from '@/components/ui/skeleton';
 
 interface DataKey {
@@ -28,7 +28,7 @@ interface DataKey {
 interface AnalyticsChartProps {
   title: string;
   description?: string;
-  data: DailyMetric[];
+  data: AnalyticsMetric[];
   type: 'line' | 'bar' | 'area';
   dataKeys: DataKey[];
   loading?: boolean;
