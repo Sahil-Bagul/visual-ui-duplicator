@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalyticsMetric {
@@ -118,15 +117,15 @@ export async function fetchDashboardSummary(): Promise<DashboardSummary> {
     const referrals = calculateMetricSummary(metrics, 'referral_count', 7, 7);
     
     // Fetch total counts
-    const { data: usersData } = await supabase
+    const { data: usersData, error: usersError } = await supabase
       .from('users')
       .select('count', { count: 'exact', head: true });
       
-    const { data: coursesData } = await supabase
+    const { data: coursesData, error: coursesError } = await supabase
       .from('courses')
       .select('count', { count: 'exact', head: true });
       
-    const { data: purchasesData } = await supabase
+    const { data: purchasesData, error: purchasesError } = await supabase
       .from('purchases')
       .select('count', { count: 'exact', head: true });
       
@@ -137,10 +136,11 @@ export async function fetchDashboardSummary(): Promise<DashboardSummary> {
     // Calculate total revenue from purchases (simplified)
     const totalRevenue = metrics.reduce((sum, day) => sum + day.total_revenue, 0);
     
-    // Fix: Access count properly from Supabase response
-    const totalUsers = usersData?.count || 0;
-    const totalCourses = coursesData?.count || 0;
-    const totalPurchases = purchasesData?.count || 0;
+    // Fix: The count is directly in the response, not in a data.count property
+    // For count queries with head: true, Supabase returns the count as a property of the response
+    const totalUsers = typeof usersData === 'number' ? usersData : 0;
+    const totalCourses = typeof coursesData === 'number' ? coursesData : 0;
+    const totalPurchases = typeof purchasesData === 'number' ? purchasesData : 0;
     
     return {
       totalUsers,
