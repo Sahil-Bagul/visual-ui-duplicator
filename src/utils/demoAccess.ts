@@ -27,8 +27,8 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
 
     console.log("RPC response data:", data);
     
-    // Check if the data exists and is a valid object before accessing properties
-    if (data) {
+    // Safe check if data exists and is a valid object before accessing properties
+    if (data !== null) {
       // Handle different response formats
       if (typeof data === 'object' && 'success' in data) {
         if (data.success === true) {
@@ -46,12 +46,11 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       }
     }
 
-    // If we reached here, the data is valid but doesn't have the expected format
-    // We'll assume success if there was no error
+    // If we reached here, assume success if there was no error and data is not null
     return {
       success: true,
       message: `Successfully granted access to courses for user ${userEmail}`,
-      purchases: Array.isArray(data) ? data : []
+      purchases: data !== null && Array.isArray(data) ? data : []
     };
   } catch (error) {
     console.error("Error granting course access:", error);
