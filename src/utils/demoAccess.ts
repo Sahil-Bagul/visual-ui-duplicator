@@ -37,18 +37,25 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     
     // Handle different response formats
     if (typeof data === 'object' && 'success' in data) {
-      // We know 'success' is a property of data at this point, so we can safely access it
+      // We know 'success' is a property of data at this point
       const successValue = data.success;
       if (successValue === true) {
+        // Check if data.purchases exists and is an array
+        const purchases = 'purchases' in data && Array.isArray(data.purchases) ? data.purchases : [];
+        
         return {
           success: true,
           message: `Successfully granted access to courses for user ${userEmail}`,
-          purchases: Array.isArray(data.purchases) ? data.purchases : []
+          purchases: purchases
         };
       } else {
+        const message = 'message' in data && typeof data.message === 'string' 
+          ? data.message 
+          : `Failed to grant access to user ${userEmail}`;
+          
         return {
           success: false,
-          message: typeof data.message === 'string' ? data.message : `Failed to grant access to user ${userEmail}`
+          message: message
         };
       }
     }
