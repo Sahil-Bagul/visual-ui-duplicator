@@ -36,7 +36,8 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     }
     
     // At this point, data is definitely not null
-    const nonNullData = data;
+    // Use a definitive type assertion to tell TypeScript that data is not null
+    const nonNullData = data as NonNullable<typeof data>;
     
     // Check if data is an object with a success property
     if (typeof nonNullData === 'object' && 'success' in nonNullData) {
