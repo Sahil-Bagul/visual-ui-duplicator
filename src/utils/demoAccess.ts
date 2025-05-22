@@ -27,24 +27,29 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
 
     console.log("RPC response data:", data);
     
-    // Safe check if data exists and is a valid object before accessing properties
-    if (data !== null) {
-      // Handle different response formats
-      if (typeof data === 'object' && 'success' in data) {
-        // We can safely access data.success because we've checked that 'success' is in data
-        const successValue = data.success;
-        if (successValue === true) {
-          return {
-            success: true,
-            message: `Successfully granted access to courses for user ${userEmail}`,
-            purchases: Array.isArray(data) ? data : []
-          };
-        } else {
-          return {
-            success: false,
-            message: typeof data.message === 'string' ? data.message : `Failed to grant access to user ${userEmail}`
-          };
-        }
+    // Handle the case where data is null
+    if (data === null) {
+      return {
+        success: false,
+        message: `Failed to grant access: No data returned from the server`
+      };
+    }
+    
+    // Handle different response formats
+    if (typeof data === 'object' && 'success' in data) {
+      // We know 'success' is a property of data at this point, so we can safely access it
+      const successValue = data.success;
+      if (successValue === true) {
+        return {
+          success: true,
+          message: `Successfully granted access to courses for user ${userEmail}`,
+          purchases: Array.isArray(data.purchases) ? data.purchases : []
+        };
+      } else {
+        return {
+          success: false,
+          message: typeof data.message === 'string' ? data.message : `Failed to grant access to user ${userEmail}`
+        };
       }
     }
 
@@ -52,7 +57,7 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     return {
       success: true,
       message: `Successfully granted access to courses for user ${userEmail}`,
-      purchases: data !== null && Array.isArray(data) ? data : []
+      purchases: Array.isArray(data) ? data : []
     };
   } catch (error) {
     console.error("Error granting course access:", error);
