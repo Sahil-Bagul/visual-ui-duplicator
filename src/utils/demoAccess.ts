@@ -27,10 +27,10 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
 
     console.log("RPC response data:", data);
     
-    // Check if the data is valid and has the success property
-    if (data && typeof data === 'object') {
+    // Check if the data exists and is a valid object before accessing properties
+    if (data) {
       // Handle different response formats
-      if ('success' in data) {
+      if (typeof data === 'object' && 'success' in data) {
         if (data.success === true) {
           return {
             success: true,
@@ -46,6 +46,8 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       }
     }
 
+    // If we reached here, the data is valid but doesn't have the expected format
+    // We'll assume success if there was no error
     return {
       success: true,
       message: `Successfully granted access to courses for user ${userEmail}`,
