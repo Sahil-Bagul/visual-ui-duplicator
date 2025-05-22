@@ -35,11 +35,15 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
-    // Now that we've checked for null, we can safely access data properties
+    // Now that we've checked for null, data is guaranteed to be non-null
+    // TypeScript might still show errors, so we'll use a non-null assertion or type guards
+    
+    // Check if data is an object with a success property
     if (typeof data === 'object' && 'success' in data) {
       const successValue = data.success;
       
       if (successValue === true) {
+        // Check if purchases property exists and is an array
         const hasPurchases = 'purchases' in data;
         const purchases = hasPurchases && Array.isArray(data.purchases) ? data.purchases : [];
         
@@ -49,6 +53,7 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
           purchases: purchases
         };
       } else {
+        // Check if message property exists and is a string
         const hasMessage = 'message' in data;
         const message = hasMessage && typeof data.message === 'string' 
           ? data.message 
