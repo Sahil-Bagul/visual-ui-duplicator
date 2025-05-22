@@ -1,221 +1,249 @@
 
-import { supabase } from '@/integrations/supabase/client';
+import { supabase } from "@/integrations/supabase/client";
+import { PostgrestResponse } from "@supabase/supabase-js";
 
 export interface User {
   id: string;
-  email: string;
   name: string;
+  email: string;
   joined_at: string;
   is_admin: boolean;
   is_suspended: boolean;
-  last_login?: string;
-  courses_purchased?: number;
-  successful_referrals?: number;
-  total_earned?: number;
 }
 
-/**
- * Get a list of all users with enhanced data
- */
+export interface AdminLog {
+  id: string;
+  admin_id: string;
+  operation_type: string;
+  resource_type: string;
+  resource_id: string;
+  details: Record<string, any>;
+  created_at: string;
+}
+
+// Get all users (admin only)
 export async function getAllUsers(): Promise<User[]> {
   try {
-    console.log('Fetching all users');
-    
-    // First get basic user information
     const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .order('joined_at', { ascending: false });
-    
+      .from("users")
+      .select("*")
+      .order("joined_at", { ascending: false });
+
     if (error) {
-      console.error('Error fetching users:', error);
+      console.error("Error fetching users:", error);
       return [];
     }
 
-    // Process and enhance user data
-    const enhancedUsers = await Promise.all(data.map(async (user) => {
-      try {
-        // Get last login info
-        const { data: activityData } = await supabase
-          .from('user_activity_logs')
-          .select('created_at')
-          .eq('user_id', user.id)
-          .eq('activity_type', 'login')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        // Get course purchase count
-        const { count: purchaseCount } = await supabase
-          .from('purchases')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        
-        // Get referral stats
-        const { data: referralData } = await supabase
-          .from('referrals')
-          .select('successful_referrals, total_earned')
-          .eq('user_id', user.id)
-          .order('total_earned', { ascending: false })
-          .limit(1);
-          
-        return {
-          ...user,
-          last_login: activityData?.[0]?.created_at,
-          courses_purchased: purchaseCount || 0,
-          successful_referrals: referralData?.[0]?.successful_referrals || 0,
-          total_earned: referralData?.[0]?.total_earned || 0
-        };
-      } catch (error) {
-        console.error(`Error enhancing user data for ${user.id}:`, error);
-        return user;
-      }
-    }));
-    
-    console.log(`Retrieved ${enhancedUsers.length} users`);
-    return enhancedUsers;
+    return data as User[];
   } catch (error) {
-    console.error('Exception in getAllUsers:', error);
+    console.error("Exception fetching users:", error);
     return [];
   }
 }
 
-/**
- * Toggle the suspension status of a user
- */
+// Get a single user by ID
+export async function getUserById(userId: string): Promise<User | null> {
+  try {
+    if (!userId) return null;
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", userId)
+      .single();
+
+    if (error) {
+      console.error(`Error fetching user ${userId}:`, error);
+      return null;
+    }
+
+    return data as User;
+  } catch (error) {
+    console.error(`Exception fetching user ${userId}:`, error);
+    return null;
+  }
+}
+
+// Get current user details
+export async function getCurrentUser(): Promise<User | null> {
+  try {
+    // First get the authenticated user ID
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) return null;
+
+    // Then fetch the user details from the users table
+    const { data, error } = await supabase
+      .from("users")
+      .select("*")
+      .eq("id", authData.user.id)
+      .single();
+
+    if (error) {
+      console.error("Error fetching current user:", error);
+      return null;
+    }
+
+    return data as User;
+  } catch (error) {
+    console.error("Exception fetching current user:", error);
+    return null;
+  }
+}
+
+// Update user profile
+export async function updateUserProfile(
+  userId: string,
+  updates: Partial<User>
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from("users")
+      .update(updates)
+      .eq("id", userId);
+
+    if (error) {
+      console.error("Error updating user profile:", error);
+      return { success: false, error: error.message };
+    }
+
+    return { success: true };
+  } catch (error) {
+    console.error("Exception updating user profile:", error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : "Unknown error",
+    };
+  }
+}
+
+// Grant admin privileges to a user
+export async function grantAdminPrivileges(
+  email: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const { data, error } = await supabase.rpc("grant_admin_privileges", {
+      admin_email: email,
+    });
+
+    // Handle the response based on the RPC function's format
+    const response = data as any; // Use a type assertion for now
+    
+    if (error) {
+      console.error("Error granting admin privileges:", error);
+      return { success: false, message: error.message };
+    }
+    
+    if (response && typeof response === 'object' && 'success' in response) {
+      if (response.success) {
+        return { success: true, message: response.message || "Admin privileges granted successfully" };
+      } else {
+        return { success: false, message: response.message || "Failed to grant admin privileges" };
+      }
+    }
+    
+    return { success: true, message: "Admin privileges granted successfully" };
+  } catch (error) {
+    console.error("Exception granting admin privileges:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, message };
+  }
+}
+
+// Revoke admin privileges from a user
+export async function revokeAdminPrivileges(
+  email: string
+): Promise<{ success: boolean; message: string }> {
+  try {
+    const { data, error } = await supabase.rpc("revoke_admin_privileges", {
+      admin_email: email,
+    });
+
+    // Handle the response based on the RPC function's format  
+    const response = data as any; // Use a type assertion for now
+    
+    if (error) {
+      console.error("Error revoking admin privileges:", error);
+      return { success: false, message: error.message };
+    }
+    
+    if (response && typeof response === 'object' && 'success' in response) {
+      if (response.success) {
+        return { success: true, message: response.message || "Admin privileges revoked successfully" };
+      } else {
+        return { success: false, message: response.message || "Failed to revoke admin privileges" };
+      }
+    }
+    
+    return { success: true, message: "Admin privileges revoked successfully" };
+  } catch (error) {
+    console.error("Exception revoking admin privileges:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, message };
+  }
+}
+
+// Toggle user suspension status
 export async function toggleUserSuspension(
-  targetUserId: string, 
+  userId: string,
   suspend: boolean
 ): Promise<{ success: boolean; message: string }> {
   try {
-    console.log(`${suspend ? 'Suspending' : 'Unsuspending'} user ${targetUserId}`);
-    
-    // Get the current user (admin)
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      return { 
-        success: false, 
-        message: 'You must be logged in to perform this action' 
-      };
+    // Get the current user's ID to use as admin_id
+    const { data: authData } = await supabase.auth.getUser();
+    if (!authData.user) {
+      return { success: false, message: "Not authenticated" };
     }
-    
-    // Call the RPC function to toggle suspension
-    const { data, error } = await supabase.rpc('toggle_user_suspension', {
-      admin_id: user.id,
-      target_user_id: targetUserId,
-      suspend: suspend
+
+    const { data, error } = await supabase.rpc("toggle_user_suspension", {
+      admin_id: authData.user.id,
+      target_user_id: userId,
+      suspend: suspend,
     });
+
+    // Handle the response based on the RPC function's format
+    const response = data as any; // Use a type assertion for now
     
     if (error) {
-      console.error('Error toggling user suspension:', error);
-      return { 
-        success: false, 
-        message: error.message 
-      };
+      console.error("Error toggling user suspension:", error);
+      return { success: false, message: error.message };
     }
     
-    if (!data || !data.success) {
-      return { 
-        success: false, 
-        message: data?.message || 'Operation failed' 
-      };
+    if (response && typeof response === 'object' && 'success' in response) {
+      if (response.success) {
+        return { success: true, message: response.message || `User ${suspend ? "suspended" : "unsuspended"} successfully` };
+      } else {
+        return { success: false, message: response.message || `Failed to ${suspend ? "suspend" : "unsuspend"} user` };
+      }
     }
     
-    console.log('Toggle suspension result:', data);
     return { 
       success: true, 
-      message: data.message 
+      message: `User ${suspend ? "suspended" : "unsuspended"} successfully` 
     };
   } catch (error) {
-    console.error('Exception in toggleUserSuspension:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'An unexpected error occurred' 
-    };
+    console.error("Exception toggling user suspension:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return { success: false, message };
   }
 }
 
-/**
- * Grant admin privileges to a user
- */
-export async function grantAdminPrivileges(
-  userEmail: string
-): Promise<{ success: boolean; message: string }> {
+// Get content management logs (admin only)
+export async function getContentManagementLogs(): Promise<AdminLog[]> {
   try {
-    console.log(`Granting admin privileges to ${userEmail}`);
-    
-    // Call the RPC function to grant admin privileges
-    const { data, error } = await supabase.rpc('grant_admin_privileges', {
-      admin_email: userEmail
-    });
-    
-    if (error) {
-      console.error('Error granting admin privileges:', error);
-      return { 
-        success: false, 
-        message: error.message 
-      };
-    }
-    
-    if (!data || !data.success) {
-      return { 
-        success: false, 
-        message: data?.message || 'Operation failed' 
-      };
-    }
-    
-    console.log('Grant admin result:', data);
-    return { 
-      success: true, 
-      message: data.message 
-    };
-  } catch (error) {
-    console.error('Exception in grantAdminPrivileges:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'An unexpected error occurred' 
-    };
-  }
-}
+    const { data, error } = await supabase
+      .from("content_management_logs")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(100);
 
-/**
- * Revoke admin privileges from a user
- */
-export async function revokeAdminPrivileges(
-  userEmail: string
-): Promise<{ success: boolean; message: string }> {
-  try {
-    console.log(`Revoking admin privileges from ${userEmail}`);
-    
-    // Call the RPC function to revoke admin privileges
-    const { data, error } = await supabase.rpc('revoke_admin_privileges', {
-      admin_email: userEmail
-    });
-    
     if (error) {
-      console.error('Error revoking admin privileges:', error);
-      return { 
-        success: false, 
-        message: error.message 
-      };
+      console.error("Error fetching admin logs:", error);
+      return [];
     }
-    
-    if (!data || !data.success) {
-      return { 
-        success: false, 
-        message: data?.message || 'Operation failed' 
-      };
-    }
-    
-    console.log('Revoke admin result:', data);
-    return { 
-      success: true, 
-      message: data.message 
-    };
+
+    return data as AdminLog[];
   } catch (error) {
-    console.error('Exception in revokeAdminPrivileges:', error);
-    return { 
-      success: false, 
-      message: error instanceof Error ? error.message : 'An unexpected error occurred' 
-    };
+    console.error("Exception fetching admin logs:", error);
+    return [];
   }
 }

@@ -1,199 +1,156 @@
-
-import React, { useState, useEffect } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Separator } from '@/components/ui/separator';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
-import Footer from '@/components/layout/Footer';
-import { supabase } from '@/integrations/supabase/client';
+import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
-import { MessageCircle, LogOut, HelpCircle } from 'lucide-react';
-import ContactSupportButton from '@/components/support/ContactSupportButton';
-import { useQuery } from '@tanstack/react-query';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { updateUserProfile } from '@/services/userManagementService';
+import PageLayout from '@/components/layout/PageLayout';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
-  const { user, signOut } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
+  const queryClient = useQueryClient();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
-  const [isLoading, setIsLoading] = useState(false);
-  
-  // Use React Query to fetch user profile data
-  const { data: userData, isLoading: isUserLoading, error: userError } = useQuery({
-    queryKey: ['user-profile', user?.id],
+  const [isEditing, setIsEditing] = useState(false);
+
+  // Fetch user profile data
+  const { data: profile, isLoading } = useQuery({
+    queryKey: ['profile'],
     queryFn: async () => {
-      if (!user) throw new Error('Not authenticated');
+      // If no authenticated user, return null
+      if (!user?.id) return null;
       
       const { data, error } = await supabase
         .from('users')
         .select('name, email, is_admin')
         .eq('id', user.id)
         .single();
-
+        
       if (error) throw error;
       return data;
     },
-    enabled: !!user,
-    onSuccess: (data) => {
-      if (data) {
-        setName(data.name || '');
-        setEmail(data.email || '');
-      }
-    },
-    onError: (error) => {
-      console.error('Error fetching user profile:', error);
-      toast.error('Failed to load user profile data');
-    }
+    enabled: !!user?.id,
   });
 
-  const handleUpdateProfile = async () => {
-    if (!user) return;
-    setIsLoading(true);
+  // When profile data is loaded, set the form state
+  React.useEffect(() => {
+    if (profile) {
+      setName(profile.name || '');
+      setEmail(profile.email || '');
+    }
+  }, [profile]);
 
-    try {
-      const { error } = await supabase
-        .from('users')
-        .update({ name })
-        .eq('id', user.id);
-
-      if (error) throw error;
-
+  // Update profile mutation
+  const updateProfileMutation = useMutation({
+    mutationFn: async ({ name, email }: { name: string; email: string }) => {
+      if (!user?.id) throw new Error('Not authenticated');
+      return await updateUserProfile(user.id, { name, email });
+    },
+    onSuccess: () => {
       toast.success('Profile updated successfully');
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      toast.error('Failed to update profile');
-    } finally {
-      setIsLoading(false);
+      setIsEditing(false);
+      queryClient.invalidateQueries({ queryKey: ['profile'] });
+    },
+    onError: (error) => {
+      toast.error(`Failed to update profile: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
-  };
-
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      toast.success('You have been signed out successfully');
-      navigate('/');
-    } catch (error) {
-      console.error('Error signing out:', error);
-      toast.error('Failed to sign out');
+  });
+  
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim()) {
+      toast.error('Name cannot be empty');
+      return;
     }
+    updateProfileMutation.mutate({ name, email });
   };
-
-  if (!user) {
-    return (
-      <div className="flex justify-center items-center h-screen">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Not logged in</h1>
-          <Link to="/">
-            <Button>Go to Login</Button>
-          </Link>
-        </div>
-      </div>
-    );
-  }
-
-  const isAdmin = userData?.is_admin || false;
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
-      <main className="flex-grow container max-w-md mx-auto px-4 py-8">
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Profile</h1>
-          <p className="text-gray-600">Manage your account information</p>
-        </div>
-
-        <Card className="shadow-sm">
+    <PageLayout title="Profile" backTo="/dashboard">
+      <div className="max-w-2xl mx-auto px-4">
+        <Card className="mb-6">
           <CardHeader>
-            <CardTitle className="text-lg">Account Information</CardTitle>
+            <CardTitle>My Profile</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
-                Name
-              </label>
-              <Input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="w-full"
-                disabled={isUserLoading}
-              />
-            </div>
-            <div>
-              <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
-                Email
-              </label>
-              <Input 
-                id="email" 
-                type="email" 
-                value={email} 
-                readOnly 
-                disabled 
-                className="w-full bg-gray-50" 
-              />
-              <p className="mt-1 text-xs text-gray-500">Email address cannot be changed</p>
-            </div>
-
-            {isAdmin && (
-              <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
-                <p className="text-blue-800 font-medium">Admin Account</p>
-                <p className="text-sm text-blue-600 mt-1">You have administrative privileges on this platform</p>
-                <Link to="/admin">
-                  <Button variant="outline" className="mt-2 w-full border-blue-200 hover:bg-blue-100">
-                    Go to Admin Dashboard
-                  </Button>
-                </Link>
+          <CardContent>
+            {isLoading ? (
+              <div className="flex justify-center p-4">
+                <div className="w-6 h-6 border-2 border-t-primary border-gray-200 rounded-full animate-spin"></div>
               </div>
+            ) : (
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="name">Name</Label>
+                  <Input
+                    id="name"
+                    name="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    disabled={!isEditing || updateProfileMutation.isPending}
+                    className={!isEditing ? 'bg-gray-50' : ''}
+                  />
+                </div>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    id="email"
+                    name="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={!isEditing || updateProfileMutation.isPending}
+                    className={!isEditing ? 'bg-gray-50' : ''}
+                  />
+                </div>
+                
+                <div className="pt-2 flex justify-end gap-2">
+                  {!isEditing ? (
+                    <Button
+                      type="button"
+                      onClick={() => setIsEditing(true)}
+                      variant="default"
+                      className="bg-[#00C853] hover:bg-[#00A846] text-white"
+                    >
+                      Edit Profile
+                    </Button>
+                  ) : (
+                    <>
+                      <Button
+                        type="button"
+                        variant="outline"
+                        onClick={() => {
+                          setIsEditing(false);
+                          // Reset form to original values
+                          if (profile) {
+                            setName(profile.name || '');
+                            setEmail(profile.email || '');
+                          }
+                        }}
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        type="submit"
+                        variant="default"
+                        className="bg-[#00C853] hover:bg-[#00A846] text-white"
+                        disabled={updateProfileMutation.isPending}
+                      >
+                        {updateProfileMutation.isPending ? 'Saving...' : 'Save Changes'}
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </form>
             )}
           </CardContent>
-          <CardFooter className="justify-between">
-            <Button variant="outline" onClick={() => navigate(-1)}>
-              Cancel
-            </Button>
-            <Button
-              className="bg-[#00C853] hover:bg-green-600"
-              onClick={handleUpdateProfile}
-              disabled={isLoading || isUserLoading}
-            >
-              {isLoading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </CardFooter>
         </Card>
-
-        <Separator className="my-6" />
-
-        <div className="space-y-4">
-          <h2 className="text-lg font-medium">Help & Support</h2>
-          
-          <div className="flex flex-col space-y-3">
-            <ContactSupportButton />
-            
-            <Link to="/feedback">
-              <Button variant="outline" className="flex items-center gap-2 w-full">
-                <HelpCircle className="h-4 w-4" />
-                Send Feedback
-              </Button>
-            </Link>
-          </div>
-          
-          <h2 className="text-lg font-medium pt-4">Account Actions</h2>
-          
-          <Button
-            variant="destructive"
-            onClick={handleSignOut}
-            className="w-full"
-          >
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign out
-          </Button>
-        </div>
-      </main>
-      <Footer />
-    </div>
+      </div>
+    </PageLayout>
   );
 };
 

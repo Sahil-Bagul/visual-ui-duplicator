@@ -36,7 +36,7 @@ export const NotificationCenter: React.FC = () => {
     isLoading 
   } = useQuery({
     queryKey: ['notifications'],
-    queryFn: () => getUserNotifications(30),
+    queryFn: () => getUserNotifications(),
   });
   
   const { 
@@ -94,12 +94,12 @@ export const NotificationCenter: React.FC = () => {
       <PopoverTrigger asChild>
         <Button variant="ghost" size="icon" className="relative">
           <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
+          {(unreadCount as number) > 0 && (
             <Badge 
               className="absolute -top-1 -right-1 px-1 min-w-[1.1rem] h-[1.1rem] flex items-center justify-center text-[10px]"
               variant="destructive"
             >
-              {unreadCount > 99 ? '99+' : unreadCount}
+              {(unreadCount as number) > 99 ? '99+' : unreadCount}
             </Badge>
           )}
         </Button>
@@ -111,7 +111,7 @@ export const NotificationCenter: React.FC = () => {
             variant="ghost" 
             size="sm" 
             onClick={handleMarkAllAsRead}
-            disabled={unreadCount === 0}
+            disabled={!unreadCount}
             className="h-auto py-1 px-2 text-xs"
           >
             Mark all as read

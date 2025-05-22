@@ -56,15 +56,16 @@ export async function createNotification(
   }
 }
 
-// Get user notifications
-export async function getUserNotifications(): Promise<Notification[]> {
+// Get user notifications with optional limit
+export async function getUserNotifications(limit: number = 20): Promise<Notification[]> {
   try {
-    console.log('Fetching user notifications');
+    console.log('Fetching user notifications with limit:', limit);
     
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(limit);
     
     if (error) {
       console.error('Error fetching notifications:', error);
@@ -76,6 +77,26 @@ export async function getUserNotifications(): Promise<Notification[]> {
   } catch (error) {
     console.error('Exception fetching notifications:', error);
     return [];
+  }
+}
+
+// Get unread notification count
+export async function getUnreadNotificationCount(): Promise<number> {
+  try {
+    const { count, error } = await supabase
+      .from('notifications')
+      .select('*', { count: 'exact', head: true })
+      .eq('read', false);
+    
+    if (error) {
+      console.error('Error counting unread notifications:', error);
+      return 0;
+    }
+    
+    return count || 0;
+  } catch (error) {
+    console.error('Exception counting unread notifications:', error);
+    return 0;
   }
 }
 
@@ -102,12 +123,19 @@ export async function markNotificationAsRead(notificationId: string): Promise<bo
 }
 
 // Mark all notifications as read
-export async function markAllNotificationsAsRead(userId: string): Promise<number> {
+export async function markAllNotificationsAsRead(): Promise<number> {
   try {
-    console.log(`Marking all notifications as read for user ${userId}`);
+    console.log(`Marking all notifications as read`);
+    
+    // Get current user ID from Supabase auth
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return 0;
+    }
     
     const { data, error } = await supabase.rpc('mark_all_notifications_as_read', {
-      user_id_param: userId
+      user_id_param: user.id
     });
     
     if (error) {
