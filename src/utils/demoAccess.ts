@@ -35,34 +35,50 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
       };
     }
     
-    // At this point, data is definitely not null
-    // Use a definitive type assertion to tell TypeScript that data is not null
-    const nonNullData = data as NonNullable<typeof data>;
+    // Now we're sure data is not null
+    
+    // Check if data is a string (some RPCs might return a text message)
+    if (typeof data === 'string') {
+      const isSuccess = data.includes('✅') || data.toLowerCase().includes('success');
+      return {
+        success: isSuccess,
+        message: data
+      };
+    }
     
     // Check if data is an object with a success property
-    if (typeof nonNullData === 'object' && 'success' in nonNullData) {
-      const successValue = nonNullData.success;
-      
-      if (successValue === true) {
-        // Check if purchases property exists and is an array
-        const hasPurchases = 'purchases' in nonNullData;
-        const purchases = hasPurchases && Array.isArray(nonNullData.purchases) ? nonNullData.purchases : [];
+    if (typeof data === 'object') {
+      if ('success' in data) {
+        const successValue = data.success;
         
+        if (successValue === true) {
+          // Check if purchases property exists and is an array
+          const purchases = 'purchases' in data && Array.isArray(data.purchases) ? data.purchases : [];
+          
+          return {
+            success: true,
+            message: `Successfully granted access to courses for user ${userEmail}`,
+            purchases: purchases
+          };
+        } else {
+          // Check if message property exists
+          const message = 'message' in data && typeof data.message === 'string' 
+            ? data.message 
+            : `Failed to grant access to user ${userEmail}`;
+            
+          return {
+            success: false,
+            message: message
+          };
+        }
+      }
+      
+      // Handle case where data is an array (possibly containing purchase records)
+      if (Array.isArray(data)) {
         return {
           success: true,
           message: `Successfully granted access to courses for user ${userEmail}`,
-          purchases: purchases
-        };
-      } else {
-        // Check if message property exists and is a string
-        const hasMessage = 'message' in nonNullData;
-        const message = hasMessage && typeof nonNullData.message === 'string' 
-          ? nonNullData.message 
-          : `Failed to grant access to user ${userEmail}`;
-          
-        return {
-          success: false,
-          message: message
+          purchases: data
         };
       }
     }
@@ -70,8 +86,7 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     // If we reached here, assume success if there was no error and data is not null
     return {
       success: true,
-      message: `Successfully granted access to courses for user ${userEmail}`,
-      purchases: Array.isArray(nonNullData) ? nonNullData : []
+      message: `Successfully granted access to courses for user ${userEmail}`
     };
   } catch (error) {
     console.error("Error granting course access:", error);
