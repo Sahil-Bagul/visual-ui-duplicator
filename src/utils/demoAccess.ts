@@ -31,7 +31,9 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     if (data !== null) {
       // Handle different response formats
       if (typeof data === 'object' && 'success' in data) {
-        if (data.success === true) {
+        // We can safely access data.success because we've checked that 'success' is in data
+        const successValue = data.success;
+        if (successValue === true) {
           return {
             success: true,
             message: `Successfully granted access to courses for user ${userEmail}`,
