@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -60,6 +61,8 @@ const UserManagement: React.FC = () => {
     try {
       setLoading(true);
       
+      console.log("Starting to fetch users data...");
+      
       // First get basic user information
       const { data, error } = await supabase
         .from('users')
@@ -72,40 +75,62 @@ const UserManagement: React.FC = () => {
         return;
       }
       
-      // Process and enhance user data
-      const enhancedUsers = await Promise.all(data.map(async (user) => {
-        // Get last login info
-        const { data: activityData } = await supabase
-          .from('user_activity_logs')
-          .select('created_at')
-          .eq('user_id', user.id)
-          .eq('activity_type', 'login')
-          .order('created_at', { ascending: false })
-          .limit(1);
-        
-        // Get course purchase count
-        const { count: purchaseCount } = await supabase
-          .from('purchases')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id);
-        
-        // Get referral stats
-        const { data: referralData } = await supabase
-          .from('referrals')
-          .select('successful_referrals, total_earned')
-          .eq('user_id', user.id)
-          .order('total_earned', { ascending: false })
-          .limit(1);
-          
-        return {
-          ...user,
-          last_login: activityData?.[0]?.created_at,
-          courses_purchased: purchaseCount || 0,
-          successful_referrals: referralData?.[0]?.successful_referrals || 0,
-          total_earned: referralData?.[0]?.total_earned || 0
-        };
-      }));
+      console.log("Fetched users:", data?.length || 0);
       
+      if (!data || data.length === 0) {
+        setUsers([]);
+        setLoading(false);
+        return;
+      }
+      
+      // Process and enhance user data
+      const enhancedUsers = await Promise.all(
+        data.map(async (user) => {
+          try {
+            // Get last login info
+            const { data: activityData } = await supabase
+              .from('user_activity_logs')
+              .select('created_at')
+              .eq('user_id', user.id)
+              .eq('activity_type', 'login')
+              .order('created_at', { ascending: false })
+              .limit(1);
+            
+            // Get course purchase count
+            const { count: purchaseCount } = await supabase
+              .from('purchases')
+              .select('*', { count: 'exact', head: true })
+              .eq('user_id', user.id);
+            
+            // Get referral stats
+            const { data: referralData } = await supabase
+              .from('referrals')
+              .select('successful_referrals, total_earned')
+              .eq('user_id', user.id)
+              .order('total_earned', { ascending: false })
+              .limit(1);
+              
+            return {
+              ...user,
+              last_login: activityData?.[0]?.created_at,
+              courses_purchased: purchaseCount || 0,
+              successful_referrals: referralData?.[0]?.successful_referrals || 0,
+              total_earned: referralData?.[0]?.total_earned || 0
+            };
+          } catch (userError) {
+            console.error(`Error processing user ${user.id}:`, userError);
+            return {
+              ...user,
+              last_login: undefined,
+              courses_purchased: 0,
+              successful_referrals: 0,
+              total_earned: 0
+            };
+          }
+        })
+      );
+      
+      console.log("Enhanced users data:", enhancedUsers.length);
       setUsers(enhancedUsers);
     } catch (error) {
       console.error('Error in loadUsers:', error);
@@ -231,15 +256,10 @@ const UserManagement: React.FC = () => {
         return;
       }
       
-      // For now, we'll create a notification instead of calling the missing function
+      // Call the grant_one_time_access_to_user function
       const { data: result, error: rpcError } = await supabase
-        .rpc('create_user_notification', {
-          user_id_param: userId,
-          title_param: 'Course Access Granted',
-          message_param: 'You have been granted access to all courses!',
-          type_param: 'success',
-          action_url_param: '/my-courses',
-          action_text_param: 'View Courses'
+        .rpc('grant_one_time_access_to_user', {
+          user_email: data.email
         });
       
       if (rpcError) {

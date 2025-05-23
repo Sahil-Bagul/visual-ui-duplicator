@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -15,6 +16,7 @@ import { CourseWithProgress } from '@/types/course';
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { useQuery } from '@tanstack/react-query';
+import { logDataError, logDataSuccess, handleSupabaseError } from '@/utils/errorLogger';
 
 const Dashboard: React.FC = () => {
   const [walletBalance, setWalletBalance] = useState<number>(0);
@@ -26,14 +28,28 @@ const Dashboard: React.FC = () => {
   const { data: allCourses, isLoading: coursesLoading, error: coursesError } = useQuery({
     queryKey: ['courses'],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from('courses')
-        .select('*');
+      try {
+        console.log('🔄 Fetching all courses...');
+        const { data, error } = await supabase
+          .from('courses')
+          .select('*')
+          .eq('is_published', true);
+          
+        if (error) {
+          logDataError('courses fetch', error);
+          throw error;
+        }
         
-      if (error) throw error;
-      return data || [];
+        logDataSuccess('courses', data);
+        return data || [];
+      } catch (error) {
+        logDataError('courses fetch exception', error);
+        throw error;
+      }
     },
     staleTime: 5 * 60 * 1000, // Consider data fresh for 5 minutes
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch user's purchased courses
@@ -42,16 +58,30 @@ const Dashboard: React.FC = () => {
     queryFn: async () => {
       if (!user) return [];
       
-      const { data, error } = await supabase
-        .from('purchases')
-        .select('course_id')
-        .eq('user_id', user.id);
+      try {
+        console.log('🔄 Fetching user purchases...');
+        const { data, error } = await supabase
+          .from('purchases')
+          .select('course_id')
+          .eq('user_id', user.id);
+          
+        if (error && error.code !== 'PGRST116') {
+          logDataError('purchases fetch', error, { userId: user.id });
+          throw error;
+        }
         
-      if (error && error.code !== 'PGRST116') throw error;
-      return (data || []).map(purchase => purchase.course_id);
+        const courseIds = (data || []).map(purchase => purchase.course_id);
+        logDataSuccess('purchases', courseIds);
+        return courseIds;
+      } catch (error) {
+        logDataError('purchases fetch exception', error);
+        throw error;
+      }
     },
     enabled: !!user,
     staleTime: 3 * 60 * 1000, // Consider data fresh for 3 minutes
+    retry: 3,
+    retryDelay: 1000,
   });
 
   // Fetch wallet balance
@@ -60,21 +90,29 @@ const Dashboard: React.FC = () => {
     queryFn: async () => {
       if (!user) return { balance: 0 };
       
-      const { data, error } = await supabase
-        .from('wallet')
-        .select('balance')
-        .eq('user_id', user.id)
-        .single();
+      try {
+        console.log('🔄 Fetching wallet balance...');
+        const { data, error } = await supabase
+          .from('wallet')
+          .select('balance')
+          .eq('user_id', user.id)
+          .single();
+          
+        if (error && error.code !== 'PGRST116') {
+          console.error("Error fetching wallet data:", error);
+          return { balance: 0 };
+        }
         
-      if (error && error.code !== 'PGRST116') {
-        console.error("Error fetching wallet data:", error);
+        logDataSuccess('wallet', data);
+        return data || { balance: 0 };
+      } catch (error) {
+        logDataError('wallet fetch exception', error);
         return { balance: 0 };
       }
-      
-      return data || { balance: 0 };
     },
     enabled: !!user,
     staleTime: 2 * 60 * 1000, // Consider data fresh for 2 minutes
+    retry: 2,
   });
 
   // Update wallet balance when wallet data changes
@@ -92,24 +130,78 @@ const Dashboard: React.FC = () => {
         return [];
       }
       
-      // Filter purchased courses
-      const userCourses = allCourses.filter(course => 
-        purchasedCourseIds.includes(course.id)
-      );
-      
-      // For each purchased course, get progress data
-      const coursesWithProgress = await Promise.all(
-        userCourses.map(async (course) => {
-          try {
-            // Get modules for this course - optimized query with RLS
-            const { data: modulesData, error: modulesError } = await supabase
-              .from('course_modules')
-              .select('*')
-              .eq('course_id', course.id)
-              .order('module_order', { ascending: true });
+      try {
+        console.log('🔄 Fetching enrolled courses with progress...');
+        
+        // Filter purchased courses
+        const userCourses = allCourses.filter(course => 
+          purchasedCourseIds.includes(course.id)
+        );
+        
+        if (userCourses.length === 0) {
+          console.log('No purchased courses found');
+          return [];
+        }
+        
+        // For each purchased course, get progress data
+        const coursesWithProgress = await Promise.all(
+          userCourses.map(async (course) => {
+            try {
+              // Get modules for this course - optimized query with RLS
+              const { data: modulesData, error: modulesError } = await supabase
+                .from('course_modules')
+                .select('*')
+                .eq('course_id', course.id)
+                .order('module_order', { ascending: true });
+                
+              if (modulesError) {
+                console.error(`Error fetching modules for course ${course.id}:`, modulesError);
+                return {
+                  ...course,
+                  modules: [],
+                  totalModules: 0,
+                  completedModules: 0,
+                  progress: 0
+                };
+              }
               
-            if (modulesError) {
-              console.error(`Error fetching modules for course ${course.id}:`, modulesError);
+              const modules = modulesData || [];
+              
+              if (modules.length === 0) {
+                return {
+                  ...course,
+                  modules: [],
+                  totalModules: 0,
+                  completedModules: 0,
+                  progress: 0
+                };
+              }
+              
+              // Get user progress for this course's modules
+              const { data: progressData, error: progressError } = await supabase
+                .from('user_progress')
+                .select('*')
+                .eq('user_id', user.id)
+                .in('module_id', modules.map(module => module.id));
+                
+              if (progressError && progressError.code !== 'PGRST116') {
+                console.error(`Error fetching progress for course ${course.id}:`, progressError);
+              }
+              
+              // Calculate progress
+              const totalModules = modules.length;
+              const completedModules = progressData?.filter(p => p.completed).length || 0;
+              const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
+              
+              return {
+                ...course,
+                modules,
+                totalModules,
+                completedModules,
+                progress
+              };
+            } catch (err) {
+              console.error(`Error processing course ${course.id}:`, err);
               return {
                 ...course,
                 modules: [],
@@ -118,59 +210,19 @@ const Dashboard: React.FC = () => {
                 progress: 0
               };
             }
-            
-            const modules = modulesData || [];
-            
-            if (modules.length === 0) {
-              return {
-                ...course,
-                modules: [],
-                totalModules: 0,
-                completedModules: 0,
-                progress: 0
-              };
-            }
-            
-            // Get user progress for this course's modules
-            const { data: progressData, error: progressError } = await supabase
-              .from('user_progress')
-              .select('*')
-              .eq('user_id', user.id)
-              .in('module_id', modules.map(module => module.id));
-              
-            if (progressError && progressError.code !== 'PGRST116') {
-              console.error(`Error fetching progress for course ${course.id}:`, progressError);
-            }
-            
-            // Calculate progress
-            const totalModules = modules.length;
-            const completedModules = progressData?.filter(p => p.completed).length || 0;
-            const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
-            
-            return {
-              ...course,
-              modules,
-              totalModules,
-              completedModules,
-              progress
-            };
-          } catch (err) {
-            console.error(`Error processing course ${course.id}:`, err);
-            return {
-              ...course,
-              modules: [],
-              totalModules: 0,
-              completedModules: 0,
-              progress: 0
-            };
-          }
-        })
-      );
-          
-      return coursesWithProgress;
+          })
+        );
+        
+        logDataSuccess('enrolled courses', coursesWithProgress);
+        return coursesWithProgress;
+      } catch (error) {
+        logDataError('enrolled courses fetch exception', error);
+        return [];
+      }
     },
     enabled: !!user && !!purchasedCourseIds && purchasedCourseIds.length > 0 && !!allCourses,
     staleTime: 3 * 60 * 1000, // Consider data fresh for 3 minutes
+    retry: 2,
   });
 
   const handleCourseClick = useCallback((courseId: string) => {
@@ -186,7 +238,7 @@ const Dashboard: React.FC = () => {
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 flex-1">
         <div className="flex justify-between items-center mb-4">
           <WelcomeCard 
-            userName={user?.user_metadata?.name || 'User'} 
+            userName={user?.user_metadata?.name || user?.email || 'User'} 
             walletBalance={walletBalance} 
           />
           <div className="flex space-x-2">
@@ -199,9 +251,13 @@ const Dashboard: React.FC = () => {
         {error && (
           <Alert variant="destructive" className="my-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
+            <AlertTitle>Error Loading Data</AlertTitle>
             <AlertDescription>
-              {error instanceof Error ? error.message : "Failed to load data. Please refresh the page."}
+              {handleSupabaseError(error, 'dashboard') || "Failed to load data. Please refresh the page."}
+              <br />
+              <small className="text-xs opacity-75">
+                Check console for detailed error information.
+              </small>
             </AlertDescription>
           </Alert>
         )}

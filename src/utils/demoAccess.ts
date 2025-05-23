@@ -12,25 +12,36 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
   try {
     console.log(`Granting access to ${userEmail} for courses:`, courseIds);
     
-    // Call the database function to grant access using a more generic approach
-    const { data, error } = await supabase.rpc('create_user_notification', {
-      user_id_param: userEmail, // We'll need to modify this approach
-      title_param: 'Course Access Granted',
-      message_param: 'You have been granted access to courses',
-      type_param: 'success',
-      action_url_param: '/my-courses',
-      action_text_param: 'View Courses'
+    // Call the database function to grant access
+    const { data, error } = await supabase.rpc('grant_one_time_access_to_user', {
+      user_email: userEmail
     });
 
     if (error) {
-      console.error("Error in granting access:", error);
+      console.error("Error in grant_one_time_access_to_user RPC:", error);
       return {
         success: false,
         message: `Failed to grant access: ${error.message}`
       };
     }
 
-    console.log("Grant access response:", data);
+    console.log("RPC response data:", data);
+    
+    // Handle the response from the JSONB function
+    if (data && typeof data === 'object') {
+      if (data.success === true) {
+        return {
+          success: true,
+          message: data.message || `Successfully granted access to courses for user ${userEmail}`,
+          purchases: []
+        };
+      } else {
+        return {
+          success: false,
+          message: data.message || `Failed to grant access to user ${userEmail}`
+        };
+      }
+    }
     
     return {
       success: true,

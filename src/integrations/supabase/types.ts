@@ -723,6 +723,10 @@ export type Database = {
         Args: { admin_email: string }
         Returns: Json
       }
+      grant_one_time_access_to_user: {
+        Args: { user_email: string }
+        Returns: Json
+      }
       is_user_admin: {
         Args: { user_id: string }
         Returns: boolean
