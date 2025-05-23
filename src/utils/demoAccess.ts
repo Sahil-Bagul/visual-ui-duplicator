@@ -35,7 +35,7 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     
     // Handle the response from the JSONB function
     if (data && typeof data === 'object' && !Array.isArray(data)) {
-      const response = data as DatabaseResponse;
+      const response = data as unknown as DatabaseResponse;
       
       if (response.success === true) {
         return {
