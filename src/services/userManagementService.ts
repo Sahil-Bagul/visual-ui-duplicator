@@ -1,3 +1,4 @@
+
 import { supabase } from "@/integrations/supabase/client";
 
 export interface User {
@@ -22,6 +23,16 @@ export interface AdminLog {
 // Get all users (admin only)
 export async function getAllUsers(): Promise<User[]> {
   try {
+    console.log('Fetching all users...');
+    
+    // First check if current user is admin
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_current_user_admin');
+    
+    if (adminError || !isAdmin) {
+      console.error('Not authorized to fetch users:', adminError);
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -32,6 +43,7 @@ export async function getAllUsers(): Promise<User[]> {
       return [];
     }
 
+    console.log('Successfully fetched users:', data?.length || 0);
     return data as User[];
   } catch (error) {
     console.error("Exception fetching users:", error);
@@ -39,21 +51,25 @@ export async function getAllUsers(): Promise<User[]> {
   }
 }
 
-// Get a single user by ID
+// Get a single user by ID using safe function
 export async function getUserById(userId: string): Promise<User | null> {
   try {
     if (!userId) return null;
 
-    // Use RPC function to avoid recursion issues with RLS
+    console.log(`Fetching user ${userId}...`);
+    
     const { data, error } = await supabase
-      .rpc('get_user_by_id_safe', { user_id_param: userId })
-      .single();
+      .from('users')
+      .select('*')
+      .eq('id', userId)
+      .maybeSingle();
 
     if (error) {
       console.error(`Error fetching user ${userId}:`, error);
       return null;
     }
 
+    console.log('Successfully fetched user:', data?.id);
     return data as User;
   } catch (error) {
     console.error(`Exception fetching user ${userId}:`, error);
@@ -111,8 +127,7 @@ export async function grantAdminPrivileges(
       admin_email: email,
     });
 
-    // Handle the response based on the RPC function's format
-    const response = data as any; // Use a type assertion for now
+    const response = data as any;
     
     if (error) {
       console.error("Error granting admin privileges:", error);
@@ -144,8 +159,7 @@ export async function revokeAdminPrivileges(
       admin_email: email,
     });
 
-    // Handle the response based on the RPC function's format  
-    const response = data as any; // Use a type assertion for now
+    const response = data as any;
     
     if (error) {
       console.error("Error revoking admin privileges:", error);
@@ -186,8 +200,7 @@ export async function toggleUserSuspension(
       suspend: suspend,
     });
 
-    // Handle the response based on the RPC function's format
-    const response = data as any; // Use a type assertion for now
+    const response = data as any;
     
     if (error) {
       console.error("Error toggling user suspension:", error);

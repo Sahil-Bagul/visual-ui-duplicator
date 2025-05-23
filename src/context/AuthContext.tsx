@@ -35,19 +35,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if a user is an admin
+  // Check if a user is an admin using the new safe function
   const checkAdminStatus = async (userId: string) => {
     try {
-      // Use the improved function that won't cause recursion
-      const { data, error } = await supabase.rpc('is_user_admin_safe', {
-        user_id_param: userId
-      });
+      console.log('Checking admin status for user:', userId);
+      
+      // Use the new safe admin check function
+      const { data, error } = await supabase.rpc('is_current_user_admin');
       
       if (error) {
         console.error('Error checking admin status:', error);
         return false;
       }
       
+      console.log('Admin status result:', data);
       return data || false;
     } catch (error) {
       console.error('Exception checking admin status:', error);
@@ -62,7 +63,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data: { session }, error } = await supabase.auth.getSession();
       
       if (error) {
-        handleSupabaseError(error, 'refreshing auth');
+        console.error('Error refreshing auth:', error);
         return;
       }
       
@@ -85,11 +86,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   useEffect(() => {
     const initializeAuth = async () => {
       try {
+        console.log('Initializing auth...');
+        
         // Get the current session
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
         if (sessionError) {
-          handleSupabaseError(sessionError, 'getting session');
+          console.error('Session error:', sessionError);
           setIsLoading(false);
           return;
         }
@@ -102,13 +105,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (session?.user) {
           const adminStatus = await checkAdminStatus(session.user.id);
           setIsAdmin(adminStatus);
-          
-          // Initialize app data after auth is confirmed
-          try {
-            await initializeAppData();
-          } catch (initError) {
-            console.error('Error initializing app data:', initError);
-          }
         }
       } catch (error) {
         console.error('Auth initialization error:', error);
@@ -119,15 +115,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Setup auth state change listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      async (_event, newSession) => {
+      async (event, newSession) => {
+        console.log('Auth state changed:', event);
+        
         // Update session and user state
         setSession(newSession);
         setUser(newSession?.user ?? null);
         
         // Check admin status if user exists
         if (newSession?.user) {
-          const adminStatus = await checkAdminStatus(newSession.user.id);
-          setIsAdmin(adminStatus);
+          // Use setTimeout to avoid potential recursion in auth state change
+          setTimeout(async () => {
+            const adminStatus = await checkAdminStatus(newSession.user.id);
+            setIsAdmin(adminStatus);
+          }, 0);
         } else {
           setIsAdmin(false);
         }

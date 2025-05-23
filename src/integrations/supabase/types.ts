@@ -686,6 +686,10 @@ export type Database = {
           lesson_order: number
         }[]
       }
+      get_current_user_id: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_recent_analytics_metrics: {
         Args: { days_back?: number }
         Returns: {
@@ -726,6 +730,10 @@ export type Database = {
       grant_one_time_access_to_user: {
         Args: { user_email: string }
         Returns: Json
+      }
+      is_current_user_admin: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_user_admin: {
         Args: { user_id: string }

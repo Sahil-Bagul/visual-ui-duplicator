@@ -30,57 +30,42 @@ import {
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const AdminPanel: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin: contextIsAdmin, isLoading: authLoading } = useAuth();
   
-  // Fetch admin status from the database with improved error handling
+  // Double-check admin status from database using the new safe function
   const { data: isAdmin, isLoading, error } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
       if (!user?.id) return false;
       
       try {
-        console.log('Checking admin status for user:', user.id);
+        console.log('Double-checking admin status for user:', user.id);
         
-        // First check the users table for is_admin flag
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('is_admin')
-          .eq('id', user.id)
-          .single();
+        // Use the new safe admin check function
+        const { data, error } = await supabase.rpc('is_current_user_admin');
         
-        if (userError) {
-          console.error('Error checking admin status from users table:', userError);
-          // Fall back to RPC if direct table access fails
-          const { data: rpcData, error: rpcError } = await supabase.rpc('is_user_admin', {
-            user_id: user.id
-          });
-          
-          if (rpcError) {
-            console.error('Error checking admin status from RPC:', rpcError);
-            throw rpcError;
-          }
-          
-          console.log('Admin status result from RPC:', rpcData);
-          return rpcData || false;
+        if (error) {
+          console.error('Error checking admin status:', error);
+          throw error;
         }
         
-        console.log('Admin status result from users table:', userData);
-        return userData?.is_admin || false;
+        console.log('Admin status result from database:', data);
+        return data || false;
       } catch (error) {
         console.error('Exception checking admin status:', error);
         throw error;
       }
     },
-    enabled: !!user,
-    staleTime: 60000, // Cache for 1 minute to prevent excessive checks
-    retry: 2, // Retry twice if failed
+    enabled: !!user && !authLoading,
+    staleTime: 60000, // Cache for 1 minute
+    retry: 2,
   });
   
   if (!user) {
     return <Navigate to="/" replace />;
   }
   
-  if (isLoading) {
+  if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center">
@@ -101,6 +86,8 @@ const AdminPanel: React.FC = () => {
             <AlertTitle>Authentication Error</AlertTitle>
             <AlertDescription>
               Failed to verify admin permissions. Please try refreshing the page or contact support.
+              <br />
+              <small className="text-xs opacity-75">Error: {error.message}</small>
             </AlertDescription>
           </Alert>
         </main>
@@ -109,7 +96,10 @@ const AdminPanel: React.FC = () => {
     );
   }
   
-  if (!isAdmin) {
+  // Use the database result, fallback to context if needed
+  const finalIsAdmin = isAdmin ?? contextIsAdmin;
+  
+  if (!finalIsAdmin) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <HeaderWithNotifications />
