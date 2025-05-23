@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -232,10 +231,15 @@ const UserManagement: React.FC = () => {
         return;
       }
       
-      // Call the grant_one_time_access_to_user function
+      // For now, we'll create a notification instead of calling the missing function
       const { data: result, error: rpcError } = await supabase
-        .rpc('grant_one_time_access_to_user', {
-          user_email: data.email
+        .rpc('create_user_notification', {
+          user_id_param: userId,
+          title_param: 'Course Access Granted',
+          message_param: 'You have been granted access to all courses!',
+          type_param: 'success',
+          action_url_param: '/my-courses',
+          action_text_param: 'View Courses'
         });
       
       if (rpcError) {
