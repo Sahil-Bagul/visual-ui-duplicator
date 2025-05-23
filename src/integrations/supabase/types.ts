@@ -592,23 +592,34 @@ export type Database = {
         Args: { target_date: string }
         Returns: undefined
       }
-      bytea_to_text: {
-        Args: { data: string }
-        Returns: string
-      }
       create_course: {
-        Args: {
-          admin_id: string
-          title: string
-          price: number
-          referral_reward: number
-          description: string
-          pdf_url: string
-        }
+        Args:
+          | {
+              admin_id: string
+              course_title: string
+              course_price: number
+              referral_reward: number
+              course_description: string
+              pdf_url: string
+            }
+          | {
+              p_title: string
+              p_price: number
+              p_referral_reward: number
+              p_description: string
+              p_pdf_url: string
+            }
         Returns: string
       }
       create_course_module: {
         Args:
+          | Record<PropertyKey, never>
+          | {
+              admin_id: string
+              course_id: string
+              module_title: string
+              module_order: number
+            }
           | {
               admin_id: string
               course_id: string
@@ -624,27 +635,37 @@ export type Database = {
               description: string
               module_order: number
             }
-        Returns: string
+        Returns: undefined
       }
       create_lesson: {
-        Args: {
-          module_id: string
-          title: string
-          content: string
-          lesson_index: number
-        }
+        Args:
+          | {
+              admin_id: string
+              module_id: string
+              lesson_title: string
+              lesson_content: string
+              lesson_order: number
+            }
+          | {
+              module_id: string
+              title: string
+              video_url: string
+              lesson_order: number
+            }
         Returns: string
       }
       create_user_notification: {
-        Args: {
-          user_id_param: string
-          title_param: string
-          message_param: string
-          type_param: string
-          action_url_param: string
-          action_text_param: string
-        }
-        Returns: string
+        Args:
+          | Record<PropertyKey, never>
+          | {
+              user_id_param: string
+              title_param: string
+              message_param: string
+              type_param: string
+              action_url_param: string
+              action_text_param: string
+            }
+        Returns: undefined
       }
       generate_test_analytics_data: {
         Args: Record<PropertyKey, never>
@@ -702,61 +723,6 @@ export type Database = {
         Args: { admin_email: string }
         Returns: Json
       }
-      grant_one_time_access_to_user: {
-        Args: { user_email: string }
-        Returns: string
-      }
-      http: {
-        Args: { request: Database["public"]["CompositeTypes"]["http_request"] }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_delete: {
-        Args:
-          | { uri: string }
-          | { uri: string; content: string; content_type: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_get: {
-        Args: { uri: string } | { uri: string; data: Json }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_head: {
-        Args: { uri: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_header: {
-        Args: { field: string; value: string }
-        Returns: Database["public"]["CompositeTypes"]["http_header"]
-      }
-      http_list_curlopt: {
-        Args: Record<PropertyKey, never>
-        Returns: {
-          curlopt: string
-          value: string
-        }[]
-      }
-      http_patch: {
-        Args: { uri: string; content: string; content_type: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_post: {
-        Args:
-          | { uri: string; content: string; content_type: string }
-          | { uri: string; data: Json }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_put: {
-        Args: { uri: string; content: string; content_type: string }
-        Returns: Database["public"]["CompositeTypes"]["http_response"]
-      }
-      http_reset_curlopt: {
-        Args: Record<PropertyKey, never>
-        Returns: boolean
-      }
-      http_set_curlopt: {
-        Args: { curlopt: string; value: string }
-        Returns: boolean
-      }
       is_user_admin: {
         Args: { user_id: string }
         Returns: boolean
@@ -807,16 +773,10 @@ export type Database = {
         Args: { subject_param: string; message_param: string }
         Returns: string
       }
-      text_to_bytea: {
-        Args: { data: string }
-        Returns: string
-      }
       toggle_user_suspension: {
-        Args: { admin_id: string; target_user_id: string; suspend: boolean }
-        Returns: string
-      }
-      urlencode: {
-        Args: { data: Json } | { string: string } | { string: string }
+        Args:
+          | { admin_id: string; target_user_id: string; suspend: boolean }
+          | { user_id: number }
         Returns: string
       }
     }
@@ -824,23 +784,7 @@ export type Database = {
       [_ in never]: never
     }
     CompositeTypes: {
-      http_header: {
-        field: string | null
-        value: string | null
-      }
-      http_request: {
-        method: unknown | null
-        uri: string | null
-        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
-        content_type: string | null
-        content: string | null
-      }
-      http_response: {
-        status: number | null
-        content_type: string | null
-        headers: Database["public"]["CompositeTypes"]["http_header"][] | null
-        content: string | null
-      }
+      [_ in never]: never
     }
   }
 }
