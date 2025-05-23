@@ -7,6 +7,12 @@ export interface GrantCourseResult {
   purchases?: any[];
 }
 
+interface DatabaseResponse {
+  success: boolean;
+  message: string;
+  user_id?: string;
+}
+
 // Function to grant course access to a user
 export async function grantCourseAccessToUser(userEmail: string, courseIds: string[]): Promise<GrantCourseResult> {
   try {
@@ -28,17 +34,19 @@ export async function grantCourseAccessToUser(userEmail: string, courseIds: stri
     console.log("RPC response data:", data);
     
     // Handle the response from the JSONB function
-    if (data && typeof data === 'object') {
-      if (data.success === true) {
+    if (data && typeof data === 'object' && !Array.isArray(data)) {
+      const response = data as DatabaseResponse;
+      
+      if (response.success === true) {
         return {
           success: true,
-          message: data.message || `Successfully granted access to courses for user ${userEmail}`,
+          message: response.message || `Successfully granted access to courses for user ${userEmail}`,
           purchases: []
         };
       } else {
         return {
           success: false,
-          message: data.message || `Failed to grant access to user ${userEmail}`
+          message: response.message || `Failed to grant access to user ${userEmail}`
         };
       }
     }
