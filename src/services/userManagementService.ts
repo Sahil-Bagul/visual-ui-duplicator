@@ -25,14 +25,6 @@ export async function getAllUsers(): Promise<User[]> {
   try {
     console.log('Fetching all users...');
     
-    // First check if current user is admin using the new function
-    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
-    
-    if (adminError || !isAdmin) {
-      console.error('Not authorized to fetch users:', adminError);
-      return [];
-    }
-    
     const { data, error } = await supabase
       .from("users")
       .select("*")
@@ -51,7 +43,7 @@ export async function getAllUsers(): Promise<User[]> {
   }
 }
 
-// Get a single user by ID using safe function
+// Get a single user by ID
 export async function getUserById(userId: string): Promise<User | null> {
   try {
     if (!userId) return null;
@@ -118,7 +110,7 @@ export async function updateUserProfile(
   }
 }
 
-// Grant admin privileges to a user - updated to use new system
+// Grant admin privileges to a user
 export async function grantAdminPrivileges(
   email: string
 ): Promise<{ success: boolean; message: string }> {
@@ -127,22 +119,16 @@ export async function grantAdminPrivileges(
       admin_email: email,
     });
 
-    const response = data as any;
-    
     if (error) {
       console.error("Error granting admin privileges:", error);
       return { success: false, message: error.message };
     }
     
-    if (response && typeof response === 'object' && 'success' in response) {
-      if (response.success) {
-        return { success: true, message: response.message || "Admin privileges granted successfully" };
-      } else {
-        return { success: false, message: response.message || "Failed to grant admin privileges" };
-      }
-    }
-    
-    return { success: true, message: "Admin privileges granted successfully" };
+    const response = data as any;
+    return { 
+      success: response?.success || true, 
+      message: response?.message || "Admin privileges granted successfully" 
+    };
   } catch (error) {
     console.error("Exception granting admin privileges:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
@@ -150,7 +136,7 @@ export async function grantAdminPrivileges(
   }
 }
 
-// Revoke admin privileges from a user - updated to use new system
+// Revoke admin privileges from a user
 export async function revokeAdminPrivileges(
   email: string
 ): Promise<{ success: boolean; message: string }> {
@@ -159,68 +145,18 @@ export async function revokeAdminPrivileges(
       admin_email: email,
     });
 
-    const response = data as any;
-    
     if (error) {
       console.error("Error revoking admin privileges:", error);
       return { success: false, message: error.message };
     }
     
-    if (response && typeof response === 'object' && 'success' in response) {
-      if (response.success) {
-        return { success: true, message: response.message || "Admin privileges revoked successfully" };
-      } else {
-        return { success: false, message: response.message || "Failed to revoke admin privileges" };
-      }
-    }
-    
-    return { success: true, message: "Admin privileges revoked successfully" };
-  } catch (error) {
-    console.error("Exception revoking admin privileges:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
-    return { success: false, message };
-  }
-}
-
-// Toggle user suspension status
-export async function toggleUserSuspension(
-  userId: string,
-  suspend: boolean
-): Promise<{ success: boolean; message: string }> {
-  try {
-    // Get the current user's ID to use as admin_id
-    const { data: authData } = await supabase.auth.getUser();
-    if (!authData?.user) {
-      return { success: false, message: "Not authenticated" };
-    }
-
-    const { data, error } = await supabase.rpc("toggle_user_suspension", {
-      admin_id: authData.user.id,
-      target_user_id: userId,
-      suspend: suspend,
-    });
-
     const response = data as any;
-    
-    if (error) {
-      console.error("Error toggling user suspension:", error);
-      return { success: false, message: error.message };
-    }
-    
-    if (response && typeof response === 'object' && 'success' in response) {
-      if (response.success) {
-        return { success: true, message: response.message || `User ${suspend ? "suspended" : "unsuspended"} successfully` };
-      } else {
-        return { success: false, message: response.message || `Failed to ${suspend ? "suspend" : "unsuspend"} user` };
-      }
-    }
-    
     return { 
-      success: true, 
-      message: `User ${suspend ? "suspended" : "unsuspended"} successfully` 
+      success: response?.success || true, 
+      message: response?.message || "Admin privileges revoked successfully" 
     };
   } catch (error) {
-    console.error("Exception toggling user suspension:", error);
+    console.error("Exception revoking admin privileges:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return { success: false, message };
   }

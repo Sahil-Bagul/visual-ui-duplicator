@@ -1,9 +1,8 @@
 
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
-import { supabase, handleSupabaseError } from '@/integrations/supabase/client';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { initializeAppData } from '@/utils/autoSetupCourses';
 
 interface AuthContextType {
   user: User | null;
@@ -35,13 +34,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if a user is an admin using the new safe function
+  // Check if a user is an admin using the safe function
   const checkAdminStatus = async (userId: string) => {
     try {
       console.log('Checking admin status for user:', userId);
       
-      // Use the new safe admin check function that doesn't cause recursion
-      const { data, error } = await supabase.rpc('is_admin_user');
+      const { data, error } = await supabase.rpc('is_admin');
       
       if (error) {
         console.error('Error checking admin status:', error);
