@@ -32,7 +32,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 const AdminPanel: React.FC = () => {
   const { user, isAdmin: contextIsAdmin, isLoading: authLoading } = useAuth();
   
-  // Double-check admin status from database using the new safe function
+  // Double-check admin status from database using the existing is_admin function
   const { data: isAdmin, isLoading, error } = useQuery({
     queryKey: ['isAdmin', user?.id],
     queryFn: async () => {
@@ -41,8 +41,8 @@ const AdminPanel: React.FC = () => {
       try {
         console.log('Double-checking admin status for user:', user.id);
         
-        // Use the new safe admin check function that doesn't cause recursion
-        const { data, error } = await supabase.rpc('is_admin_user');
+        // Use the existing is_admin function
+        const { data, error } = await supabase.rpc('is_admin');
         
         if (error) {
           console.error('Error checking admin status:', error);

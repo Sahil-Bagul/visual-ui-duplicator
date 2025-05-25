@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -32,6 +31,7 @@ interface Purchase {
   purchased_at: string;
   has_used_referral_code: boolean;
   used_referral_code: string | null;
+  amount: number;
   course?: {
     title: string;
     price: number;
@@ -49,7 +49,7 @@ interface Payout {
   status: string;
   created_at: string;
   processed_at: string | null;
-  payout_method_id: string;
+  payout_method_id: string | null;
   razorpay_payout_id: string | null;
   failure_reason: string | null;
   user?: {
@@ -86,7 +86,9 @@ const PaymentsDashboard: React.FC = () => {
       return (data || []).map(item => ({
         ...item,
         course: item.course || { title: 'Unknown Course', price: 0 },
-        user: item.user || { email: 'Unknown User', name: 'Unknown' }
+        user: item.user || { email: 'Unknown User', name: 'Unknown' },
+        has_used_referral_code: item.has_used_referral_code || false,
+        used_referral_code: item.used_referral_code || null
       })) as Purchase[];
     },
   });
@@ -111,7 +113,11 @@ const PaymentsDashboard: React.FC = () => {
       // Handle possible relation errors by providing default values
       return (data || []).map(item => ({
         ...item,
-        user: item.user || { email: 'Unknown User', name: 'Unknown' }
+        user: item.user || { email: 'Unknown User', name: 'Unknown' },
+        processed_at: item.processed_at || null,
+        payout_method_id: item.payout_method_id || null,
+        razorpay_payout_id: item.razorpay_payout_id || null,
+        failure_reason: item.failure_reason || null
       })) as Payout[];
     },
   });

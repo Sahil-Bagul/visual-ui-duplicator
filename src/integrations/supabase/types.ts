@@ -47,6 +47,50 @@ export type Database = {
           },
         ]
       }
+      course_modules: {
+        Row: {
+          content: string | null
+          course_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          is_active: boolean | null
+          order_index: number
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content?: string | null
+          course_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_index: number
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string | null
+          course_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          order_index?: number
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "course_modules_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -82,6 +126,41 @@ export type Database = {
           updated_at?: string | null
         }
         Relationships: []
+      }
+      feedback: {
+        Row: {
+          created_at: string | null
+          id: string
+          message: string
+          rating: number | null
+          subject: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          message: string
+          rating?: number | null
+          subject: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          message?: string
+          rating?: number | null
+          subject?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedback_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       notifications: {
         Row: {
@@ -219,32 +298,89 @@ export type Database = {
           },
         ]
       }
+      payouts: {
+        Row: {
+          amount: number
+          created_at: string | null
+          failure_reason: string | null
+          id: string
+          payout_method_id: string | null
+          processed_at: string | null
+          razorpay_payout_id: string | null
+          status: string | null
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          payout_method_id?: string | null
+          processed_at?: string | null
+          razorpay_payout_id?: string | null
+          status?: string | null
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string | null
+          failure_reason?: string | null
+          id?: string
+          payout_method_id?: string | null
+          processed_at?: string | null
+          razorpay_payout_id?: string | null
+          status?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payouts_payout_method_id_fkey"
+            columns: ["payout_method_id"]
+            isOneToOne: false
+            referencedRelation: "payout_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payouts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           amount: number
           course_id: string
+          has_used_referral_code: boolean | null
           id: string
           payment_id: string | null
           payment_status: string | null
           purchased_at: string | null
+          used_referral_code: string | null
           user_id: string
         }
         Insert: {
           amount: number
           course_id: string
+          has_used_referral_code?: boolean | null
           id?: string
           payment_id?: string | null
           payment_status?: string | null
           purchased_at?: string | null
+          used_referral_code?: string | null
           user_id: string
         }
         Update: {
           amount?: number
           course_id?: string
+          has_used_referral_code?: boolean | null
           id?: string
           payment_id?: string | null
           payment_status?: string | null
           purchased_at?: string | null
+          used_referral_code?: string | null
           user_id?: string
         }
         Relationships: [
@@ -540,8 +676,16 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: boolean
       }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
+      }
       revoke_admin_privileges: {
         Args: { admin_email: string }
+        Returns: Json
+      }
+      send_telegram_test_message: {
+        Args: Record<PropertyKey, never>
         Returns: Json
       }
     }

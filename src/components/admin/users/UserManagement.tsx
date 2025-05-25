@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -63,7 +64,7 @@ const UserManagement: React.FC = () => {
       console.log("Starting to fetch users data...");
       
       // First check if current user is admin using the new function
-      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
       
       if (adminError || !isAdmin) {
         console.error('Not authorized to fetch users:', adminError);
@@ -110,20 +111,21 @@ const UserManagement: React.FC = () => {
               .select('*', { count: 'exact', head: true })
               .eq('user_id', user.id);
             
-            // Get referral stats
-            const { data: referralData } = await supabase
+            // Get referral stats - count from referrals table and calculate earnings
+            const { data: referralData, count: referralCount } = await supabase
               .from('referrals')
-              .select('successful_referrals, total_earned')
+              .select('commission_amount', { count: 'exact' })
               .eq('user_id', user.id)
-              .order('total_earned', { ascending: false })
-              .limit(1);
+              .eq('status', 'completed');
+              
+            const totalEarned = referralData?.reduce((sum, ref) => sum + (ref.commission_amount || 0), 0) || 0;
               
             return {
               ...user,
               last_login: activityData?.[0]?.created_at,
               courses_purchased: purchaseCount || 0,
-              successful_referrals: referralData?.[0]?.successful_referrals || 0,
-              total_earned: referralData?.[0]?.total_earned || 0
+              successful_referrals: referralCount || 0,
+              total_earned: totalEarned
             };
           } catch (userError) {
             console.error(`Error processing user ${user.id}:`, userError);

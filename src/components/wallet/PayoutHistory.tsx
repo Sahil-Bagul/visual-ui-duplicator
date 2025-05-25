@@ -41,7 +41,7 @@ const PayoutHistory: React.FC = () => {
             payout_method:payout_methods(
               method_type,
               upi_id,
-              account_number
+              bank_account_number
             )
           `)
           .eq('user_id', user.id)
@@ -49,8 +49,17 @@ const PayoutHistory: React.FC = () => {
           
         if (error) throw error;
         
-        // Type assertion to ensure the data matches our Payout interface
-        setPayouts(data as unknown as Payout[]);
+        // Transform the data to match our interface
+        const transformedPayouts = (data || []).map(item => ({
+          ...item,
+          payout_method: {
+            method_type: item.payout_method?.method_type || 'UPI',
+            upi_id: item.payout_method?.upi_id || null,
+            account_number: item.payout_method?.bank_account_number || null
+          }
+        }));
+        
+        setPayouts(transformedPayouts as unknown as Payout[]);
       } catch (error) {
         console.error('Error fetching payouts:', error);
       } finally {
