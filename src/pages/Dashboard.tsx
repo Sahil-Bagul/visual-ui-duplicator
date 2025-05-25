@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -98,6 +99,14 @@ const Dashboard: React.FC = () => {
     fetchData();
   }, [user]);
 
+  const handleCourseClick = (courseId: string, isPurchased: boolean) => {
+    if (isPurchased) {
+      navigate(`/course/${courseId}`);
+    } else {
+      navigate(`/payment/${courseId}`);
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
@@ -125,11 +134,11 @@ const Dashboard: React.FC = () => {
               {courses.map((course) => (
                 <CourseCard
                   key={course.id}
-                  courseId={course.id}
                   title={course.title}
-                  description={course.description}
-                  thumbnailUrl={course.thumbnail_url}
+                  description={course.description || ''}
                   price={course.price}
+                  type="PDF"
+                  onClick={() => handleCourseClick(course.id, course.isPurchased)}
                   isPurchased={course.isPurchased}
                 />
               ))}

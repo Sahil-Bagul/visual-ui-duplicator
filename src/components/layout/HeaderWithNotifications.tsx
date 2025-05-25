@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Bell, Menu, X } from 'lucide-react';
@@ -35,11 +36,11 @@ const HeaderWithNotifications: React.FC = () => {
       if (!user) return;
       
       try {
-        const { data, error, count } = await supabase
+        const { count, error } = await supabase
           .from('notifications')
-          .select('*', { count: 'exact' })
+          .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id)
-          .eq('read', false);
+          .eq('is_read', false);
           
         if (error) {
           console.error('Error fetching notifications:', error);

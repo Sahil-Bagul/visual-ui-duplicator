@@ -29,11 +29,24 @@ export async function createSupportTicket(
   try {
     console.log(`Creating support ticket: ${subject}`);
     
-    // Call the database function to submit a new ticket
-    const { data, error } = await supabase.rpc('submit_support_ticket', {
-      subject_param: subject,
-      message_param: message
-    });
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      return { 
+        success: false, 
+        error: "Authentication error: " + (authError?.message || "Not authenticated") 
+      };
+    }
+    
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .insert({
+        user_id: authData.user.id,
+        subject: subject,
+        message: message,
+        status: 'open'
+      })
+      .select('id')
+      .single();
     
     if (error) {
       console.error('Error submitting support ticket:', error);
@@ -45,7 +58,7 @@ export async function createSupportTicket(
     
     return { 
       success: true, 
-      ticketId: data as string 
+      ticketId: data.id 
     };
   } catch (error) {
     console.error('Exception submitting support ticket:', error);
@@ -127,11 +140,14 @@ export async function respondToSupportTicket(
   try {
     console.log(`Responding to ticket ${ticketId} with status: ${status}`);
     
-    const { error } = await supabase.rpc('respond_to_support_ticket', {
-      ticket_id_param: ticketId,
-      status_param: status,
-      admin_response_param: adminResponse
-    });
+    const { error } = await supabase
+      .from('support_tickets')
+      .update({ 
+        status: status,
+        admin_response: adminResponse,
+        updated_at: new Date().toISOString()
+      })
+      .eq('id', ticketId);
     
     if (error) {
       console.error('Error responding to support ticket:', error);

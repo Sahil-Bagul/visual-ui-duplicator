@@ -79,7 +79,7 @@ export const getUnreadNotificationCount = async (): Promise<number> => {
 // Mark a notification as read
 export const markNotificationAsRead = async (notificationId: string): Promise<boolean> => {
   try {
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('notifications')
       .update({ is_read: true })
       .eq('id', notificationId);
@@ -109,7 +109,8 @@ export const markAllNotificationsAsRead = async (): Promise<number> => {
       .from('notifications')
       .update({ is_read: true })
       .eq('user_id', authData.user.id)
-      .eq('is_read', false);
+      .eq('is_read', false)
+      .select();
 
     if (error) {
       console.error("Error marking all notifications as read:", error);
@@ -204,7 +205,7 @@ export const createNotificationForAll = async (
       is_read: false
     }));
 
-    const { data, error } = await supabase
+    const { error } = await supabase
       .from('notifications')
       .insert(notifications);
 

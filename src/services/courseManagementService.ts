@@ -11,7 +11,7 @@ export interface Course {
   price: number;
   referral_reward: number;
   pdf_url: string | null;
-  is_published: boolean;
+  is_active: boolean;
 }
 
 export interface Module {
@@ -47,7 +47,16 @@ export async function getAllCourses(): Promise<Course[]> {
     }
 
     console.log(`Retrieved ${data?.length || 0} courses`);
-    return data as Course[];
+    // Transform the data to match our Course interface
+    return (data || []).map(course => ({
+      id: course.id,
+      title: course.title,
+      description: course.description || '',
+      price: course.price,
+      referral_reward: course.referral_reward,
+      pdf_url: course.pdf_url,
+      is_active: course.is_active || false
+    })) as Course[];
   } catch (error) {
     console.error('Exception fetching courses:', error);
     toast.error('Failed to load courses');
@@ -72,7 +81,16 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     }
 
     console.log('Retrieved course:', data);
-    return data as Course;
+    // Transform the data to match our Course interface
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description || '',
+      price: data.price,
+      referral_reward: data.referral_reward,
+      pdf_url: data.pdf_url,
+      is_active: data.is_active || false
+    } as Course;
   } catch (error) {
     console.error('Exception fetching course:', error);
     toast.error('Failed to load course details');
@@ -98,12 +116,12 @@ export async function createCourse(course: Omit<Course, 'id'>): Promise<{ succes
     console.log('Created course:', data);
 
     // Log the content management operation
-    await logContentManagement(
-      'create',
-      'course',
-      data.id,
-      { title: course.title }
-    );
+    await logContentManagement({
+      resource_type: 'course',
+      operation_type: 'create',
+      resource_id: data.id,
+      details: { title: course.title }
+    });
 
     return { success: true, courseId: data.id };
   } catch (error) {
@@ -129,12 +147,12 @@ export async function updateCourse(courseId: string, updates: Partial<Course>): 
     console.log(`Course ${courseId} updated successfully`);
 
     // Log the content management operation
-    await logContentManagement(
-      'update',
-      'course',
-      courseId,
-      { updates }
-    );
+    await logContentManagement({
+      resource_type: 'course',
+      operation_type: 'update',
+      resource_id: courseId,
+      details: { updates }
+    });
 
     return { success: true };
   } catch (error) {
@@ -160,12 +178,12 @@ export async function deleteCourse(courseId: string): Promise<{ success: boolean
     console.log(`Course ${courseId} deleted successfully`);
 
     // Log the content management operation
-    await logContentManagement(
-      'delete',
-      'course',
-      courseId,
-      {}
-    );
+    await logContentManagement({
+      resource_type: 'course',
+      operation_type: 'delete',
+      resource_id: courseId,
+      details: {}
+    });
 
     return { success: true };
   } catch (error) {
@@ -231,12 +249,12 @@ export async function createModule(module: Omit<Module, 'id'>): Promise<{ succes
     console.log('Created module:', data);
 
     // Log the content management operation
-    await logContentManagement(
-      'create',
-      'module',
-      data.id,
-      { title: module.title, course_id: module.course_id }
-    );
+    await logContentManagement({
+      resource_type: 'module',
+      operation_type: 'create',
+      resource_id: data.id,
+      details: { title: module.title, course_id: module.course_id }
+    });
 
     toast.success('Module created successfully');
     return { success: true, moduleId: data.id };
@@ -263,12 +281,12 @@ export async function updateModule(moduleId: string, updates: Partial<Module>): 
     console.log(`Module ${moduleId} updated successfully`);
 
     // Log the content management operation
-    await logContentManagement(
-      'update',
-      'module',
-      moduleId,
-      { updates }
-    );
+    await logContentManagement({
+      resource_type: 'module',
+      operation_type: 'update',
+      resource_id: moduleId,
+      details: { updates }
+    });
 
     toast.success('Module updated successfully');
     return { success: true };
@@ -295,12 +313,12 @@ export async function deleteModule(moduleId: string): Promise<{ success: boolean
     console.log(`Module ${moduleId} deleted successfully`);
 
     // Log the content management operation
-    await logContentManagement(
-      'delete',
-      'module',
-      moduleId,
-      {}
-    );
+    await logContentManagement({
+      resource_type: 'module',
+      operation_type: 'delete',
+      resource_id: moduleId,
+      details: {}
+    });
 
     toast.success('Module deleted successfully');
     return { success: true };
@@ -367,12 +385,12 @@ export async function createLesson(lesson: Omit<Lesson, 'id'>): Promise<{ succes
     console.log('Created lesson:', data);
 
     // Log the content management operation
-    await logContentManagement(
-      'create',
-      'lesson',
-      data.id,
-      { title: lesson.title, module_id: lesson.module_id }
-    );
+    await logContentManagement({
+      resource_type: 'lesson',
+      operation_type: 'create',
+      resource_id: data.id,
+      details: { title: lesson.title, module_id: lesson.module_id }
+    });
 
     toast.success('Lesson created successfully');
     return { success: true, lessonId: data.id };
@@ -399,12 +417,12 @@ export async function updateLesson(lessonId: string, updates: Partial<Lesson>): 
     console.log(`Lesson ${lessonId} updated successfully`);
 
     // Log the content management operation
-    await logContentManagement(
-      'update',
-      'lesson',
-      lessonId,
-      { updates }
-    );
+    await logContentManagement({
+      resource_type: 'lesson',
+      operation_type: 'update',
+      resource_id: lessonId,
+      details: { updates }
+    });
 
     toast.success('Lesson updated successfully');
     return { success: true };
@@ -431,12 +449,12 @@ export async function deleteLesson(lessonId: string): Promise<{ success: boolean
     console.log(`Lesson ${lessonId} deleted successfully`);
 
     // Log the content management operation
-    await logContentManagement(
-      'delete',
-      'lesson',
-      lessonId,
-      {}
-    );
+    await logContentManagement({
+      resource_type: 'lesson',
+      operation_type: 'delete',
+      resource_id: lessonId,
+      details: {}
+    });
 
     toast.success('Lesson deleted successfully');
     return { success: true };
@@ -450,18 +468,64 @@ export async function deleteLesson(lessonId: string): Promise<{ success: boolean
 export async function getFullCourseStructure(courseId: string): Promise<CourseStructure[]> {
   try {
     console.log(`Fetching full course structure for course: ${courseId}`);
-    const { data, error } = await supabase.rpc('get_course_structure', {
-      course_id_param: courseId
-    });
+    
+    // Since we don't have the RPC function, let's fetch manually
+    const { data: modules, error: modulesError } = await supabase
+      .from('course_modules')
+      .select(`
+        *,
+        lessons(*)
+      `)
+      .eq('course_id', courseId)
+      .order('module_order');
 
-    if (error) {
-      console.error('Error fetching course structure:', error);
+    if (modulesError) {
+      console.error('Error fetching course structure:', modulesError);
       toast.error('Failed to load course structure');
       return [];
     }
 
     console.log(`Retrieved course structure for course ${courseId}`);
-    return data as CourseStructure[];
+    
+    // Transform to CourseStructure format
+    const courseStructure: CourseStructure[] = [];
+    modules?.forEach(module => {
+      // Add module entry
+      courseStructure.push({
+        course_id: courseId,
+        course_title: '',
+        course_description: '',
+        module_id: module.id,
+        module_title: module.title,
+        module_description: module.description,
+        module_order: module.module_order,
+        lesson_id: null,
+        lesson_title: null,
+        lesson_content: null,
+        lesson_order: null
+      });
+      
+      // Add lesson entries
+      if (module.lessons) {
+        module.lessons.forEach((lesson: any) => {
+          courseStructure.push({
+            course_id: courseId,
+            course_title: '',
+            course_description: '',
+            module_id: module.id,
+            module_title: module.title,
+            module_description: module.description,
+            module_order: module.module_order,
+            lesson_id: lesson.id,
+            lesson_title: lesson.title,
+            lesson_content: lesson.content,
+            lesson_order: lesson.lesson_order
+          });
+        });
+      }
+    });
+    
+    return courseStructure;
   } catch (error) {
     console.error('Exception fetching course structure:', error);
     toast.error('Failed to load course structure');
@@ -469,66 +533,11 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
   }
 }
 
-// Publish a course (make it visible to users)
+// These functions are simplified since we don't have is_published in the database
 export async function publishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    console.log(`Publishing course: ${courseId}`);
-    // Update the is_published field to true
-    const { error } = await supabase
-      .from('courses')
-      .update({ is_published: true })
-      .eq('id', courseId);
-      
-    if (error) {
-      console.error('Error publishing course:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`Course ${courseId} published successfully`);
-
-    // Log the content management operation
-    await logContentManagement(
-      'publish',
-      'course',
-      courseId,
-      { action: 'publish' }
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.error('Exception publishing course:', error);
-    return { success: false, error: 'Failed to publish course' };
-  }
+  return updateCourse(courseId, { is_active: true });
 }
 
-// Unpublish a course (hide it from users)
 export async function unpublishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
-  try {
-    console.log(`Unpublishing course: ${courseId}`);
-    // Update the is_published field to false
-    const { error } = await supabase
-      .from('courses')
-      .update({ is_published: false })
-      .eq('id', courseId);
-      
-    if (error) {
-      console.error('Error unpublishing course:', error);
-      return { success: false, error: error.message };
-    }
-
-    console.log(`Course ${courseId} unpublished successfully`);
-
-    // Log the content management operation
-    await logContentManagement(
-      'unpublish',
-      'course',
-      courseId,
-      { action: 'unpublish' }
-    );
-
-    return { success: true };
-  } catch (error) {
-    console.error('Exception unpublishing course:', error);
-    return { success: false, error: 'Failed to unpublish course' };
-  }
+  return updateCourse(courseId, { is_active: false });
 }
