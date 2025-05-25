@@ -25,8 +25,8 @@ export async function getAllUsers(): Promise<User[]> {
   try {
     console.log('Fetching all users...');
     
-    // First check if current user is admin
-    const { data: isAdmin, error: adminError } = await supabase.rpc('is_current_user_admin');
+    // First check if current user is admin using the new function
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
     
     if (adminError || !isAdmin) {
       console.error('Not authorized to fetch users:', adminError);
@@ -118,7 +118,7 @@ export async function updateUserProfile(
   }
 }
 
-// Grant admin privileges to a user
+// Grant admin privileges to a user - updated to use new system
 export async function grantAdminPrivileges(
   email: string
 ): Promise<{ success: boolean; message: string }> {
@@ -150,7 +150,7 @@ export async function grantAdminPrivileges(
   }
 }
 
-// Revoke admin privileges from a user
+// Revoke admin privileges from a user - updated to use new system
 export async function revokeAdminPrivileges(
   email: string
 ): Promise<{ success: boolean; message: string }> {

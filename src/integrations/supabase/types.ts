@@ -9,6 +9,24 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      admin_users: {
+        Row: {
+          granted_at: string | null
+          granted_by: string | null
+          user_id: string
+        }
+        Insert: {
+          granted_at?: string | null
+          granted_by?: string | null
+          user_id: string
+        }
+        Update: {
+          granted_at?: string | null
+          granted_by?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       analytics_daily_metrics: {
         Row: {
           active_users: number | null
@@ -704,6 +722,10 @@ export type Database = {
           course_completion_rate: number
         }[]
       }
+      get_user_admin_status: {
+        Args: { check_user_id: string }
+        Returns: boolean
+      }
       get_user_by_id_safe: {
         Args: { user_id_param: string }
         Returns: {
@@ -730,6 +752,10 @@ export type Database = {
       grant_one_time_access_to_user: {
         Args: { user_email: string }
         Returns: Json
+      }
+      is_admin_user: {
+        Args: Record<PropertyKey, never>
+        Returns: boolean
       }
       is_current_user_admin: {
         Args: Record<PropertyKey, never>

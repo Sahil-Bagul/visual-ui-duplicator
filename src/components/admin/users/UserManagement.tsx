@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import {
@@ -63,7 +62,16 @@ const UserManagement: React.FC = () => {
       
       console.log("Starting to fetch users data...");
       
-      // First get basic user information
+      // First check if current user is admin using the new function
+      const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+      
+      if (adminError || !isAdmin) {
+        console.error('Not authorized to fetch users:', adminError);
+        toast.error('You are not authorized to view users');
+        return;
+      }
+      
+      // Get basic user information
       const { data, error } = await supabase
         .from('users')
         .select('*')
@@ -157,23 +165,10 @@ const UserManagement: React.FC = () => {
     setConfirmDialog({ ...confirmDialog, processing: true });
     
     try {
-      // Get the email for the selected user
-      const { data, error } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', userId)
-        .single();
-      
-      if (error || !data) {
-        console.error('Error getting user email:', error);
-        toast.error('Failed to find user email');
-        return;
-      }
-      
-      // Call the RPC function to grant admin privileges
+      // Call the RPC function to grant admin privileges using the new system
       const { data: result, error: rpcError } = await supabase
         .rpc('grant_admin_privileges', {
-          admin_email: data.email
+          admin_email: selectedUser.email
         });
       
       if (rpcError) {
@@ -183,7 +178,7 @@ const UserManagement: React.FC = () => {
       }
       
       console.log('Admin privileges granted:', result);
-      toast.success(`Admin privileges granted to ${data.email}`);
+      toast.success(`Admin privileges granted to ${selectedUser.email}`);
       
       // Refresh the user list
       loadUsers();
@@ -202,23 +197,10 @@ const UserManagement: React.FC = () => {
     setConfirmDialog({ ...confirmDialog, processing: true });
     
     try {
-      // Get the email for the selected user
-      const { data, error } = await supabase
-        .from('users')
-        .select('email')
-        .eq('id', userId)
-        .single();
-      
-      if (error || !data) {
-        console.error('Error getting user email:', error);
-        toast.error('Failed to find user email');
-        return;
-      }
-      
-      // Call the RPC function to revoke admin privileges
+      // Call the RPC function to revoke admin privileges using the new system
       const { data: result, error: rpcError } = await supabase
         .rpc('revoke_admin_privileges', {
-          admin_email: data.email
+          admin_email: selectedUser.email
         });
       
       if (rpcError) {
@@ -228,7 +210,7 @@ const UserManagement: React.FC = () => {
       }
       
       console.log('Admin privileges revoked:', result);
-      toast.success(`Admin privileges revoked from ${data.email}`);
+      toast.success(`Admin privileges revoked from ${selectedUser.email}`);
       
       // Refresh the user list
       loadUsers();

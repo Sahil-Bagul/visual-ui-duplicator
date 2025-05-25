@@ -40,8 +40,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Checking admin status for user:', userId);
       
-      // Use the new safe admin check function
-      const { data, error } = await supabase.rpc('is_current_user_admin');
+      // Use the new safe admin check function that doesn't cause recursion
+      const { data, error } = await supabase.rpc('is_admin_user');
       
       if (error) {
         console.error('Error checking admin status:', error);
