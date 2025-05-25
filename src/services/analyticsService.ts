@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface AnalyticsMetric {
@@ -10,6 +11,11 @@ export interface AnalyticsMetric {
   revenue: number;
   support_tickets: number;
   user_engagement: number;
+  total_revenue: number;
+  referral_count: number;
+  lesson_completions: number;
+  course_completion_rate: number;
+  referral_commissions: number;
 }
 
 export interface DashboardStats {
@@ -17,7 +23,38 @@ export interface DashboardStats {
   totalCourses: number;
   totalRevenue: number;
   totalReferrals: number;
+  totalPurchases: number;
+  activeUsers?: {
+    current: number;
+    percentChange: number;
+  };
+  newSignups?: {
+    current: number;
+    percentChange: number;
+  };
+  revenue?: {
+    current: number;
+    percentChange: number;
+  };
+  referrals?: {
+    current: number;
+    percentChange: number;
+  };
 }
+
+export interface DailyMetric {
+  date: string;
+  value: number;
+}
+
+export type AnalyticsTimeframe = '7d' | '30d' | '90d' | 'all';
+
+export const TIMEFRAMES = [
+  { label: '7 Days', value: '7d' },
+  { label: '30 Days', value: '30d' },
+  { label: '90 Days', value: '90d' },
+  { label: 'All Time', value: 'all' }
+];
 
 const getDashboardStats = async (): Promise<DashboardStats> => {
   try {
@@ -44,11 +81,17 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
       .from('referrals')
       .select('*', { count: 'exact', head: true });
 
+    // Get total purchases
+    const { count: totalPurchases } = await supabase
+      .from('purchases')
+      .select('*', { count: 'exact', head: true });
+
     return {
       totalUsers: totalUsers || 0,
       totalCourses: totalCourses || 0,
       totalRevenue,
-      totalReferrals: totalReferrals || 0
+      totalReferrals: totalReferrals || 0,
+      totalPurchases: totalPurchases || 0
     };
   } catch (error) {
     console.error('Error fetching dashboard stats:', error);
@@ -56,20 +99,19 @@ const getDashboardStats = async (): Promise<DashboardStats> => {
       totalUsers: 0,
       totalCourses: 0,
       totalRevenue: 0,
-      totalReferrals: 0
+      totalReferrals: 0,
+      totalPurchases: 0
     };
   }
 };
 
-const getAnalyticsMetrics = async (period: string = '30d'): Promise<AnalyticsMetric[]> => {
+const fetchAnalyticsData = async (days: number = 30): Promise<AnalyticsMetric[]> => {
   try {
-    // For now, return mock data since we don't have the analytics functions
-    // In production, this would call actual analytics functions
-    console.log('Fetching analytics for period:', period);
+    console.log('Fetching analytics for period:', days);
     
-    // Generate mock analytics data for the last 7 days
+    // Generate mock analytics data for the specified number of days
     const mockData: AnalyticsMetric[] = [];
-    for (let i = 6; i >= 0; i--) {
+    for (let i = days - 1; i >= 0; i--) {
       const date = new Date();
       date.setDate(date.getDate() - i);
       
@@ -82,7 +124,12 @@ const getAnalyticsMetrics = async (period: string = '30d'): Promise<AnalyticsMet
         successful_payments: Math.floor(Math.random() * 15) + 2,
         revenue: Math.floor(Math.random() * 10000) + 1000,
         support_tickets: Math.floor(Math.random() * 5) + 1,
-        user_engagement: Math.floor(Math.random() * 80) + 20
+        user_engagement: Math.floor(Math.random() * 80) + 20,
+        total_revenue: Math.floor(Math.random() * 10000) + 1000,
+        referral_count: Math.floor(Math.random() * 25) + 5,
+        lesson_completions: Math.floor(Math.random() * 30) + 5,
+        course_completion_rate: Math.floor(Math.random() * 40) + 60,
+        referral_commissions: Math.floor(Math.random() * 2500) + 250
       });
     }
     
@@ -91,6 +138,27 @@ const getAnalyticsMetrics = async (period: string = '30d'): Promise<AnalyticsMet
     console.error('Error fetching analytics metrics:', error);
     return [];
   }
+};
+
+const fetchDashboardSummary = async (): Promise<DashboardStats> => {
+  return getDashboardStats();
+};
+
+const calculateMetricSummary = (data: AnalyticsMetric[], key: keyof AnalyticsMetric, currentPeriod: number, previousPeriod: number) => {
+  if (!data || data.length === 0) return { current: 0, percentChange: 0 };
+  
+  const currentData = data.slice(-currentPeriod);
+  const previousData = data.slice(-(currentPeriod + previousPeriod), -currentPeriod);
+  
+  const currentSum = currentData.reduce((sum, item) => sum + Number(item[key]), 0);
+  const previousSum = previousData.reduce((sum, item) => sum + Number(item[key]), 0);
+  
+  const percentChange = previousSum > 0 ? ((currentSum - previousSum) / previousSum) * 100 : 0;
+  
+  return {
+    current: currentSum,
+    percentChange: Math.round(percentChange * 100) / 100
+  };
 };
 
 const getRecentActivity = async (limit: number = 10) => {
@@ -150,7 +218,9 @@ const logUserLogin = async (userId: string) => {
 
 export {
   getDashboardStats,
-  getAnalyticsMetrics,
+  fetchAnalyticsData,
+  fetchDashboardSummary,
+  calculateMetricSummary,
   getRecentActivity,
   generateTestData,
   logUserLogin
