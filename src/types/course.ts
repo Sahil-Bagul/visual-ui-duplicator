@@ -46,9 +46,9 @@ export interface CourseStructure {
   module_title: string;
   module_description: string | null;
   module_order: number;
-  lesson_id: string;
-  lesson_title: string;
-  lesson_order: number;
+  lesson_id: string | null;
+  lesson_title: string | null;
+  lesson_order: number | null;
 }
 
 export interface LessonProgress {

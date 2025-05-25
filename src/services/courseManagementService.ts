@@ -1,4 +1,3 @@
-
 import { supabase } from "@/integrations/supabase/client";
 import { CourseStructure } from "@/types/course";
 import { toast } from "sonner";
@@ -47,7 +46,6 @@ export async function getAllCourses(): Promise<Course[]> {
     }
 
     console.log(`Retrieved ${data?.length || 0} courses`);
-    // Transform the data to match our Course interface
     return (data || []).map(course => ({
       id: course.id,
       title: course.title,
@@ -81,7 +79,6 @@ export async function getCourseById(courseId: string): Promise<Course | null> {
     }
 
     console.log('Retrieved course:', data);
-    // Transform the data to match our Course interface
     return {
       id: data.id,
       title: data.title,
@@ -501,7 +498,6 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
         module_order: module.module_order,
         lesson_id: null,
         lesson_title: null,
-        lesson_content: null,
         lesson_order: null
       });
       
@@ -518,7 +514,6 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
             module_order: module.module_order,
             lesson_id: lesson.id,
             lesson_title: lesson.title,
-            lesson_content: lesson.content,
             lesson_order: lesson.lesson_order
           });
         });
@@ -533,7 +528,7 @@ export async function getFullCourseStructure(courseId: string): Promise<CourseSt
   }
 }
 
-// These functions are simplified since we don't have is_published in the database
+// These functions are simplified since we use is_active in the database
 export async function publishCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   return updateCourse(courseId, { is_active: true });
 }

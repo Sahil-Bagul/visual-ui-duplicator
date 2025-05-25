@@ -203,13 +203,13 @@ const CourseListView: React.FC<CourseListViewProps> = ({ onCreateCourse, onEditC
                 <TableCell>{course.price}</TableCell>
                 <TableCell>{course.referral_reward}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className={course.is_published ? "bg-green-100" : "bg-gray-100"}>
-                    {course.is_published ? "Published" : "Hidden"}
+                  <Badge variant="outline" className={course.is_active ? "bg-green-100" : "bg-gray-100"}>
+                    {course.is_active ? "Published" : "Hidden"}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-right">
                   <div className="flex justify-end gap-2" onClick={(e) => e.stopPropagation()}>
-                    {!course.is_published ? (
+                    {!course.is_active ? (
                       <Button
                         variant="ghost"
                         size="icon"

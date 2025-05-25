@@ -70,8 +70,8 @@ const CourseDetailView: React.FC<CourseDetailViewProps> = ({ courseId, onBack })
         <CardHeader className="pb-2">
           <div className="flex items-center justify-between">
             <CardTitle className="text-xl">{course.title}</CardTitle>
-            <Badge variant="outline" className={course.is_published ? "bg-green-100" : "bg-gray-100"}>
-              {course.is_published ? "Published" : "Hidden"}
+            <Badge variant="outline" className={course.is_active ? "bg-green-100" : "bg-gray-100"}>
+              {course.is_active ? "Published" : "Hidden"}
             </Badge>
           </div>
         </CardHeader>

@@ -34,7 +34,7 @@ const courseFormSchema = z.object({
   price: z.coerce.number().min(0, "Price must be a positive number"),
   referral_reward: z.coerce.number().min(0, "Referral reward must be a positive number"),
   pdf_url: z.string().url("PDF URL must be a valid URL").optional().or(z.literal("")),
-  is_published: z.boolean().default(true),
+  is_active: z.boolean().default(true),
 });
 
 type CourseFormValues = z.infer<typeof courseFormSchema>;
@@ -66,7 +66,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
       price: course?.price || 0,
       referral_reward: course?.referral_reward || 0,
       pdf_url: course?.pdf_url || "",
-      is_published: course?.is_published ?? true,
+      is_active: course?.is_active ?? true,
     },
   });
   
@@ -116,7 +116,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
             price: data.price,
             referral_reward: data.referral_reward,
             pdf_url: data.pdf_url || null,
-            is_published: data.is_published,
+            is_active: data.is_active,
           }
         });
       } else {
@@ -126,7 +126,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
           price: data.price,
           referral_reward: data.referral_reward,
           pdf_url: data.pdf_url || null,
-          is_published: data.is_published,
+          is_active: data.is_active,
         });
       }
     } catch (error) {
@@ -231,7 +231,7 @@ const CourseForm: React.FC<CourseFormProps> = ({
 
         <FormField
           control={form.control}
-          name="is_published"
+          name="is_active"
           render={({ field }) => (
             <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
               <div className="space-y-0.5">
