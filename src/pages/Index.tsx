@@ -1,114 +1,60 @@
 
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import AuthForm from '@/components/auth/AuthForm';
-import Header from '@/components/layout/Header';
-import WelcomeCard from '@/components/dashboard/WelcomeCard';
-import CourseCard from '@/components/courses/CourseCard';
-import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
 
 const Index: React.FC = () => {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const { user } = useAuth();
   const navigate = useNavigate();
-  const [userEmail, setUserEmail] = useState('movieskatta7641@gmail.com'); // For demo purposes
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Check if user is admin
-  const { data: isAdmin } = useQuery({
-    queryKey: ['isAdmin', userEmail],
-    queryFn: async () => {
-      // For demo purposes, we're using the is_user_admin RPC function
-      // This won't actually run in the demo without a real user session
-      if (!userEmail) return false;
-      
+  useEffect(() => {
+    const checkAuthentication = async () => {
       try {
-        const { data: userId } = await supabase
-          .from('users')
-          .select('id')
-          .eq('email', userEmail)
-          .single();
-          
-        if (!userId) return false;
-        
-        const { data } = await supabase.rpc('is_user_admin', {
-          user_id: userId.id
-        });
-        
-        return data || false;
+        if (!user) {
+          // Not authenticated, redirect to auth page
+          navigate('/auth');
+          return;
+        }
+
+        // Check if user is admin using the correct function name
+        const { data: isAdminData, error: adminError } = await supabase
+          .rpc('is_admin_user');
+
+        if (adminError) {
+          console.error('Error checking admin status:', adminError);
+          // Continue as regular user if admin check fails
+          navigate('/dashboard');
+          return;
+        }
+
+        // Redirect based on user type
+        if (isAdminData) {
+          navigate('/admin');
+        } else {
+          navigate('/dashboard');
+        }
       } catch (error) {
-        console.error('Error checking admin status:', error);
-        return false;
+        console.error('Error in authentication check:', error);
+        navigate('/auth');
+      } finally {
+        setIsLoading(false);
       }
-    },
-    enabled: !!userEmail
-  });
+    };
 
-  // Toggle between login and dashboard views for demo purposes
-  const toggleView = () => {
-    setIsLoggedIn(!isLoggedIn);
-  };
+    checkAuthentication();
+  }, [user, navigate]);
 
-  const handleCourseClick = (courseId: string) => {
-    navigate(`/course/${courseId}`);
-  };
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      </div>
+    );
+  }
 
-  return <>
-      <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet" />
-      
-      {!isLoggedIn ?
-    // Login/Signup View
-    <div className="flex justify-center items-center min-h-screen">
-          <div className="max-w-[993px] w-full h-screen flex justify-center items-center mx-auto max-md:max-w-[991px] max-sm:max-w-screen-sm">
-            <div className="flex flex-col items-center gap-8 w-full max-w-md">
-              <div className="text-center pt-6">
-                <h1 className="text-[26px] text-gray-900 mb-2">Learn &amp; Earn</h1>
-                <p className="text-xs text-gray-600">Learn new skills and earn through referrals</p>
-              </div>
-              <AuthForm />
-              
-            </div>
-          </div>
-        </div> :
-    // Dashboard View
-    <div className="flex flex-col min-h-screen bg-gray-50">
-          <Header />
-          <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4">
-            <WelcomeCard userName="Rahul" walletBalance={0} />
-            <section>
-              <h2 className="text-[17px] font-semibold text-gray-800 mb-4">Available Courses</h2>
-              <div className="flex gap-6 max-md:flex-col">
-                <CourseCard 
-                  title="AI Tools Mastery" 
-                  description="Learn how to leverage AI tools to boost your productivity and creativity. This comprehensive guide covers the most popular AI tools and how to use them effectively." 
-                  price={500} 
-                  type="PDF Course" 
-                  onClick={() => handleCourseClick('ai-tools')} 
-                />
-                <CourseCard 
-                  title="Stock Market Fundamentals" 
-                  description="A beginner's guide to understanding the stock market. Learn about different investment strategies, how to read financial statements, and make informed investment decisions." 
-                  price={1000} 
-                  type="PDF Course" 
-                  onClick={() => handleCourseClick('stock-market')} 
-                />
-              </div>
-            </section>
-            <div className="mt-8 flex gap-4 justify-center">
-              <button onClick={toggleView} className="text-xs text-blue-600 underline">
-                Demo: Back to Login
-              </button>
-              <button onClick={() => navigate('/my-courses')} className="text-xs text-blue-600 underline">
-                View My Courses
-              </button>
-              {isAdmin && (
-                <button onClick={() => navigate('/admin')} className="text-xs text-blue-600 underline">
-                  Admin Panel
-                </button>
-              )}
-            </div>
-          </main>
-        </div>}
-    </>;
+  return null;
 };
 
 export default Index;

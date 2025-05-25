@@ -39,7 +39,7 @@ const CourseDetail: React.FC = () => {
         // Fetch course details
         const { data: courseData, error: courseError } = await supabase
           .from('courses')
-          .select('*')
+          .select('id, title, description, price, referral_reward')
           .eq('id', id)
           .single();
           

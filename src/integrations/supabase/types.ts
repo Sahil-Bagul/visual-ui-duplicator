@@ -99,6 +99,7 @@ export type Database = {
           is_active: boolean | null
           pdf_url: string | null
           price: number
+          referral_reward: number
           thumbnail_url: string | null
           title: string
           updated_at: string | null
@@ -110,6 +111,7 @@ export type Database = {
           is_active?: boolean | null
           pdf_url?: string | null
           price: number
+          referral_reward?: number
           thumbnail_url?: string | null
           title: string
           updated_at?: string | null
@@ -121,6 +123,7 @@ export type Database = {
           is_active?: boolean | null
           pdf_url?: string | null
           price?: number
+          referral_reward?: number
           thumbnail_url?: string | null
           title?: string
           updated_at?: string | null
@@ -441,32 +444,51 @@ export type Database = {
       referrals: {
         Row: {
           commission_amount: number | null
+          course_id: string | null
           created_at: string | null
           id: string
           purchase_id: string | null
+          referral_code: string | null
           referred_user_id: string
           status: string | null
+          successful_referrals: number | null
+          total_earned: number | null
           user_id: string
         }
         Insert: {
           commission_amount?: number | null
+          course_id?: string | null
           created_at?: string | null
           id?: string
           purchase_id?: string | null
+          referral_code?: string | null
           referred_user_id: string
           status?: string | null
+          successful_referrals?: number | null
+          total_earned?: number | null
           user_id: string
         }
         Update: {
           commission_amount?: number | null
+          course_id?: string | null
           created_at?: string | null
           id?: string
           purchase_id?: string | null
+          referral_code?: string | null
           referred_user_id?: string
           status?: string | null
+          successful_referrals?: number | null
+          total_earned?: number | null
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "referrals_course_id_fkey"
+            columns: ["course_id"]
+            isOneToOne: false
+            referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "referrals_purchase_id_fkey"
             columns: ["purchase_id"]
@@ -671,7 +693,7 @@ export type Database = {
       }
       wallet: {
         Row: {
-          available_balance: number | null
+          balance: number | null
           id: string
           total_earned: number | null
           total_withdrawn: number | null
@@ -679,7 +701,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          available_balance?: number | null
+          balance?: number | null
           id?: string
           total_earned?: number | null
           total_withdrawn?: number | null
@@ -687,7 +709,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          available_balance?: number | null
+          balance?: number | null
           id?: string
           total_earned?: number | null
           total_withdrawn?: number | null

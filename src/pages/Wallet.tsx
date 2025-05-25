@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -45,7 +44,7 @@ const Wallet: React.FC = () => {
       if (walletError) throw walletError;
       
       if (walletData) {
-        setBalance(walletData.balance);
+        setBalance(walletData.balance || 0);
       }
       
       // Get successful referrals as transactions
@@ -54,7 +53,8 @@ const Wallet: React.FC = () => {
         .select(`
           successful_referrals,
           total_earned,
-          courses:courses(title, referral_reward)
+          course_id,
+          courses!inner(title, referral_reward)
         `)
         .eq('user_id', user.id)
         .gt('successful_referrals', 0);
@@ -63,7 +63,7 @@ const Wallet: React.FC = () => {
       
       if (referralsData && referralsData.length > 0) {
         // Convert referrals to transactions
-        const referralTransactions: Transaction[] = referralsData.map(referral => ({
+        const referralTransactions: Transaction[] = referralsData.map((referral: any) => ({
           course_title: referral.courses.title,
           type: 'Referral',
           date: new Date().toLocaleDateString('en-US', {
@@ -71,8 +71,8 @@ const Wallet: React.FC = () => {
             month: 'long',
             day: 'numeric'
           }),
-          amount: referral.courses.referral_reward * referral.successful_referrals,
-          status: "Paid"
+          amount: referral.total_earned || 0,
+          status: "Paid" as const
         }));
         
         setTransactions(referralTransactions);

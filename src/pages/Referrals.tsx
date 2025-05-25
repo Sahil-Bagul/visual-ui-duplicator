@@ -62,7 +62,7 @@ const Referrals: React.FC = () => {
         // Get user's referrals
         const { data: referralsData, error: referralsError } = await supabase
           .from('referrals')
-          .select('*')
+          .select('course_id, referral_code, successful_referrals, total_earned')
           .eq('user_id', user.id);
           
         if (referralsError) throw referralsError;
@@ -72,8 +72,15 @@ const Referrals: React.FC = () => {
         
         if (referralsData) {
           referralsData.forEach(referral => {
-            referralsMap[referral.course_id] = referral;
-            totalEarned += referral.total_earned;
+            if (referral.course_id) {
+              referralsMap[referral.course_id] = {
+                course_id: referral.course_id,
+                referral_code: referral.referral_code || '',
+                successful_referrals: referral.successful_referrals || 0,
+                total_earned: referral.total_earned || 0
+              };
+              totalEarned += referral.total_earned || 0;
+            }
           });
         }
         
