@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
@@ -74,14 +75,24 @@ const CourseContent: React.FC = () => {
         if (modulesError) throw modulesError;
           
         if (modulesData && modulesData.length > 0) {
-          setModules(modulesData as Module[]);
+          // Transform the data to match our Module interface
+          const transformedModules = modulesData.map(module => ({
+            id: module.id,
+            title: module.title,
+            description: module.description,
+            content: module.content || '',
+            module_order: module.module_order,
+            course_id: module.course_id
+          }));
+          
+          setModules(transformedModules);
             
           // Set the first module as active if no active module
-          if (modulesData.length > 0 && !activeModule) {
-            setActiveModule(modulesData[0] as Module);
+          if (transformedModules.length > 0 && !activeModule) {
+            setActiveModule(transformedModules[0]);
             
             // Fetch lessons for this module
-            fetchLessons(modulesData[0].id);
+            fetchLessons(transformedModules[0].id);
           }
         }
         

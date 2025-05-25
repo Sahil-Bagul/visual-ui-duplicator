@@ -55,7 +55,7 @@ export type Database = {
           description: string | null
           id: string
           is_active: boolean | null
-          order_index: number
+          module_order: number
           title: string
           updated_at: string | null
         }
@@ -66,7 +66,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
-          order_index: number
+          module_order: number
           title: string
           updated_at?: string | null
         }
@@ -77,7 +77,7 @@ export type Database = {
           description?: string | null
           id?: string
           is_active?: boolean | null
-          order_index?: number
+          module_order?: number
           title?: string
           updated_at?: string | null
         }
@@ -158,6 +158,44 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      lessons: {
+        Row: {
+          content: string
+          created_at: string | null
+          id: string
+          lesson_order: number
+          module_id: string
+          title: string
+          updated_at: string | null
+        }
+        Insert: {
+          content: string
+          created_at?: string | null
+          id?: string
+          lesson_order: number
+          module_id: string
+          title: string
+          updated_at?: string | null
+        }
+        Update: {
+          content?: string
+          created_at?: string | null
+          id?: string
+          lesson_order?: number
+          module_id?: string
+          title?: string
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "lessons_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
             referencedColumns: ["id"]
           },
         ]
@@ -527,6 +565,58 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "user_activity_logs_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_progress: {
+        Row: {
+          completed: boolean | null
+          completed_at: string | null
+          created_at: string | null
+          id: string
+          lesson_id: string | null
+          module_id: string | null
+          user_id: string
+        }
+        Insert: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          module_id?: string | null
+          user_id: string
+        }
+        Update: {
+          completed?: boolean | null
+          completed_at?: string | null
+          created_at?: string | null
+          id?: string
+          lesson_id?: string | null
+          module_id?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_progress_lesson_id_fkey"
+            columns: ["lesson_id"]
+            isOneToOne: false
+            referencedRelation: "lessons"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_module_id_fkey"
+            columns: ["module_id"]
+            isOneToOne: false
+            referencedRelation: "course_modules"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_progress_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
