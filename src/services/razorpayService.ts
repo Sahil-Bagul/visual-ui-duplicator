@@ -198,12 +198,27 @@ const processReferralReward = async (
     
     const rewardAmount = course.referral_reward || (amount * 0.5); // 50% default
     
+    // Get current wallet balance
+    const { data: currentWallet, error: walletFetchError } = await supabase
+      .from('wallet')
+      .select('balance, total_earned')
+      .eq('user_id', referrer.id)
+      .single();
+      
+    if (walletFetchError) {
+      console.error('Error fetching wallet:', walletFetchError);
+      return;
+    }
+    
+    const newBalance = (currentWallet?.balance || 0) + rewardAmount;
+    const newTotalEarned = (currentWallet?.total_earned || 0) + rewardAmount;
+    
     // Update referrer's wallet
     const { error: walletError } = await supabase
       .from('wallet')
       .update({
-        balance: supabase.sql`balance + ${rewardAmount}`,
-        total_earned: supabase.sql`total_earned + ${rewardAmount}`,
+        balance: newBalance,
+        total_earned: newTotalEarned,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', referrer.id);
