@@ -1,176 +1,178 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
-import { Button } from '@/components/ui/button';
-import TransactionItem from '@/components/wallet/TransactionItem';
+
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import PayoutMethodsList from '@/components/wallet/PayoutMethodsList';
+import { Navigate } from 'react-router-dom';
+import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import Footer from '@/components/layout/Footer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Wallet as WalletIcon, TrendingUp, Download } from 'lucide-react';
 import WithdrawFunds from '@/components/wallet/WithdrawFunds';
 import PayoutHistory from '@/components/wallet/PayoutHistory';
-
-interface Transaction {
-  course_title: string;
-  type: string;
-  date: string;
-  amount: number;
-  status: "Paid" | "Pending" | "Failed";
-}
+import { getUserWallet, getWalletTransactions, type WalletData, type WalletTransaction } from '@/services/walletService';
+import { toast } from 'sonner';
 
 const Wallet: React.FC = () => {
-  const [balance, setBalance] = useState(0);
-  const [transactions, setTransactions] = useState<Transaction[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState('earnings');
+  const [walletData, setWalletData] = useState<WalletData | null>(null);
+  const [transactions, setTransactions] = useState<WalletTransaction[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const fetchWalletData = async () => {
-    if (!user) return;
-    
-    try {
-      setIsLoading(true);
-      
-      // Get wallet balance
-      const { data: walletData, error: walletError } = await supabase
-        .from('wallet')
-        .select('balance')
-        .eq('user_id', user.id)
-        .single();
-        
-      if (walletError) throw walletError;
-      
-      if (walletData) {
-        setBalance(walletData.balance || 0);
-      }
-      
-      // Get successful referrals as transactions
-      const { data: referralsData, error: referralsError } = await supabase
-        .from('referrals')
-        .select(`
-          successful_referrals,
-          total_earned,
-          course_id,
-          courses!inner(title, referral_reward)
-        `)
-        .eq('user_id', user.id)
-        .gt('successful_referrals', 0);
-        
-      if (referralsError) throw referralsError;
-      
-      if (referralsData && referralsData.length > 0) {
-        // Convert referrals to transactions
-        const referralTransactions: Transaction[] = referralsData.map((referral: any) => ({
-          course_title: referral.courses.title,
-          type: 'Referral',
-          date: new Date().toLocaleDateString('en-US', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-          }),
-          amount: referral.total_earned || 0,
-          status: "Paid" as const
-        }));
-        
-        setTransactions(referralTransactions);
-      }
-      
-    } catch (error) {
-      console.error("Error fetching wallet data:", error);
-      toast({
-        title: "Error",
-        description: "Failed to load wallet data",
-        variant: "destructive"
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   useEffect(() => {
-    fetchWalletData();
-  }, [user, toast]);
+    const loadWalletData = async () => {
+      if (!user) return;
+      
+      try {
+        setIsLoading(true);
+        setError(null);
+        
+        console.log('Loading wallet data for user:', user.id);
+        
+        // Load wallet data and transactions in parallel
+        const [wallet, walletTransactions] = await Promise.all([
+          getUserWallet(),
+          getWalletTransactions()
+        ]);
+        
+        if (!wallet) {
+          setError('Unable to load wallet data. Please try again.');
+          return;
+        }
+        
+        setWalletData(wallet);
+        setTransactions(walletTransactions);
+        console.log('Wallet data loaded successfully');
+      } catch (error) {
+        console.error('Error loading wallet data:', error);
+        setError('Failed to load wallet data. Please refresh the page.');
+        toast.error('Failed to load wallet data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadWalletData();
+  }, [user]);
+
+  const handleWithdrawSuccess = () => {
+    // Refresh wallet data after successful withdrawal
+    if (user) {
+      getUserWallet().then(wallet => {
+        if (wallet) setWalletData(wallet);
+      });
+      getWalletTransactions().then(setTransactions);
+    }
+    toast.success('Withdrawal request submitted successfully');
+  };
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <HeaderWithNotifications />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-gray-600">Loading wallet data...</p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <HeaderWithNotifications />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <div className="text-center py-12">
+            <div className="text-red-500 mb-4">
+              <WalletIcon className="h-16 w-16 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Wallet Error</h2>
+              <p>{error}</p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-[#00C853] text-white rounded-lg hover:bg-[#00B248]"
+            >
+              Retry
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  const availableBalance = walletData?.balance || 0;
+  const totalEarned = walletData?.total_earned || 0;
+  const totalWithdrawn = walletData?.total_withdrawn || 0;
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full">
-        <h1 className="text-2xl font-bold text-gray-900 mb-8">Wallet</h1>
-
-        <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-6 mb-8">
-          <div className="flex justify-between items-center">
-            <div>
-              <h2 className="text-base font-medium text-gray-700 mb-1">Total Balance</h2>
-              <div className="text-3xl font-bold">₹ {balance}</div>
-            </div>
-          </div>
-          
-          {balance > 0 && (
-            <WithdrawFunds 
-              balance={balance} 
-              onWithdrawSuccess={fetchWalletData} 
-            />
-          )}
-          
-          {balance === 0 && (
-            <p className="text-sm text-gray-500 mt-2">Earn by referring courses to your friends</p>
-          )}
+      <HeaderWithNotifications />
+      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
+        <div className="flex items-center mb-6">
+          <WalletIcon className="h-8 w-8 text-[#00C853] mr-3" />
+          <h1 className="text-2xl font-bold text-gray-900">My Wallet</h1>
         </div>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-2 mb-6">
-            <TabsTrigger value="earnings">Earnings</TabsTrigger>
-            <TabsTrigger value="payouts">Payout Methods</TabsTrigger>
-          </TabsList>
-          
-          <TabsContent value="earnings" className="mt-0">
-            <div className="mb-4">
-              <h2 className="text-lg font-semibold text-gray-800 mb-2">Transaction History</h2>
-              <p className="text-sm text-gray-500 mb-4">Your referral earnings and withdrawals</p>
-            </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Available Balance</CardTitle>
+              <WalletIcon className="h-4 w-4 text-[#00C853]" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-[#00C853]">₹{availableBalance.toFixed(2)}</div>
+              <p className="text-xs text-gray-500 mt-1">Ready for withdrawal</p>
+            </CardContent>
+          </Card>
 
-            {isLoading ? (
-              <div className="flex justify-center py-8">
-                <p className="text-gray-500">Loading transactions...</p>
-              </div>
-            ) : transactions.length > 0 ? (
-              <div className="space-y-4">
-                {transactions.map((transaction, index) => (
-                  <TransactionItem 
-                    key={index}
-                    title={transaction.course_title}
-                    type={transaction.type}
-                    date={transaction.date}
-                    amount={transaction.amount}
-                    status={transaction.status}
-                    isPositive={true}
-                  />
-                ))}
-              </div>
-            ) : (
-              <div className="bg-gray-50 rounded-lg p-8 text-center">
-                <p className="text-gray-500">No transactions yet</p>
-                <Button 
-                  className="mt-4" 
-                  variant="outline"
-                  onClick={() => navigate('/referrals')}
-                >
-                  Go to Referrals
-                </Button>
-              </div>
-            )}
-            
-            <PayoutHistory />
-          </TabsContent>
-          
-          <TabsContent value="payouts" className="mt-0">
-            <PayoutMethodsList />
-          </TabsContent>
-        </Tabs>
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Earned</CardTitle>
+              <TrendingUp className="h-4 w-4 text-blue-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-blue-600">₹{totalEarned.toFixed(2)}</div>
+              <p className="text-xs text-gray-500 mt-1">From referrals</p>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+              <CardTitle className="text-sm font-medium">Total Withdrawn</CardTitle>
+              <Download className="h-4 w-4 text-gray-500" />
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold text-gray-600">₹{totalWithdrawn.toFixed(2)}</div>
+              <p className="text-xs text-gray-500 mt-1">Successful payouts</p>
+            </CardContent>
+          </Card>
+        </div>
+
+        <Card className="mb-8">
+          <CardHeader>
+            <CardTitle>Withdraw Funds</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <WithdrawFunds 
+              balance={availableBalance} 
+              onWithdrawSuccess={handleWithdrawSuccess}
+            />
+          </CardContent>
+        </Card>
+
+        <PayoutHistory />
       </main>
+      <Footer />
     </div>
   );
 };

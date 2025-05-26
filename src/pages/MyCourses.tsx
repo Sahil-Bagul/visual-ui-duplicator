@@ -1,200 +1,169 @@
 
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
-import Footer from '@/components/layout/Footer';
-import { Button } from '@/components/ui/button';
-import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
-import { useToast } from '@/hooks/use-toast';
-import { BookOpen, AlertCircle, MessageSquare } from 'lucide-react';
-import { CourseWithProgress, Module } from '@/types/course';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Skeleton } from '@/components/ui/skeleton';
-import CourseProgressSummary from '@/components/courses/CourseProgressSummary';
+import { Navigate, useNavigate } from 'react-router-dom';
+import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import Footer from '@/components/layout/Footer';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { BookOpen, Clock, CheckCircle, ArrowRight } from 'lucide-react';
+import { getUserCourses, type CourseWithProgress } from '@/services/courseContentService';
+import { toast } from 'sonner';
 
 const MyCourses: React.FC = () => {
+  const { user } = useAuth();
+  const navigate = useNavigate();
   const [courses, setCourses] = useState<CourseWithProgress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [dataFetched, setDataFetched] = useState(false);
-  
-  const { user } = useAuth();
-  const navigate = useNavigate();
-  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchMyCourses = async () => {
-      if (!user) {
-        setIsLoading(false);
-        return;
-      }
+    const loadCourses = async () => {
+      if (!user) return;
       
       try {
         setIsLoading(true);
         setError(null);
         
-        console.log("Fetching courses for user:", user.id);
+        console.log('Loading user courses...');
+        const userCourses = await getUserCourses();
         
-        // Get user's purchased courses
-        const { data: purchasesData, error: purchasesError } = await supabase
-          .from('purchases')
-          .select('course:courses(*)')
-          .eq('user_id', user.id);
-          
-        if (purchasesError) {
-          console.error("Error fetching purchases:", purchasesError);
-          throw purchasesError;
-        }
-        
-        // Extract course data from the join
-        const purchasedCourses = purchasesData?.map(item => item.course) || [];
-        console.log("Purchased courses:", purchasedCourses.length);
-        
-        if (purchasedCourses.length === 0) {
-          // No courses found - not an error condition
-          setIsLoading(false);
-          setCourses([]);
-          setDataFetched(true);
-          return;
-        }
-        
-        // For each course, fetch modules and user progress
-        const coursesWithProgress = await Promise.all(
-          purchasedCourses.map(async (course) => {
-            // Get modules for this course
-            const { data: modulesData, error: modulesError } = await supabase
-              .from('course_modules')
-              .select('*')
-              .eq('course_id', course.id)
-              .order('module_order', { ascending: true });
-              
-            if (modulesError) {
-              console.error(`Error fetching modules for course ${course.id}:`, modulesError);
-              throw modulesError;
-            }
-            
-            const modules = modulesData as Module[] || [];
-            console.log(`Course ${course.id} modules:`, modules.length);
-            
-            if (modules.length === 0) {
-              return {
-                ...course,
-                modules: [],
-                totalModules: 0,
-                completedModules: 0,
-                progress: 0
-              };
-            }
-            
-            // Get user progress for this course's modules
-            const { data: progressData, error: progressError } = await supabase
-              .from('user_progress')
-              .select('*')
-              .eq('user_id', user.id)
-              .in('module_id', modules.map(module => module.id));
-              
-            if (progressError && progressError.code !== 'PGRST116') {
-              console.error(`Error fetching progress for course ${course.id}:`, progressError);
-              throw progressError;
-            }
-            
-            // Calculate progress
-            const totalModules = modules.length;
-            const completedModules = progressData?.filter(p => p.completed).length || 0;
-            const progress = totalModules > 0 ? Math.round((completedModules / totalModules) * 100) : 0;
-            
-            return {
-              ...course,
-              modules,
-              totalModules,
-              completedModules,
-              progress
-            };
-          })
-        );
-        
-        setCourses(coursesWithProgress);
-        setDataFetched(true);
-        
-      } catch (error: any) {
-        console.error("Error fetching courses:", error);
-        setError("Failed to load your courses. Please refresh the page or try again later.");
-        toast({
-          title: "Error",
-          description: "Failed to load your courses",
-          variant: "destructive"
-        });
+        setCourses(userCourses);
+        console.log('Courses loaded successfully:', userCourses.length);
+      } catch (error) {
+        console.error('Error loading courses:', error);
+        setError('Failed to load your courses. Please try again.');
+        toast.error('Failed to load courses');
       } finally {
         setIsLoading(false);
       }
     };
-    
-    fetchMyCourses();
-  }, [user, toast]);
+
+    loadCourses();
+  }, [user]);
+
+  const handleCourseClick = (courseId: string) => {
+    navigate(`/course/${courseId}`);
+  };
+
+  if (!user) {
+    return <Navigate to="/auth" replace />;
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <HeaderWithNotifications />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <div className="flex items-center justify-center h-64">
+            <div className="text-center">
+              <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
+              <p className="text-gray-600">Loading your courses...</p>
+            </div>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <HeaderWithNotifications />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <div className="text-center py-12">
+            <div className="text-red-500 mb-4">
+              <BookOpen className="h-16 w-16 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Course Loading Error</h2>
+              <p>{error}</p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-[#00C853] text-white rounded-lg hover:bg-[#00B248]"
+            >
+              Retry
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
-        <div className="flex justify-between items-center mb-8">
+      <HeaderWithNotifications />
+      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
+        <div className="flex items-center mb-6">
+          <BookOpen className="h-8 w-8 text-[#00C853] mr-3" />
           <h1 className="text-2xl font-bold text-gray-900">My Courses</h1>
-          <Button 
-            onClick={() => navigate('/feedback')} 
-            variant="outline"
-            className="flex items-center gap-2 border-[#00C853] text-[#00C853] hover:bg-green-50"
-          >
-            <MessageSquare className="h-4 w-4" />
-            <span>Send Feedback</span>
-          </Button>
         </div>
 
-        {/* Error display */}
-        {error && (
-          <Alert variant="destructive" className="mb-6">
-            <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Error</AlertTitle>
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {isLoading ? (
-          <div className="space-y-6">
-            <Skeleton className="h-64 w-full rounded-lg" />
-            <Skeleton className="h-64 w-full rounded-lg" />
-          </div>
-        ) : courses.length > 0 ? (
-          <div className="space-y-6">
-            {courses.map(course => (
-              <CourseProgressSummary 
-                key={course.id}
-                course={course}
-                onContinue={() => navigate(`/course-content/${course.id}`)}
-                onShare={() => navigate('/referrals')}
-              />
-            ))}
-          </div>
-        ) : dataFetched ? (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-12 flex flex-col items-center justify-center">
-            <div className="w-16 h-16 mb-4 text-gray-300">
-              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M12 2v6m0 0v14m0-14h6m-6 0H6" />
-                <rect x="2" y="6" width="20" height="16" rx="2" />
-              </svg>
-            </div>
-            <h2 className="text-lg font-semibold text-gray-800 mb-2">No courses yet</h2>
-            <p className="text-gray-500 text-center mb-6">Get started by purchasing your first course.</p>
-            <Button asChild className="bg-[#4F46E5] hover:bg-blue-700">
-              <Link to="/dashboard">Browse Courses</Link>
-            </Button>
-          </div>
+        {courses.length === 0 ? (
+          <Card className="text-center py-12">
+            <CardContent>
+              <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold text-gray-600 mb-2">No Courses Yet</h2>
+              <p className="text-gray-500 mb-6">
+                You haven't purchased any courses yet. Browse our course catalog to get started.
+              </p>
+              <Button 
+                onClick={() => navigate('/dashboard')}
+                className="bg-[#00C853] hover:bg-[#00B248] text-white"
+              >
+                Browse Courses
+              </Button>
+            </CardContent>
+          </Card>
         ) : (
-          <div className="flex justify-center py-8">
-            <div className="flex flex-col items-center">
-              <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
-              <p className="mt-2 text-gray-500">Loading your courses...</p>
-            </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {courses.map((course) => (
+              <Card key={course.id} className="hover:shadow-lg transition-shadow cursor-pointer">
+                <CardHeader>
+                  <CardTitle className="text-lg">{course.title}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                    {course.description}
+                  </p>
+                  
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between text-sm">
+                      <span className="flex items-center text-gray-500">
+                        <BookOpen className="h-4 w-4 mr-1" />
+                        {course.totalModules} modules
+                      </span>
+                      <span className="flex items-center text-green-600">
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        {course.completedModules}/{course.totalModules} completed
+                      </span>
+                    </div>
+                    
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-[#00C853] h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${course.progress}%` }}
+                      ></div>
+                    </div>
+                    
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-gray-500">
+                        {Math.round(course.progress)}% complete
+                      </span>
+                      <Button
+                        size="sm"
+                        onClick={() => handleCourseClick(course.id)}
+                        className="bg-[#00C853] hover:bg-[#00B248] text-white"
+                      >
+                        {course.progress > 0 ? 'Continue' : 'Start'}
+                        <ArrowRight className="h-4 w-4 ml-1" />
+                      </Button>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         )}
       </main>
