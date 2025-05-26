@@ -1,15 +1,16 @@
+
 import React, { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { Menu } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Menu, Shield } from 'lucide-react';
 
 // Import the logo
 import logoImage from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png';
 
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const { user } = useAuth();
+  const { user, isAdmin } = useAuth();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -17,11 +18,10 @@ const Header: React.FC = () => {
 
   return (
     <header className="bg-white border-b border-gray-200">
-      <div className="max-w-[993px] mx-auto px-6 py-4 flex justify-between items-center">
-        {/* Logo with error handling */}
+      <div className="max-w-[1200px] mx-auto px-6 py-4 flex justify-between items-center">
+        {/* Logo */}
         <div className="flex items-center">
           <NavLink to="/dashboard" className="flex items-center">
-            {/* Enhanced logo styling */}
             <div className="h-10 w-auto mr-2 flex items-center">
               <img 
                 src={logoImage} 
@@ -32,15 +32,12 @@ const Header: React.FC = () => {
                   maxWidth: "150px",
                 }}
                 onError={(e) => {
-                  // Use proper TypeScript casting for HTMLElement
                   const target = e.currentTarget as HTMLImageElement;
                   target.style.display = 'none';
-                  // Show text fallback when image fails
                   const fallback = e.currentTarget.nextElementSibling as HTMLElement;
                   if (fallback) fallback.style.display = 'block';
                 }}
               />
-              {/* Text fallback (hidden by default) */}
               <span 
                 className="text-lg font-bold text-gray-900 hidden" 
                 style={{ display: 'none' }}
@@ -52,7 +49,7 @@ const Header: React.FC = () => {
         </div>
         
         {/* Desktop Nav */}
-        <nav className="hidden md:flex space-x-6">
+        <nav className="hidden md:flex items-center space-x-6">
           <NavLink 
             to="/dashboard" 
             className={({ isActive }) => 
@@ -93,6 +90,20 @@ const Header: React.FC = () => {
           >
             Profile
           </NavLink>
+          
+          {/* Admin Panel Button - Only show for admins */}
+          {isAdmin && (
+            <NavLink to="/admin">
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="border-purple-200 text-purple-700 hover:bg-purple-50"
+              >
+                <Shield className="h-4 w-4 mr-1" />
+                Admin Panel
+              </Button>
+            </NavLink>
+          )}
         </nav>
         
         {/* Mobile menu button */}
@@ -153,6 +164,19 @@ const Header: React.FC = () => {
               >
                 Profile
               </NavLink>
+              
+              {/* Admin Panel Button for Mobile */}
+              {isAdmin && (
+                <NavLink 
+                  to="/admin"
+                  className="p-2 text-purple-700 border border-purple-200 rounded-md bg-purple-50 flex items-center"
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  <Shield className="h-4 w-4 mr-1" />
+                  Admin Panel
+                </NavLink>
+              )}
+              
               <NavLink 
                 to="/feedback" 
                 className={({ isActive }) => 

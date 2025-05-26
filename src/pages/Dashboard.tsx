@@ -56,7 +56,7 @@ const Dashboard: React.FC = () => {
           .from('wallet')
           .select('balance, total_earned')
           .eq('user_id', user.id)
-          .single();
+          .maybeSingle();
           
         if (walletError && walletError.code !== 'PGRST116') {
           console.error("Error fetching wallet:", walletError);

@@ -4,22 +4,19 @@ import { useParams, useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { createRazorpayOrder, initializeRazorpayPayment, processPaymentSuccess } from '@/services/razorpayService';
-import { BookOpen, Clock, Users, Award } from 'lucide-react';
+import { BookOpen, Clock, Users, Star, Play } from 'lucide-react';
 
 interface Course {
   id: string;
   title: string;
-  description: string;
+  description: string | null;
   price: number;
-  thumbnail_url: string;
+  thumbnail_url: string | null;
   referral_reward: number;
   is_active: boolean;
 }
@@ -27,17 +24,15 @@ interface Course {
 const CourseDetail: React.FC = () => {
   const { courseId } = useParams();
   const [course, setCourse] = useState<Course | null>(null);
-  const [hasAccess, setHasAccess] = useState(false);
+  const [isPurchased, setIsPurchased] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [referralCode, setReferralCode] = useState('');
   const { user } = useAuth();
-  const { toast } = useToast();
   const navigate = useNavigate();
+  const { toast } = useToast();
 
   useEffect(() => {
-    const fetchCourseAndAccess = async () => {
-      if (!courseId || !user) return;
+    const fetchCourseData = async () => {
+      if (!courseId) return;
       
       try {
         setIsLoading(true);
@@ -57,28 +52,29 @@ const CourseDetail: React.FC = () => {
             description: "Course not found",
             variant: "destructive"
           });
+          navigate('/dashboard');
           return;
         }
         
         setCourse(courseData);
         
-        // Check if user has access
-        const { data: purchase, error: purchaseError } = await supabase
-          .from('purchases')
-          .select('*')
-          .eq('user_id', user.id)
-          .eq('course_id', courseId)
-          .eq('payment_status', 'completed')
-          .single();
-          
-        if (purchaseError && purchaseError.code !== 'PGRST116') {
-          console.error('Error checking access:', purchaseError);
-        } else if (purchase) {
-          setHasAccess(true);
+        // Check if user has purchased this course
+        if (user) {
+          const { data: purchase, error: purchaseError } = await supabase
+            .from('purchases')
+            .select('id')
+            .eq('user_id', user.id)
+            .eq('course_id', courseId)
+            .eq('payment_status', 'completed')
+            .maybeSingle();
+            
+          if (!purchaseError && purchase) {
+            setIsPurchased(true);
+          }
         }
         
       } catch (error) {
-        console.error("Error fetching course data:", error);
+        console.error('Error fetching course data:', error);
         toast({
           title: "Error",
           description: "Failed to load course details",
@@ -89,93 +85,24 @@ const CourseDetail: React.FC = () => {
       }
     };
     
-    fetchCourseAndAccess();
-  }, [courseId, user, toast]);
+    fetchCourseData();
+  }, [courseId, user, navigate, toast]);
 
-  const handlePurchase = async () => {
-    if (!user || !course) return;
-    
-    try {
-      setIsProcessing(true);
-      
-      // Create Razorpay order
-      const orderResult = await createRazorpayOrder(
-        course.id,
-        course.price,
-        user.id,
-        referralCode.trim() || undefined
-      );
-      
-      if (!orderResult.success) {
-        throw new Error(orderResult.error);
-      }
-      
-      // Initialize Razorpay payment
-      initializeRazorpayPayment(
-        {
-          orderId: orderResult.data.id,
-          amount: orderResult.data.amount,
-          currency: orderResult.data.currency,
-          userId: user.id,
-          courseId: course.id,
-          referralCode: referralCode.trim() || undefined
-        },
-        async (response) => {
-          // Payment successful
-          try {
-            const processResult = await processPaymentSuccess(
-              response,
-              user.id,
-              course.id,
-              course.price,
-              referralCode.trim() || undefined
-            );
-            
-            if (processResult.success) {
-              toast({
-                title: "Payment Successful!",
-                description: "You now have access to the course.",
-              });
-              setHasAccess(true);
-              navigate(`/course/${courseId}/content`);
-            } else {
-              throw new Error(processResult.error);
-            }
-          } catch (error) {
-            console.error('Error processing payment:', error);
-            toast({
-              title: "Payment Error",
-              description: "Payment was successful but there was an error processing your purchase. Please contact support.",
-              variant: "destructive"
-            });
-          } finally {
-            setIsProcessing(false);
-          }
-        },
-        (error) => {
-          // Payment failed
-          console.error('Payment failed:', error);
-          toast({
-            title: "Payment Failed",
-            description: "There was an error processing your payment. Please try again.",
-            variant: "destructive"
-          });
-          setIsProcessing(false);
-        }
-      );
-      
-    } catch (error) {
-      console.error('Error initiating payment:', error);
+  const handlePurchase = () => {
+    if (!user) {
       toast({
-        title: "Error",
-        description: "Failed to initiate payment. Please try again.",
+        title: "Login Required",
+        description: "Please login to purchase courses",
         variant: "destructive"
       });
-      setIsProcessing(false);
+      navigate('/auth');
+      return;
     }
+    
+    navigate(`/payment/${courseId}`);
   };
 
-  const handleAccessCourse = () => {
+  const handleStartCourse = () => {
     navigate(`/course/${courseId}/content`);
   };
 
@@ -198,11 +125,12 @@ const CourseDetail: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <Header />
-        <main className="flex-grow flex items-center justify-center">
-          <div className="text-center">
-            <h2 className="text-xl font-bold text-gray-900 mb-4">Course Not Found</h2>
-            <p className="text-gray-600 mb-6">The course you're looking for doesn't exist or has been removed.</p>
-            <Button onClick={() => navigate('/dashboard')}>
+        <main className="max-w-[1200px] mx-auto w-full px-6 py-8 flex-grow">
+          <div className="text-center py-12">
+            <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">Course Not Found</h2>
+            <p className="text-gray-600 mb-6">The course you're looking for doesn't exist or is no longer available.</p>
+            <Button onClick={() => navigate('/dashboard')} className="bg-[#00C853] hover:bg-green-700">
               Back to Dashboard
             </Button>
           </div>
@@ -219,103 +147,129 @@ const CourseDetail: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Course Content */}
           <div className="lg:col-span-2">
+            {/* Course Header */}
             <div className="mb-6">
-              {course.thumbnail_url && (
+              <div className="flex items-center gap-2 mb-4">
+                <Badge variant="outline">Web Course</Badge>
+                <Badge className="bg-green-100 text-green-800">Active</Badge>
+              </div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
+              <p className="text-lg text-gray-600 leading-relaxed">
+                {course.description || 'No description available'}
+              </p>
+            </div>
+
+            {/* Course Image */}
+            {course.thumbnail_url && (
+              <div className="mb-8">
                 <img 
                   src={course.thumbnail_url} 
                   alt={course.title}
-                  className="w-full h-64 object-cover rounded-lg shadow-md mb-6"
+                  className="w-full h-64 object-cover rounded-lg shadow-md"
                 />
-              )}
-              
-              <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
-              
-              <div className="flex items-center space-x-4 mb-6">
-                <Badge className="bg-[#00C853] text-white">
-                  <BookOpen className="h-3 w-3 mr-1" />
-                  Web Course
-                </Badge>
-                <div className="flex items-center text-gray-600">
-                  <Users className="h-4 w-4 mr-1" />
-                  <span className="text-sm">Online Learning</span>
-                </div>
-                <div className="flex items-center text-gray-600">
-                  <Award className="h-4 w-4 mr-1" />
-                  <span className="text-sm">₹{course.referral_reward} Referral Reward</span>
-                </div>
               </div>
-              
-              <div className="prose max-w-none">
-                <h2 className="text-xl font-semibold mb-3">Course Description</h2>
-                <p className="text-gray-700 leading-relaxed">
-                  {course.description || "This comprehensive course will help you master essential skills and knowledge in this field."}
-                </p>
-              </div>
-            </div>
+            )}
+
+            {/* Course Features */}
+            <Card className="mb-8">
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4">What you'll learn</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="flex items-center">
+                    <BookOpen className="h-5 w-5 text-[#00C853] mr-3" />
+                    <span>Comprehensive course modules</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Play className="h-5 w-5 text-[#00C853] mr-3" />
+                    <span>Interactive lessons</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Clock className="h-5 w-5 text-[#00C853] mr-3" />
+                    <span>Self-paced learning</span>
+                  </div>
+                  <div className="flex items-center">
+                    <Users className="h-5 w-5 text-[#00C853] mr-3" />
+                    <span>Lifetime access</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Referral Information */}
+            <Card>
+              <CardContent className="p-6">
+                <h3 className="text-xl font-semibold mb-4">Earn with Referrals</h3>
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <Star className="h-5 w-5 text-yellow-600 mr-2" />
+                    <span className="font-semibold text-yellow-800">Earn ₹{course.referral_reward} per referral!</span>
+                  </div>
+                  <p className="text-yellow-700 text-sm">
+                    Share your referral code with friends and earn {((course.referral_reward / course.price) * 100).toFixed(0)}% commission on every successful purchase.
+                  </p>
+                </div>
+              </CardContent>
+            </Card>
           </div>
 
-          {/* Purchase Card */}
+          {/* Sidebar - Purchase Card */}
           <div className="lg:col-span-1">
             <Card className="sticky top-6">
-              <CardHeader>
-                <CardTitle className="text-center">
-                  {hasAccess ? 'Course Access' : 'Purchase Course'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                {hasAccess ? (
-                  <div className="text-center">
-                    <div className="mb-4">
-                      <Badge className="bg-green-100 text-green-800 border-green-200">
-                        ✓ You have access to this course
-                      </Badge>
+              <CardContent className="p-6">
+                <div className="text-center mb-6">
+                  <div className="text-3xl font-bold text-gray-900 mb-2">₹{course.price}</div>
+                  <p className="text-gray-600">One-time payment</p>
+                </div>
+
+                {isPurchased ? (
+                  <div className="space-y-4">
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-center">
+                      <div className="text-green-800 font-semibold mb-1">Course Purchased!</div>
+                      <div className="text-green-600 text-sm">You have full access to this course</div>
                     </div>
                     <Button 
+                      onClick={handleStartCourse}
                       className="w-full bg-[#00C853] hover:bg-green-700"
-                      onClick={handleAccessCourse}
+                      size="lg"
                     >
+                      <Play className="h-5 w-5 mr-2" />
                       Start Learning
                     </Button>
                   </div>
                 ) : (
-                  <div>
-                    <div className="text-center mb-6">
-                      <div className="text-3xl font-bold text-gray-900 mb-2">₹{course.price}</div>
-                      <p className="text-gray-600">One-time payment</p>
-                    </div>
-                    
-                    <div className="mb-4">
-                      <Label htmlFor="referralCode" className="text-sm text-gray-600">
-                        Referral Code (optional)
-                      </Label>
-                      <Input 
-                        type="text" 
-                        id="referralCode" 
-                        placeholder="Enter referral code" 
-                        className="mt-1"
-                        value={referralCode}
-                        onChange={(e) => setReferralCode(e.target.value)}
-                      />
-                      {referralCode && (
-                        <p className="text-xs text-green-600 mt-1">
-                          Your referrer will earn ₹{course.referral_reward} when you purchase!
-                        </p>
-                      )}
-                    </div>
-                    
+                  <div className="space-y-4">
                     <Button 
-                      className="w-full bg-[#00C853] hover:bg-green-700 mb-3"
                       onClick={handlePurchase}
-                      disabled={isProcessing}
+                      className="w-full bg-[#00C853] hover:bg-green-700"
+                      size="lg"
                     >
-                      {isProcessing ? 'Processing...' : 'Buy Now with Razorpay'}
+                      Buy Course
                     </Button>
-                    
-                    <div className="text-xs text-gray-500 text-center">
-                      Secure payment powered by Razorpay
+                    <div className="text-center">
+                      <p className="text-sm text-gray-600">
+                        Secure payment powered by Razorpay
+                      </p>
                     </div>
                   </div>
                 )}
+
+                <div className="border-t pt-4 mt-6">
+                  <h4 className="font-semibold mb-3">This course includes:</h4>
+                  <ul className="space-y-2 text-sm text-gray-600">
+                    <li className="flex items-center">
+                      <BookOpen className="h-4 w-4 text-[#00C853] mr-2" />
+                      Structured learning modules
+                    </li>
+                    <li className="flex items-center">
+                      <Clock className="h-4 w-4 text-[#00C853] mr-2" />
+                      Self-paced progress
+                    </li>
+                    <li className="flex items-center">
+                      <Users className="h-4 w-4 text-[#00C853] mr-2" />
+                      Lifetime access
+                    </li>
+                  </ul>
+                </div>
               </CardContent>
             </Card>
           </div>

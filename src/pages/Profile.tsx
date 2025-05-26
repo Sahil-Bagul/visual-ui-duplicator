@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -83,7 +83,7 @@ const Profile: React.FC = () => {
             .from('wallet')
             .select('total_earned, balance')
             .eq('user_id', user.id)
-            .single(),
+            .maybeSingle(),
           supabase
             .from('purchases')
             .select('*', { count: 'exact', head: true })
@@ -128,8 +128,8 @@ const Profile: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+        <Header />
+        <main className="max-w-[1200px] mx-auto w-full px-6 py-8 flex-grow">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
@@ -144,8 +144,8 @@ const Profile: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
-      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
+      <Header />
+      <main className="max-w-[1200px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <User className="h-8 w-8 text-[#00C853] mr-3" />
@@ -253,17 +253,25 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Support Section */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Support & Help</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="mb-4">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Contact Support</CardTitle>
+            </CardHeader>
+            <CardContent>
               <ContactSupportButton />
-            </div>
-            <UserSupportTickets />
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+
+          <Card>
+            <CardHeader>
+              <CardTitle>Support Tickets</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <UserSupportTickets />
+            </CardContent>
+          </Card>
+        </div>
       </main>
       <Footer />
     </div>

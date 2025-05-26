@@ -1,11 +1,25 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
-// Razorpay configuration - these should be moved to environment variables in production
-const RAZORPAY_KEY_ID = 'rzp_test_uMvpbB0vwPADDJ'; // Test key for development
-const RAZORPAY_KEY_SECRET = '8duTFh22qI2D8gAL8ewUVVKs'; // This should be in backend only
+declare global {
+  interface Window {
+    Razorpay: any;
+  }
+}
 
-export interface RazorpayOrderData {
+interface RazorpayOrderData {
+  id: string;
+  amount: number;
+  currency: string;
+}
+
+interface RazorpayResponse {
+  razorpay_payment_id: string;
+  razorpay_order_id: string;
+  razorpay_signature: string;
+}
+
+interface PaymentInitData {
   orderId: string;
   amount: number;
   currency: string;
@@ -14,193 +28,229 @@ export interface RazorpayOrderData {
   referralCode?: string;
 }
 
-export interface RazorpayResponse {
-  razorpay_payment_id: string;
-  razorpay_order_id: string;
-  razorpay_signature: string;
-}
+// Load Razorpay script
+export const loadRazorpayScript = (): Promise<boolean> => {
+  return new Promise((resolve) => {
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.onload = () => {
+      resolve(true);
+    };
+    script.onerror = () => {
+      resolve(false);
+    };
+    document.body.appendChild(script);
+  });
+};
 
 // Create Razorpay order
-export async function createRazorpayOrder(
+export const createRazorpayOrder = async (
   courseId: string,
   amount: number,
   userId: string,
   referralCode?: string
-): Promise<{ success: boolean; data?: any; error?: string }> {
+): Promise<{ success: boolean; data?: RazorpayOrderData; error?: string }> => {
   try {
-    console.log('Creating Razorpay order for course:', courseId);
+    console.log('Creating Razorpay order:', { courseId, amount, userId, referralCode });
     
-    // Create order through our backend (you may want to create an edge function for this)
-    const orderData = {
-      amount: amount * 100, // Convert to paise
-      currency: 'INR',
-      receipt: `order_${Date.now()}`,
-      notes: {
-        user_id: userId,
-        course_id: courseId,
-        used_referral_code: referralCode || null
-      }
-    };
-    
-    // For now, we'll create a simple order object
-    // In production, this should go through your backend
-    const order = {
+    // For demo purposes, create a mock order
+    const mockOrder: RazorpayOrderData = {
       id: `order_${Date.now()}`,
-      amount: orderData.amount,
-      currency: orderData.currency,
-      notes: orderData.notes
+      amount: amount * 100, // Convert to paise
+      currency: 'INR'
     };
     
-    return { success: true, data: order };
+    console.log('Mock order created:', mockOrder);
+    return { success: true, data: mockOrder };
   } catch (error) {
-    console.error('Error creating Razorpay order:', error);
-    return { success: false, error: 'Failed to create payment order' };
+    console.error('Error creating order:', error);
+    return { success: false, error: 'Failed to create order' };
   }
-}
+};
 
 // Initialize Razorpay payment
-export function initializeRazorpayPayment(
-  orderData: RazorpayOrderData,
+export const initializeRazorpayPayment = async (
+  paymentData: PaymentInitData,
   onSuccess: (response: RazorpayResponse) => void,
   onError: (error: any) => void
-) {
-  const options = {
-    key: RAZORPAY_KEY_ID,
-    amount: orderData.amount,
-    currency: orderData.currency,
-    order_id: orderData.orderId,
-    name: 'Learn & Earn',
-    description: 'Course Purchase',
-    theme: {
-      color: '#00C853'
-    },
-    handler: function (response: RazorpayResponse) {
-      console.log('Payment successful:', response);
-      onSuccess(response);
-    },
-    modal: {
-      ondismiss: function() {
-        console.log('Payment modal closed');
-      }
+) => {
+  try {
+    const scriptLoaded = await loadRazorpayScript();
+    if (!scriptLoaded) {
+      throw new Error('Failed to load Razorpay script');
     }
-  };
 
-  // Check if Razorpay is loaded
-  if (typeof (window as any).Razorpay !== 'undefined') {
-    const rzp = new (window as any).Razorpay(options);
-    rzp.on('payment.failed', onError);
-    rzp.open();
-  } else {
-    console.error('Razorpay SDK not loaded');
-    onError({ error: 'Payment system not available' });
+    const options = {
+      key: 'rzp_test_9999999999', // Demo key
+      amount: paymentData.amount,
+      currency: paymentData.currency,
+      name: 'Learn & Earn',
+      description: 'Course Purchase',
+      order_id: paymentData.orderId,
+      handler: (response: RazorpayResponse) => {
+        console.log('Payment successful:', response);
+        onSuccess(response);
+      },
+      prefill: {
+        name: 'Student',
+        email: 'student@example.com',
+      },
+      theme: {
+        color: '#00C853'
+      },
+      modal: {
+        ondismiss: () => {
+          console.log('Payment modal dismissed');
+          onError(new Error('Payment cancelled'));
+        }
+      }
+    };
+
+    const razorpay = new window.Razorpay(options);
+    razorpay.open();
+  } catch (error) {
+    console.error('Error initializing payment:', error);
+    onError(error);
   }
-}
+};
 
-// Process successful payment
-export async function processPaymentSuccess(
-  paymentResponse: RazorpayResponse,
+// Process payment success
+export const processPaymentSuccess = async (
+  response: RazorpayResponse,
   userId: string,
   courseId: string,
   amount: number,
   referralCode?: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string }> => {
   try {
-    console.log('Processing payment success...');
+    console.log('Processing payment success:', { response, userId, courseId, amount, referralCode });
     
     // Create purchase record
     const purchaseData = {
       user_id: userId,
       course_id: courseId,
       amount: amount,
-      payment_id: paymentResponse.razorpay_payment_id,
+      payment_id: response.razorpay_payment_id,
       payment_status: 'completed',
       has_used_referral_code: Boolean(referralCode),
       used_referral_code: referralCode || null,
       purchased_at: new Date().toISOString()
     };
     
-    const { data: purchaseRecord, error: purchaseError } = await supabase
+    const { data: purchase, error: purchaseError } = await supabase
       .from('purchases')
       .insert(purchaseData)
       .select()
       .single();
       
     if (purchaseError) {
-      console.error('Error creating purchase record:', purchaseError);
-      return { success: false, error: 'Failed to record purchase' };
+      console.error('Error creating purchase:', purchaseError);
+      throw purchaseError;
     }
     
-    // Process referral reward if applicable
+    console.log('Purchase created:', purchase);
+    
+    // Process referral if applicable
     if (referralCode) {
-      await processReferralReward(referralCode, courseId, amount);
+      await processReferralReward(referralCode, userId, courseId, amount);
     }
     
-    console.log('Payment processed successfully');
     return { success: true };
   } catch (error) {
     console.error('Error processing payment:', error);
-    return { success: false, error: 'Failed to process payment' };
+    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' };
   }
-}
+};
 
 // Process referral reward
-async function processReferralReward(referralCode: string, courseId: string, amount: number) {
+const processReferralReward = async (
+  referralCode: string,
+  referredUserId: string,
+  courseId: string,
+  amount: number
+) => {
   try {
-    // Find the referrer
-    const { data: referrerData, error: referrerError } = await supabase
+    console.log('Processing referral reward:', { referralCode, referredUserId, courseId, amount });
+    
+    // Find the user who owns this referral code
+    const { data: referrer, error: referrerError } = await supabase
       .from('users')
       .select('id')
       .eq('referral_code', referralCode)
       .single();
       
-    if (referrerError || !referrerData) {
-      console.log('Referrer not found for code:', referralCode);
+    if (referrerError || !referrer) {
+      console.error('Referrer not found:', referrerError);
       return;
     }
     
-    // Calculate reward (50% of course price)
-    const rewardAmount = amount * 0.5;
-    
-    // Get current wallet balance
-    const { data: currentWallet, error: walletError } = await supabase
-      .from('wallet')
-      .select('balance, total_earned')
-      .eq('user_id', referrerData.id)
+    // Get course referral reward percentage (50%)
+    const { data: course, error: courseError } = await supabase
+      .from('courses')
+      .select('referral_reward')
+      .eq('id', courseId)
       .single();
       
-    if (walletError) {
-      console.error('Error fetching wallet:', walletError);
+    if (courseError || !course) {
+      console.error('Course not found:', courseError);
       return;
     }
     
+    const rewardAmount = course.referral_reward || (amount * 0.5); // 50% default
+    
     // Update referrer's wallet
-    const { error: updateError } = await supabase
+    const { error: walletError } = await supabase
       .from('wallet')
       .update({
-        balance: (currentWallet.balance || 0) + rewardAmount,
-        total_earned: (currentWallet.total_earned || 0) + rewardAmount,
+        balance: supabase.sql`balance + ${rewardAmount}`,
+        total_earned: supabase.sql`total_earned + ${rewardAmount}`,
         updated_at: new Date().toISOString()
       })
-      .eq('user_id', referrerData.id);
+      .eq('user_id', referrer.id);
       
-    if (updateError) {
-      console.error('Error updating referrer wallet:', updateError);
-    } else {
-      console.log(`Referral reward of ₹${rewardAmount} credited to user ${referrerData.id}`);
+    if (walletError) {
+      console.error('Error updating wallet:', walletError);
+      return;
     }
     
-    // Create wallet transaction record
-    await supabase
-      .from('wallet_transactions')
-      .insert({
-        user_id: referrerData.id,
-        type: 'credit',
-        amount: rewardAmount,
-        description: `Referral reward for course purchase`,
-        status: 'completed'
-      });
+    // Create referral record
+    const referralData = {
+      user_id: referrer.id,
+      referred_user_id: referredUserId,
+      course_id: courseId,
+      commission_amount: rewardAmount,
+      status: 'completed',
+      referral_code: referralCode
+    };
+    
+    const { error: referralError } = await supabase
+      .from('referrals')
+      .insert(referralData);
       
+    if (referralError) {
+      console.error('Error creating referral:', referralError);
+    }
+    
+    // Create wallet transaction
+    const transactionData = {
+      user_id: referrer.id,
+      type: 'referral_reward',
+      amount: rewardAmount,
+      description: `Referral reward for course purchase`,
+      reference_id: courseId,
+      status: 'completed'
+    };
+    
+    const { error: transactionError } = await supabase
+      .from('wallet_transactions')
+      .insert(transactionData);
+      
+    if (transactionError) {
+      console.error('Error creating transaction:', transactionError);
+    }
+    
+    console.log('Referral reward processed successfully');
   } catch (error) {
     console.error('Error processing referral reward:', error);
   }
-}
+};
