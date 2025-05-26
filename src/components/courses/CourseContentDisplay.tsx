@@ -3,81 +3,43 @@ import React, { useState, useMemo } from 'react';
 import { CheckCircle, BookOpen, ChevronDown, ChevronUp } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { Module, Lesson, UserProgress } from '@/types/course';
+import { CourseWithProgress } from '@/types/course';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 interface CourseContentDisplayProps {
-  modules: Module[];
-  lessons: Lesson[];
-  userProgress: UserProgress[];
-  activeModuleId: string | null;
-  activeLessonId: string | null;
-  onSelectModule: (module: Module) => void;
-  onSelectLesson: (lesson: Lesson) => void;
-  onMarkComplete: () => void;
-  isMarkingComplete: boolean;
-  completedLessonIds: string[];
+  course: CourseWithProgress;
 }
 
-interface LessonItemProps {
-  lesson: Lesson;
-  isCompleted: boolean;
-  isActive: boolean;
-  onClick: () => void;
-}
+const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({ course }) => {
+  const [activeModuleId, setActiveModuleId] = useState<string | null>(null);
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(null);
 
-const LessonItem: React.FC<LessonItemProps> = ({ lesson, isCompleted, isActive, onClick }) => {
-  return (
-    <div 
-      className={`
-        p-2.5 mb-1 rounded-md flex items-center gap-2 cursor-pointer transition-colors
-        ${isActive ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}
-        ${isCompleted ? 'text-green-700' : ''}
-      `}
-      onClick={onClick}
-    >
-      {isCompleted ? (
-        <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
-      ) : (
-        <div className={`h-4 w-4 rounded-full border ${isActive ? 'border-blue-500 bg-blue-100' : 'border-gray-300'} flex-shrink-0`} />
-      )}
-      <span className={`text-sm ${isActive ? 'font-medium' : ''}`}>
-        {lesson.title}
-      </span>
-    </div>
-  );
-};
+  // Mock completed lesson IDs for now - this should come from user progress
+  const completedLessonIds: string[] = [];
 
-const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
-  modules,
-  lessons,
-  userProgress,
-  activeModuleId,
-  activeLessonId,
-  onSelectModule,
-  onSelectLesson,
-  onMarkComplete,
-  isMarkingComplete,
-  completedLessonIds
-}) => {
   // Group lessons by module
   const lessonsByModule = useMemo(() => {
-    const groupedLessons: Record<string, Lesson[]> = {};
-    modules.forEach(module => {
-      groupedLessons[module.id] = lessons.filter(lesson => lesson.module_id === module.id);
+    const groupedLessons: Record<string, any[]> = {};
+    course.modules.forEach(module => {
+      groupedLessons[module.id] = module.lessons || [];
     });
     return groupedLessons;
-  }, [modules, lessons]);
+  }, [course.modules]);
 
   // Find active lesson
   const activeLesson = useMemo(() => {
-    return lessons.find(lesson => lesson.id === activeLessonId);
-  }, [lessons, activeLessonId]);
+    if (!activeLessonId) return null;
+    for (const module of course.modules) {
+      const lesson = module.lessons?.find(lesson => lesson.id === activeLessonId);
+      if (lesson) return lesson;
+    }
+    return null;
+  }, [course.modules, activeLessonId]);
 
   // Calculate module progress percentages
   const moduleProgress = useMemo(() => {
     const progress: Record<string, number> = {};
-    modules.forEach(module => {
+    course.modules.forEach(module => {
       const moduleLessons = lessonsByModule[module.id] || [];
       const completedCount = completedLessonIds.filter(id => 
         moduleLessons.some(lesson => lesson.id === id)
@@ -87,7 +49,20 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
         : 0;
     });
     return progress;
-  }, [modules, lessonsByModule, completedLessonIds]);
+  }, [course.modules, lessonsByModule, completedLessonIds]);
+
+  const handleSelectModule = (module: any) => {
+    setActiveModuleId(module.id);
+  };
+
+  const handleSelectLesson = (lesson: any) => {
+    setActiveLessonId(lesson.id);
+  };
+
+  const handleMarkComplete = () => {
+    // TODO: Implement mark as complete functionality
+    console.log('Mark lesson as complete:', activeLessonId);
+  };
 
   // Check if current lesson is completed
   const isCurrentLessonCompleted = activeLessonId 
@@ -96,12 +71,20 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      {/* Left sidebar - Unified module and lesson navigation */}
+      {/* Left sidebar - Course navigation */}
       <div className="md:col-span-1 bg-white rounded-lg shadow-sm border border-gray-100 p-4 h-fit">
-        <h2 className="font-semibold text-gray-800 mb-4">Course Content</h2>
+        <h2 className="font-semibold text-gray-800 mb-4">{course.title}</h2>
+        
+        <div className="mb-4">
+          <div className="flex justify-between text-xs text-gray-500 mb-2">
+            <span>{course.completedModules} of {course.totalModules} modules completed</span>
+            <span>{Math.round(course.progress)}%</span>
+          </div>
+          <Progress value={course.progress} className="h-1.5" />
+        </div>
         
         <Accordion type="multiple" defaultValue={activeModuleId ? [activeModuleId] : []}>
-          {modules.map((module) => {
+          {course.modules.map((module) => {
             const moduleLessons = lessonsByModule[module.id] || [];
             const progress = moduleProgress[module.id];
             const isActive = activeModuleId === module.id;
@@ -138,16 +121,27 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
                 <AccordionContent className="pt-2 pb-1 px-0">
                   <div className="space-y-1 pl-1">
                     {moduleLessons.map((lesson) => (
-                      <LessonItem
+                      <div
                         key={lesson.id}
-                        lesson={lesson}
-                        isCompleted={completedLessonIds.includes(lesson.id)}
-                        isActive={lesson.id === activeLessonId}
+                        className={`
+                          p-2.5 mb-1 rounded-md flex items-center gap-2 cursor-pointer transition-colors
+                          ${lesson.id === activeLessonId ? 'bg-blue-50 text-blue-700' : 'hover:bg-gray-50'}
+                          ${completedLessonIds.includes(lesson.id) ? 'text-green-700' : ''}
+                        `}
                         onClick={() => {
-                          onSelectModule(module);
-                          onSelectLesson(lesson);
+                          handleSelectModule(module);
+                          handleSelectLesson(lesson);
                         }}
-                      />
+                      >
+                        {completedLessonIds.includes(lesson.id) ? (
+                          <CheckCircle className="h-4 w-4 text-green-600 flex-shrink-0" />
+                        ) : (
+                          <div className={`h-4 w-4 rounded-full border ${lesson.id === activeLessonId ? 'border-blue-500 bg-blue-100' : 'border-gray-300'} flex-shrink-0`} />
+                        )}
+                        <span className={`text-sm ${lesson.id === activeLessonId ? 'font-medium' : ''}`}>
+                          {lesson.title}
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </AccordionContent>
@@ -178,30 +172,9 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
             <div className="flex justify-between pt-4 border-t border-gray-100">
               <Button 
                 variant="outline" 
-                onClick={() => {
-                  const moduleId = activeLesson.module_id;
-                  const moduleLessons = lessonsByModule[moduleId] || [];
-                  const currentIndex = moduleLessons.findIndex(l => l.id === activeLesson.id);
-                  
-                  if (currentIndex > 0) {
-                    onSelectLesson(moduleLessons[currentIndex - 1]);
-                  } else {
-                    // Go to previous module's last lesson if possible
-                    const moduleIndex = modules.findIndex(m => m.id === moduleId);
-                    if (moduleIndex > 0) {
-                      const prevModule = modules[moduleIndex - 1];
-                      const prevModuleLessons = lessonsByModule[prevModule.id] || [];
-                      if (prevModuleLessons.length > 0) {
-                        onSelectModule(prevModule);
-                        onSelectLesson(prevModuleLessons[prevModuleLessons.length - 1]);
-                      }
-                    }
-                  }
-                }}
-                disabled={!getPreviousLesson(activeLesson)}
                 className="flex items-center gap-1.5"
               >
-                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide-arrow-left">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                   <path d="M19 12H5"></path>
                   <path d="m12 19-7-7 7-7"></path>
                 </svg>
@@ -210,45 +183,24 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
               
               {!isCurrentLessonCompleted ? (
                 <Button 
-                  onClick={onMarkComplete}
-                  disabled={isMarkingComplete}
+                  onClick={handleMarkComplete}
                   className="bg-[#00C853] hover:bg-green-700 flex items-center gap-1.5"
                 >
-                  {isMarkingComplete ? "Saving..." : "Mark as Complete"}
-                  {!isMarkingComplete && <CheckCircle className="h-4 w-4" />}
+                  Mark as Complete
+                  <CheckCircle className="h-4 w-4" />
                 </Button>
               ) : (
                 <Button 
-                  onClick={() => {
-                    const nextLesson = getNextLesson(activeLesson);
-                    if (nextLesson) {
-                      if (nextLesson.module_id !== activeLesson.module_id) {
-                        const nextModule = modules.find(m => m.id === nextLesson.module_id);
-                        if (nextModule) {
-                          onSelectModule(nextModule);
-                        }
-                      }
-                      onSelectLesson(nextLesson);
-                    }
-                  }}
-                  disabled={!getNextLesson(activeLesson)}
                   className="bg-[#4F46E5] hover:bg-blue-700 flex items-center gap-1.5"
                 >
                   Next Lesson 
-                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide-arrow-right">
+                  <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <path d="M5 12h14"></path>
                     <path d="m12 5 7 7-7 7"></path>
                   </svg>
                 </Button>
               )}
             </div>
-            
-            {isModuleCompleted(activeLesson.module_id) && (
-              <div className="mt-8 p-4 bg-green-50 border border-green-100 rounded-lg text-center">
-                <h3 className="text-green-800 font-medium">🎉 Module Completed!</h3>
-                <p className="text-green-700 text-sm mt-1">Congratulations on completing all lessons in this module.</p>
-              </div>
-            )}
           </div>
         ) : (
           <div className="flex flex-col items-center justify-center py-12">
@@ -256,14 +208,14 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
             <p className="text-gray-500 text-lg mb-2">Ready to start learning?</p>
             <p className="text-gray-400 text-sm mb-6">Select a lesson from the sidebar to begin.</p>
             
-            {modules.length > 0 && (
+            {course.modules.length > 0 && (
               <Button 
                 onClick={() => {
-                  const firstModule = modules[0];
+                  const firstModule = course.modules[0];
                   const firstModuleLessons = lessonsByModule[firstModule.id] || [];
                   if (firstModuleLessons.length > 0) {
-                    onSelectModule(firstModule);
-                    onSelectLesson(firstModuleLessons[0]);
+                    handleSelectModule(firstModule);
+                    handleSelectLesson(firstModuleLessons[0]);
                   }
                 }}
                 className="bg-[#4F46E5] hover:bg-blue-700"
@@ -276,60 +228,6 @@ const CourseContentDisplay: React.FC<CourseContentDisplayProps> = ({
       </div>
     </div>
   );
-
-  // Helper function to check if a module is completed
-  function isModuleCompleted(moduleId: string) {
-    const moduleLessons = lessons.filter(lesson => lesson.module_id === moduleId);
-    const completedModuleLessons = moduleLessons.filter(lesson => 
-      completedLessonIds.includes(lesson.id)
-    );
-    
-    return moduleLessons.length > 0 && completedModuleLessons.length === moduleLessons.length;
-  }
-
-  // Helper function to get next lesson
-  function getNextLesson(currentLesson: Lesson): Lesson | null {
-    const moduleLessons = lessonsByModule[currentLesson.module_id] || [];
-    const currentIndex = moduleLessons.findIndex(l => l.id === currentLesson.id);
-    
-    if (currentIndex < moduleLessons.length - 1) {
-      return moduleLessons[currentIndex + 1];
-    } else {
-      // Check next module
-      const moduleIndex = modules.findIndex(m => m.id === currentLesson.module_id);
-      if (moduleIndex < modules.length - 1) {
-        const nextModule = modules[moduleIndex + 1];
-        const nextModuleLessons = lessonsByModule[nextModule.id] || [];
-        if (nextModuleLessons.length > 0) {
-          return nextModuleLessons[0];
-        }
-      }
-    }
-    
-    return null;
-  }
-
-  // Helper function to get previous lesson
-  function getPreviousLesson(currentLesson: Lesson): Lesson | null {
-    const moduleLessons = lessonsByModule[currentLesson.module_id] || [];
-    const currentIndex = moduleLessons.findIndex(l => l.id === currentLesson.id);
-    
-    if (currentIndex > 0) {
-      return moduleLessons[currentIndex - 1];
-    } else {
-      // Check previous module
-      const moduleIndex = modules.findIndex(m => m.id === currentLesson.module_id);
-      if (moduleIndex > 0) {
-        const prevModule = modules[moduleIndex - 1];
-        const prevModuleLessons = lessonsByModule[prevModule.id] || [];
-        if (prevModuleLessons.length > 0) {
-          return prevModuleLessons[prevModuleLessons.length - 1];
-        }
-      }
-    }
-    
-    return null;
-  }
 };
 
 // Helper function to format content with Markdown-like formatting
@@ -369,13 +267,6 @@ function formatContent(content: string): string {
     
     // Format blockquotes
     .replace(/^> (.+)$/gm, '<blockquote class="border-l-4 border-gray-200 pl-4 italic text-gray-600 my-4">$1</blockquote>')
-    
-    // Handle tables (basic implementation)
-    .replace(/\|(.+)\|/g, '<tr>$1</tr>')
-    .replace(/<tr>(.+?)<\/tr>/g, function(match) {
-      return match.replace(/\|(.+?)\|/g, '<td class="border px-4 py-2">$1</td>');
-    })
-    .replace(/(<tr>.+?<\/tr>\n)+/g, '<table class="min-w-full border-collapse my-4">$&</table>')
     
     // Format horizontal rules
     .replace(/^---$/gm, '<hr class="my-6 border-t border-gray-200" />');

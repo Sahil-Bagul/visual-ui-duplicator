@@ -69,22 +69,61 @@ export async function getWalletTransactions(): Promise<WalletTransaction[]> {
   }
 }
 
-// Update wallet balance
+// Update wallet balance - simplified version without RPC call
 export async function updateWalletBalance(
   userId: string,
   amount: number,
   type: 'credit' | 'debit'
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const { error } = await supabase.rpc('update_wallet_balance', {
-      user_id: userId,
-      amount: amount,
-      transaction_type: type
-    });
+    // Get current wallet
+    const { data: wallet, error: walletError } = await supabase
+      .from('wallet')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
 
-    if (error) {
-      console.error('Error updating wallet balance:', error);
-      return { success: false, error: error.message };
+    if (walletError) {
+      console.error('Error fetching wallet for update:', walletError);
+      return { success: false, error: walletError.message };
+    }
+
+    // Calculate new balance
+    const currentBalance = wallet.balance || 0;
+    const newBalance = type === 'credit' ? currentBalance + amount : currentBalance - amount;
+
+    if (newBalance < 0) {
+      return { success: false, error: 'Insufficient balance' };
+    }
+
+    // Update wallet
+    const { error: updateError } = await supabase
+      .from('wallet')
+      .update({ 
+        balance: newBalance,
+        total_earned: type === 'credit' ? (wallet.total_earned || 0) + amount : wallet.total_earned,
+        updated_at: new Date().toISOString()
+      })
+      .eq('user_id', userId);
+
+    if (updateError) {
+      console.error('Error updating wallet balance:', updateError);
+      return { success: false, error: updateError.message };
+    }
+
+    // Create transaction record
+    const { error: transactionError } = await supabase
+      .from('wallet_transactions')
+      .insert({
+        user_id: userId,
+        type: type,
+        amount: amount,
+        status: 'completed',
+        description: `Wallet ${type === 'credit' ? 'credit' : 'debit'}`
+      });
+
+    if (transactionError) {
+      console.error('Error creating transaction record:', transactionError);
     }
 
     return { success: true };

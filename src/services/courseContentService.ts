@@ -2,6 +2,9 @@
 import { supabase } from '@/integrations/supabase/client';
 import { Module, Lesson, CourseWithProgress } from '@/types/course';
 
+// Export the type so it can be used in other files
+export type { CourseWithProgress } from '@/types/course';
+
 // Get course with its modules and lessons
 export async function getCourseWithContent(courseId: string): Promise<CourseWithProgress | null> {
   try {
