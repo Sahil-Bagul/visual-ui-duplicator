@@ -161,18 +161,30 @@ async function processReferralReward(referralCode: string, courseId: string, amo
     // Calculate reward (50% of course price)
     const rewardAmount = amount * 0.5;
     
+    // Get current wallet balance
+    const { data: currentWallet, error: walletError } = await supabase
+      .from('wallet')
+      .select('balance, total_earned')
+      .eq('user_id', referrerData.id)
+      .single();
+      
+    if (walletError) {
+      console.error('Error fetching wallet:', walletError);
+      return;
+    }
+    
     // Update referrer's wallet
-    const { error: walletError } = await supabase
+    const { error: updateError } = await supabase
       .from('wallet')
       .update({
-        balance: supabase.sql`balance + ${rewardAmount}`,
-        total_earned: supabase.sql`total_earned + ${rewardAmount}`,
+        balance: (currentWallet.balance || 0) + rewardAmount,
+        total_earned: (currentWallet.total_earned || 0) + rewardAmount,
         updated_at: new Date().toISOString()
       })
       .eq('user_id', referrerData.id);
       
-    if (walletError) {
-      console.error('Error updating referrer wallet:', walletError);
+    if (updateError) {
+      console.error('Error updating referrer wallet:', updateError);
     } else {
       console.log(`Referral reward of ₹${rewardAmount} credited to user ${referrerData.id}`);
     }
