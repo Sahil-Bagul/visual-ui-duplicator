@@ -1,5 +1,6 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +8,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { createRazorpayOrder, initializeRazorpayPayment, processPaymentSuccess } from '@/services/razorpayService';
 
 interface Course {
   id: string;
@@ -18,13 +20,14 @@ interface Course {
 
 const Payment: React.FC = () => {
   const { courseId } = useParams();
+  const location = useLocation();
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
-  const [referralCode, setReferralCode] = useState<string | null>(null);
-  const [isDemoAccess, setIsDemoAccess] = useState(false);
+  const [referralCode, setReferralCode] = useState<string>(location.state?.referralCode || '');
 
   useEffect(() => {
     const fetchCourse = async () => {
@@ -57,45 +60,85 @@ const Payment: React.FC = () => {
     fetchCourse();
   }, [courseId, toast]);
 
-  const handlePaymentSuccess = async (paymentId: string, signature: string) => {
+  const handleRazorpayPayment = async () => {
     if (!user || !course) return;
     
     try {
-      console.log('Payment successful, creating purchase record...');
+      setIsProcessing(true);
       
-      const purchaseData = {
-        user_id: user.id,
-        course_id: course.id,
-        amount: course.price, // Add the missing amount field
-        payment_id: paymentId,
-        payment_status: 'completed',
-        has_used_referral_code: Boolean(referralCode),
-        used_referral_code: referralCode || null,
-        purchased_at: new Date().toISOString()
-      };
+      // Create Razorpay order
+      const orderResult = await createRazorpayOrder(
+        course.id,
+        course.price,
+        user.id,
+        referralCode.trim() || undefined
+      );
       
-      const { data: purchaseRecord, error: purchaseError } = await supabase
-        .from('purchases')
-        .insert(purchaseData)
-        .select()
-        .single();
-        
-      if (purchaseError) throw purchaseError;
+      if (!orderResult.success) {
+        throw new Error(orderResult.error);
+      }
       
-      toast({
-        title: "Success",
-        description: "Payment successful! You now have access to the course.",
-      });
-      
-      navigate(`/course/${courseId}`);
+      // Initialize Razorpay payment
+      initializeRazorpayPayment(
+        {
+          orderId: orderResult.data.id,
+          amount: orderResult.data.amount,
+          currency: orderResult.data.currency,
+          userId: user.id,
+          courseId: course.id,
+          referralCode: referralCode.trim() || undefined
+        },
+        async (response) => {
+          // Payment successful
+          try {
+            const processResult = await processPaymentSuccess(
+              response,
+              user.id,
+              course.id,
+              course.price,
+              referralCode.trim() || undefined
+            );
+            
+            if (processResult.success) {
+              toast({
+                title: "Payment Successful!",
+                description: "You now have access to the course.",
+              });
+              navigate(`/course/${courseId}`);
+            } else {
+              throw new Error(processResult.error);
+            }
+          } catch (error) {
+            console.error('Error processing payment:', error);
+            toast({
+              title: "Payment Error",
+              description: "Payment was successful but there was an error processing your purchase. Please contact support.",
+              variant: "destructive"
+            });
+          } finally {
+            setIsProcessing(false);
+          }
+        },
+        (error) => {
+          // Payment failed
+          console.error('Payment failed:', error);
+          toast({
+            title: "Payment Failed",
+            description: "There was an error processing your payment. Please try again.",
+            variant: "destructive"
+          });
+          setIsProcessing(false);
+        }
+      );
       
     } catch (error) {
-      console.error('Error in payment success handler:', error);
+      console.error('Error initiating payment:', error);
       toast({
         title: "Error",
-        description: "Payment was successful but there was an error processing your purchase. Please contact support.",
+        description: "Failed to initiate payment. Please try again.",
         variant: "destructive"
       });
+      setIsProcessing(false);
     }
   };
 
@@ -103,12 +146,13 @@ const Payment: React.FC = () => {
     if (!user || !course) return;
     
     try {
+      setIsProcessing(true);
       console.log('Processing demo payment...');
       
       const purchaseData = {
         user_id: user.id,
         course_id: course.id,
-        amount: 0, // Demo payment has 0 amount
+        amount: 0,
         payment_id: 'demo_' + Date.now(),
         payment_status: 'completed',
         has_used_referral_code: Boolean(referralCode),
@@ -138,6 +182,8 @@ const Payment: React.FC = () => {
         description: "There was an error processing your demo access. Please try again.",
         variant: "destructive"
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
@@ -157,7 +203,7 @@ const Payment: React.FC = () => {
               <img 
                 src={course.thumbnail_url} 
                 alt={course.title} 
-                className="rounded-lg shadow-md" 
+                className="rounded-lg shadow-md w-full" 
               />
             </div>
             
@@ -171,27 +217,33 @@ const Payment: React.FC = () => {
                   <span className="text-xl font-bold text-gray-900">₹{course.price}</span>
                 </div>
                 
-                <div className="mb-3">
+                <div className="mb-4">
                   <Label htmlFor="referralCode" className="text-sm text-gray-600">Referral Code (optional)</Label>
                   <Input 
                     type="text" 
                     id="referralCode" 
                     placeholder="Enter referral code" 
                     className="mt-1"
+                    value={referralCode}
                     onChange={(e) => setReferralCode(e.target.value)}
                   />
                 </div>
                 
-                <Button className="w-full mb-2">
-                  Pay Now
+                <Button 
+                  className="w-full mb-2 bg-[#00C853] hover:bg-green-700"
+                  onClick={handleRazorpayPayment}
+                  disabled={isProcessing}
+                >
+                  {isProcessing ? 'Processing...' : 'Pay with Razorpay'}
                 </Button>
                 
                 <Button 
                   variant="secondary" 
                   className="w-full"
                   onClick={handleDemoPayment}
+                  disabled={isProcessing}
                 >
-                  Get Demo Access
+                  {isProcessing ? 'Processing...' : 'Get Demo Access'}
                 </Button>
               </div>
             </div>

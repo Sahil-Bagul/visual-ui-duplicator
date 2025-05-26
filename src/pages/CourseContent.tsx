@@ -1,84 +1,173 @@
 
 import React, { useState, useEffect } from 'react';
-import { useParams, Navigate } from 'react-router-dom';
-import { useAuth } from '@/context/AuthContext';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import { useParams, useNavigate } from 'react-router-dom';
+import Header from '@/components/layout/Header';
 import Footer from '@/components/layout/Footer';
-import CourseContentDisplay from '@/components/courses/CourseContentDisplay';
-import { getCourseWithContent, hasUserAccessToCourse, type CourseWithProgress } from '@/services/courseContentService';
-import { toast } from 'sonner';
-import { BookOpen, Lock } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
+import ModularCourseContent from '@/components/courses/ModularCourseContent';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 const CourseContent: React.FC = () => {
-  const { user } = useAuth();
-  const { courseId } = useParams<{ courseId: string }>();
-  const [course, setCourse] = useState<CourseWithProgress | null>(null);
-  const [hasAccess, setHasAccess] = useState<boolean>(false);
+  const { courseId } = useParams();
+  const [courseData, setCourseData] = useState<any>(null);
+  const [userProgress, setUserProgress] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [hasAccess, setHasAccess] = useState(false);
+  const { user } = useAuth();
+  const { toast } = useToast();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    const loadCourseContent = async () => {
+    const fetchCourseData = async () => {
       if (!courseId || !user) return;
       
       try {
         setIsLoading(true);
-        setError(null);
-        
-        console.log('Loading course content for courseId:', courseId);
         
         // Check if user has access to this course
-        const accessGranted = await hasUserAccessToCourse(courseId);
-        setHasAccess(accessGranted);
+        const { data: purchase, error: purchaseError } = await supabase
+          .from('purchases')
+          .select('*')
+          .eq('user_id', user.id)
+          .eq('course_id', courseId)
+          .eq('payment_status', 'completed')
+          .single();
+          
+        if (purchaseError && purchaseError.code !== 'PGRST116') {
+          throw purchaseError;
+        }
         
-        if (!accessGranted) {
-          console.log('User does not have access to course:', courseId);
-          setIsLoading(false);
+        if (!purchase) {
+          setHasAccess(false);
           return;
         }
         
-        // Load course content
-        const courseData = await getCourseWithContent(courseId);
+        setHasAccess(true);
         
-        if (!courseData) {
-          setError('Course not found or failed to load course content.');
-          return;
+        // Fetch course with modules and lessons
+        const { data: course, error: courseError } = await supabase
+          .from('courses')
+          .select(`
+            id,
+            title,
+            description,
+            course_modules (
+              id,
+              title,
+              description,
+              module_order,
+              lessons (
+                id,
+                title,
+                content,
+                lesson_order
+              )
+            )
+          `)
+          .eq('id', courseId)
+          .single();
+          
+        if (courseError) throw courseError;
+        
+        // Transform data to match component expectations
+        const transformedCourse = {
+          ...course,
+          modules: course.course_modules
+            .sort((a: any, b: any) => a.module_order - b.module_order)
+            .map((module: any) => ({
+              ...module,
+              lessons: module.lessons.sort((a: any, b: any) => a.lesson_order - b.lesson_order)
+            }))
+        };
+        
+        setCourseData(transformedCourse);
+        
+        // Fetch user progress
+        const { data: progress, error: progressError } = await supabase
+          .from('user_progress')
+          .select('*')
+          .eq('user_id', user.id);
+          
+        if (progressError) {
+          console.error('Error fetching progress:', progressError);
+        } else {
+          setUserProgress(progress || []);
         }
         
-        setCourse(courseData);
-        console.log('Course content loaded successfully:', courseData.title);
       } catch (error) {
-        console.error('Error loading course content:', error);
-        setError('Failed to load course content. Please try again.');
-        toast.error('Failed to load course content');
+        console.error('Error fetching course content:', error);
+        toast({
+          title: "Error",
+          description: "Failed to load course content",
+          variant: "destructive"
+        });
       } finally {
         setIsLoading(false);
       }
     };
+    
+    fetchCourseData();
+  }, [courseId, user, toast]);
 
-    loadCourseContent();
-  }, [courseId, user]);
-
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
-
-  if (!courseId) {
-    return <Navigate to="/my-courses" replace />;
-  }
+  const handleLessonComplete = async (lessonId: string) => {
+    if (!user) return;
+    
+    try {
+      // Mark lesson as complete
+      const { error } = await supabase
+        .from('user_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          completed: true,
+          completed_at: new Date().toISOString()
+        });
+        
+      if (error) throw error;
+      
+      // Update local progress state
+      setUserProgress(prev => {
+        const existing = prev.find(p => p.lesson_id === lessonId);
+        if (existing) {
+          return prev.map(p => 
+            p.lesson_id === lessonId 
+              ? { ...p, completed: true, completed_at: new Date().toISOString() }
+              : p
+          );
+        } else {
+          return [...prev, {
+            user_id: user.id,
+            lesson_id: lessonId,
+            completed: true,
+            completed_at: new Date().toISOString()
+          }];
+        }
+      });
+      
+      toast({
+        title: "Progress Saved",
+        description: "Lesson marked as complete!",
+      });
+      
+    } catch (error) {
+      console.error('Error updating progress:', error);
+      toast({
+        title: "Error",
+        description: "Failed to save progress",
+        variant: "destructive"
+      });
+    }
+  };
 
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
-          <div className="flex items-center justify-center h-64">
-            <div className="text-center">
-              <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
-              <p className="text-gray-600">Loading course content...</p>
-            </div>
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
+            <p className="text-gray-600">Loading course content...</p>
           </div>
         </main>
         <Footer />
@@ -89,45 +178,18 @@ const CourseContent: React.FC = () => {
   if (!hasAccess) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
-          <Card className="text-center py-12">
-            <CardContent>
-              <Lock className="h-16 w-16 text-gray-400 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold text-gray-600 mb-2">Access Denied</h2>
-              <p className="text-gray-500 mb-6">
-                You don't have access to this course. Please purchase it first.
-              </p>
-              <Button 
-                onClick={() => window.history.back()}
-                className="bg-[#00C853] hover:bg-[#00B248] text-white"
-              >
-                Go Back
-              </Button>
-            </CardContent>
-          </Card>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-
-  if (error || !course) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
-          <div className="text-center py-12">
-            <div className="text-red-500 mb-4">
-              <BookOpen className="h-16 w-16 mx-auto mb-4" />
-              <h2 className="text-xl font-semibold mb-2">Course Loading Error</h2>
-              <p>{error || 'Failed to load course content'}</p>
-            </div>
-            <button 
-              onClick={() => window.location.reload()} 
-              className="mt-4 px-4 py-2 bg-[#00C853] text-white rounded-lg hover:bg-[#00B248]"
+        <Header />
+        <main className="flex-grow flex items-center justify-center p-4">
+          <div className="text-center max-w-md">
+            <h2 className="text-xl font-bold text-gray-900 mb-4">Access Required</h2>
+            <p className="text-gray-600 mb-6">
+              You need to purchase this course to access its content.
+            </p>
+            <button
+              onClick={() => navigate(`/course/${courseId}`)}
+              className="px-6 py-2 bg-[#00C853] text-white rounded-lg hover:bg-green-700 transition-colors"
             >
-              Retry
+              View Course Details
             </button>
           </div>
         </main>
@@ -136,11 +198,27 @@ const CourseContent: React.FC = () => {
     );
   }
 
+  if (!courseData) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <Header />
+        <main className="flex-grow flex items-center justify-center">
+          <p className="text-gray-600">Course not found</p>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
-      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
-        <CourseContentDisplay course={course} />
+      <Header />
+      <main className="max-w-[1200px] mx-auto w-full px-6 py-8 flex-grow">
+        <ModularCourseContent 
+          course={courseData}
+          userProgress={userProgress}
+          onLessonComplete={handleLessonComplete}
+        />
       </main>
       <Footer />
     </div>

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -34,20 +33,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if a user is an admin using the safe function
+  // Check if a user is an admin by checking the users table directly
   const checkAdminStatus = async (userId: string) => {
     try {
       console.log('Checking admin status for user:', userId);
       
-      const { data, error } = await supabase.rpc('is_admin');
+      // First check the users table directly
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', userId)
+        .single();
       
-      if (error) {
-        console.error('Error checking admin status:', error);
+      if (userError) {
+        console.error('Error fetching user data:', userError);
         return false;
       }
       
-      console.log('Admin status result:', data);
-      return data || false;
+      console.log('User data from table:', userData);
+      const adminStatus = userData?.is_admin || false;
+      
+      console.log('Admin status result:', adminStatus);
+      return adminStatus;
     } catch (error) {
       console.error('Exception checking admin status:', error);
       return false;
