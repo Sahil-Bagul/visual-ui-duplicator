@@ -29,7 +29,6 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      // Replacing the deprecated onError property with meta to handle errors properly
       meta: {
         errorHandler: (error: Error) => {
           console.error("Query error:", error);
@@ -47,7 +46,6 @@ const AppInitializer = () => {
   useEffect(() => {
     const initialize = async () => {
       try {
-        // Always initialize app data (courses)
         await initializeAppData();
       } catch (error) {
         console.error("Initialization error:", error);
@@ -66,92 +64,68 @@ const AppInitializer = () => {
 const AppWithAuth = () => {
   const { user, isLoading: authLoading } = useAuth();
   
-  // Always call the hook, regardless of conditions
   useLoginLogger(user?.id, !!user);
 
-  // Show a loading indicator while auth is being checked
   if (authLoading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
         <div className="text-center">
           <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600">Loading...</p>
         </div>
       </div>
     );
   }
-  
+
   return (
-    <Routes>
-      {/* Public routes */}
-      <Route path="/" element={<Auth />} />
-      <Route path="/policies" element={<Policies />} />
-      
-      {/* Protected routes - regular user access */}
-      <Route element={<ProtectedRoute />}>
-        <Route path="/dashboard" element={<Dashboard />} />
-        <Route path="/my-courses" element={<MyCourses />} />
-        <Route path="/course/:id" element={<CourseDetail />} />
-        <Route path="/course-content/:courseId" element={<CourseContent />} />
-        <Route path="/payment" element={<Payment />} />
-        <Route path="/payment-success" element={<PaymentSuccess />} />
-        <Route path="/referrals" element={<Referrals />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/wallet" element={<Wallet />} />
-        <Route path="/feedback" element={<Feedback />} />
-      </Route>
-      
-      {/* Protected routes - admin only access */}
-      <Route element={<ProtectedRoute requireAdmin={true} />}>
-        <Route path="/admin" element={<AdminPanel />} />
-      </Route>
-      
-      {/* Catch-all route */}
-      <Route path="*" element={<NotFound />} />
-    </Routes>
+    <>
+      <AppInitializer />
+      <Routes>
+        {/* Public routes */}
+        <Route path="/" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+        <Route path="/auth" element={user ? <Navigate to="/dashboard" replace /> : <Auth />} />
+        <Route path="/policies" element={<Policies />} />
+        
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route path="/dashboard" element={<Dashboard />} />
+          <Route path="/my-courses" element={<MyCourses />} />
+          <Route path="/course/:courseId" element={<CourseDetail />} />
+          <Route path="/course/:courseId/content" element={<CourseContent />} />
+          <Route path="/payment/:courseId" element={<Payment />} />
+          <Route path="/payment-success" element={<PaymentSuccess />} />
+          <Route path="/referrals" element={<Referrals />} />
+          <Route path="/profile" element={<Profile />} />
+          <Route path="/wallet" element={<Wallet />} />
+          <Route path="/feedback" element={<Feedback />} />
+        </Route>
+        
+        {/* Admin routes */}
+        <Route element={<ProtectedRoute requireAdmin={true} />}>
+          <Route path="/admin" element={<AdminPanel />} />
+        </Route>
+        
+        {/* 404 route */}
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </>
   );
 };
 
-// Main App component - Make sure all React hooks are called inside a proper component function
-function App() {
-  const [isInitializing, setIsInitializing] = useState(true);
-
-  // Show a shorter loading screen and initialize in the background
-  useEffect(() => {
-    // Set a timeout to ensure the loading screen doesn't show for too long
-    const timer = setTimeout(() => {
-      setIsInitializing(false);
-    }, 1500);
-    
-    return () => clearTimeout(timer);
-  }, []);
-
-  // Show a simpler loading indicator during initialization
-  if (isInitializing) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600">Loading Learn & Earn...</p>
-        </div>
-      </div>
-    );
-  }
-
+const App = () => {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
+        <Toaster />
+        <Sonner />
         <BrowserRouter>
           <AuthProvider>
-            <AppInitializer />
-            <Toaster />
-            <Sonner />
             <AppWithAuth />
           </AuthProvider>
         </BrowserRouter>
       </TooltipProvider>
     </QueryClientProvider>
   );
-}
+};
 
 export default App;

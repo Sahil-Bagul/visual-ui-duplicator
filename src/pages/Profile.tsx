@@ -13,7 +13,8 @@ import {
   Copy, 
   Users, 
   Award,
-  Shield
+  Shield,
+  Wallet
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -35,12 +36,18 @@ interface UserStats {
   totalReferrals: number;
   totalEarned: number;
   coursesPurchased: number;
+  walletBalance: number;
 }
 
 const Profile: React.FC = () => {
   const { user, isAdmin } = useAuth();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [stats, setStats] = useState<UserStats>({ totalReferrals: 0, totalEarned: 0, coursesPurchased: 0 });
+  const [stats, setStats] = useState<UserStats>({ 
+    totalReferrals: 0, 
+    totalEarned: 0, 
+    coursesPurchased: 0,
+    walletBalance: 0
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -65,16 +72,16 @@ const Profile: React.FC = () => {
 
         setProfile(profileData);
 
-        // Get user stats
+        // Get user stats in parallel
         const [referralsResult, walletResult, purchasesResult] = await Promise.all([
           supabase
             .from('referrals')
-            .select('commission_amount', { count: 'exact' })
+            .select('*', { count: 'exact', head: true })
             .eq('user_id', user.id)
             .eq('status', 'completed'),
           supabase
             .from('wallet')
-            .select('total_earned')
+            .select('total_earned, balance')
             .eq('user_id', user.id)
             .single(),
           supabase
@@ -85,13 +92,15 @@ const Profile: React.FC = () => {
         ]);
 
         const totalEarned = walletResult.data?.total_earned || 0;
+        const walletBalance = walletResult.data?.balance || 0;
         const totalReferrals = referralsResult.count || 0;
         const coursesPurchased = purchasesResult.count || 0;
 
         setStats({
           totalReferrals,
           totalEarned,
-          coursesPurchased
+          coursesPurchased,
+          walletBalance
         });
 
       } catch (error) {
@@ -137,11 +146,13 @@ const Profile: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <HeaderWithNotifications />
       <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
-        <div className="flex items-center mb-6">
-          <User className="h-8 w-8 text-[#00C853] mr-3" />
-          <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center">
+            <User className="h-8 w-8 text-[#00C853] mr-3" />
+            <h1 className="text-2xl font-bold text-gray-900">My Profile</h1>
+          </div>
           {isAdmin && (
-            <Badge className="ml-4 bg-purple-100 text-purple-800 border-purple-200">
+            <Badge className="bg-purple-100 text-purple-800 border-purple-200">
               <Shield className="h-3 w-3 mr-1" />
               Admin
             </Badge>
@@ -159,31 +170,30 @@ const Profile: React.FC = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-3">
-                <div className="w-12 h-12 bg-[#00C853] rounded-full flex items-center justify-center">
-                  <User className="h-6 w-6 text-white" />
+                <div className="w-16 h-16 bg-gradient-to-r from-[#00C853] to-green-600 rounded-full flex items-center justify-center">
+                  <User className="h-8 w-8 text-white" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg">{profile?.name || 'User'}</h3>
-                  <p className="text-gray-500 text-sm flex items-center">
+                  <h3 className="font-semibold text-xl">{profile?.name || 'User'}</h3>
+                  <p className="text-gray-500 flex items-center">
                     <Mail className="h-4 w-4 mr-1" />
                     {profile?.email}
+                  </p>
+                  <p className="text-sm text-gray-600 flex items-center mt-1">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    Joined {profile?.joined_at && formatDistanceToNow(new Date(profile.joined_at), { addSuffix: true })}
                   </p>
                 </div>
               </div>
               
-              <div className="border-t pt-4">
-                <div className="flex items-center text-sm text-gray-600 mb-3">
-                  <Calendar className="h-4 w-4 mr-2" />
-                  Joined {profile?.joined_at && formatDistanceToNow(new Date(profile.joined_at), { addSuffix: true })}
-                </div>
-                
-                {profile?.referral_code && (
-                  <div className="bg-gray-50 rounded-lg p-3">
+              {profile?.referral_code && (
+                <div className="border-t pt-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
                     <label className="text-sm font-medium text-gray-700 block mb-2">
                       Your Referral Code
                     </label>
                     <div className="flex items-center space-x-2">
-                      <code className="bg-white px-3 py-2 rounded border font-mono text-sm flex-1">
+                      <code className="bg-white px-3 py-2 rounded border font-mono text-sm flex-1 text-center font-bold text-[#00C853]">
                         {profile.referral_code}
                       </code>
                       <Button
@@ -195,9 +205,12 @@ const Profile: React.FC = () => {
                         <Copy className="h-4 w-4" />
                       </Button>
                     </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Share this code with friends to earn referral rewards!
+                    </p>
                   </div>
-                )}
-              </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 
@@ -210,29 +223,29 @@ const Profile: React.FC = () => {
               </CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="grid grid-cols-1 gap-4">
-                <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Users className="h-5 w-5 text-green-600 mr-3" />
-                    <span className="font-medium">Total Referrals</span>
-                  </div>
-                  <span className="text-xl font-bold text-green-600">{stats.totalReferrals}</span>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="text-center p-4 bg-green-50 rounded-lg">
+                  <Wallet className="h-6 w-6 text-green-600 mx-auto mb-2" />
+                  <div className="text-xl font-bold text-green-600">₹{stats.walletBalance}</div>
+                  <div className="text-sm text-gray-600">Current Balance</div>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg">
-                  <div className="flex items-center">
-                    <Award className="h-5 w-5 text-blue-600 mr-3" />
-                    <span className="font-medium">Total Earned</span>
-                  </div>
-                  <span className="text-xl font-bold text-blue-600">₹{stats.totalEarned}</span>
+                <div className="text-center p-4 bg-blue-50 rounded-lg">
+                  <Award className="h-6 w-6 text-blue-600 mx-auto mb-2" />
+                  <div className="text-xl font-bold text-blue-600">₹{stats.totalEarned}</div>
+                  <div className="text-sm text-gray-600">Total Earned</div>
                 </div>
                 
-                <div className="flex items-center justify-between p-3 bg-purple-50 rounded-lg">
-                  <div className="flex items-center">
-                    <User className="h-5 w-5 text-purple-600 mr-3" />
-                    <span className="font-medium">Courses Purchased</span>
-                  </div>
-                  <span className="text-xl font-bold text-purple-600">{stats.coursesPurchased}</span>
+                <div className="text-center p-4 bg-purple-50 rounded-lg">
+                  <Users className="h-6 w-6 text-purple-600 mx-auto mb-2" />
+                  <div className="text-xl font-bold text-purple-600">{stats.totalReferrals}</div>
+                  <div className="text-sm text-gray-600">Referrals</div>
+                </div>
+                
+                <div className="text-center p-4 bg-orange-50 rounded-lg">
+                  <User className="h-6 w-6 text-orange-600 mx-auto mb-2" />
+                  <div className="text-xl font-bold text-orange-600">{stats.coursesPurchased}</div>
+                  <div className="text-sm text-gray-600">Courses Owned</div>
                 </div>
               </div>
             </CardContent>
@@ -240,9 +253,9 @@ const Profile: React.FC = () => {
         </div>
 
         {/* Support Section */}
-        <Card className="mb-8">
+        <Card>
           <CardHeader>
-            <CardTitle>Support</CardTitle>
+            <CardTitle>Support & Help</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="mb-4">

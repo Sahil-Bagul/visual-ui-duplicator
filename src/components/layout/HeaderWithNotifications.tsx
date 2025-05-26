@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X } from 'lucide-react';
+import { Bell, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -17,6 +17,9 @@ import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+
+// Import the logo
+import logoImage from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png';
 
 const HeaderWithNotifications: React.FC = () => {
   const { user, signOut, isAdmin } = useAuth();
@@ -92,11 +95,29 @@ const HeaderWithNotifications: React.FC = () => {
       <div className="max-w-[993px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center">
-          <img
-            src="/assets/learnandearn-logo.png"
-            alt="Learn & Earn"
-            className="h-8"
-          />
+          <div className="h-10 w-auto mr-2 flex items-center">
+            <img 
+              src={logoImage} 
+              alt="Learn & Earn" 
+              className="h-auto w-full max-h-10 object-contain"
+              style={{
+                filter: "brightness(1.2) contrast(1.2)",
+                maxWidth: "150px",
+              }}
+              onError={(e) => {
+                const target = e.currentTarget as HTMLImageElement;
+                target.style.display = 'none';
+                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
+                if (fallback) fallback.style.display = 'block';
+              }}
+            />
+            <span 
+              className="text-lg font-bold text-gray-900 hidden" 
+              style={{ display: 'none' }}
+            >
+              Learn & Earn
+            </span>
+          </div>
         </Link>
 
         {/* Desktop Navigation */}
@@ -113,15 +134,20 @@ const HeaderWithNotifications: React.FC = () => {
           <Link to="/wallet" className="text-gray-700 hover:text-[#00C853]">
             Wallet
           </Link>
+          {/* Admin Panel Button - Prominently displayed */}
           {isAdmin && (
-            <Link to="/admin" className="text-gray-700 hover:text-[#00C853]">
-              Admin
+            <Link 
+              to="/admin" 
+              className="flex items-center space-x-1 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors font-medium"
+            >
+              <Shield className="h-4 w-4" />
+              <span>Admin Panel</span>
             </Link>
           )}
         </nav>
 
         {/* Notification Bell and User Menu */}
-        <div className="flex items-center">
+        <div className="flex items-center space-x-2">
           {/* Notification Bell */}
           <DropdownMenu 
             open={isNotificationsOpen}
@@ -172,11 +198,6 @@ const HeaderWithNotifications: React.FC = () => {
               <DropdownMenuItem asChild>
                 <Link to="/feedback">Feedback</Link>
               </DropdownMenuItem>
-              {isAdmin && (
-                <DropdownMenuItem asChild>
-                  <Link to="/admin">Admin Panel</Link>
-                </DropdownMenuItem>
-              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 Logout
@@ -204,6 +225,12 @@ const HeaderWithNotifications: React.FC = () => {
                       {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
                     </p>
                     <p className="text-sm text-gray-500">{user?.email}</p>
+                    {isAdmin && (
+                      <Badge className="mt-1 bg-purple-100 text-purple-800 border-purple-200 text-xs">
+                        <Shield className="h-3 w-3 mr-1" />
+                        Admin
+                      </Badge>
+                    )}
                   </div>
                 </div>
                 
@@ -250,13 +277,15 @@ const HeaderWithNotifications: React.FC = () => {
                   >
                     Feedback
                   </Link>
+                  {/* Admin Panel for Mobile */}
                   {isAdmin && (
                     <Link 
                       to="/admin" 
-                      className="px-2 py-2 rounded-lg hover:bg-gray-100"
+                      className="px-2 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium flex items-center space-x-2"
                       onClick={() => setIsOpen(false)}
                     >
-                      Admin Panel
+                      <Shield className="h-4 w-4" />
+                      <span>Admin Panel</span>
                     </Link>
                   )}
                 </nav>
