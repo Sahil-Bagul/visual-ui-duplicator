@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import Header from '@/components/layout/Header';
 import CourseCard from '@/components/courses/CourseCard';
+import WelcomeCard from '@/components/dashboard/WelcomeCard';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
@@ -40,6 +41,7 @@ const Dashboard: React.FC = () => {
     totalReferrals: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [userName, setUserName] = useState('User');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -50,6 +52,9 @@ const Dashboard: React.FC = () => {
       
       try {
         setIsLoading(true);
+        
+        // Set user name
+        setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
         
         // Fetch wallet data
         const { data: walletData, error: walletError } = await supabase
@@ -156,106 +161,22 @@ const Dashboard: React.FC = () => {
     <div className="flex flex-col min-h-screen bg-gray-50">
       <Header />
       <main className="max-w-[1200px] mx-auto w-full px-6 py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">Welcome back!</h1>
-          <p className="text-gray-600">Here's your learning and earning overview</p>
-        </div>
+        {/* Welcome Card */}
+        <WelcomeCard userName={userName} walletBalance={stats.balance} />
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <Card className="bg-gradient-to-r from-[#00C853] to-green-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-green-100 text-sm">Wallet Balance</p>
-                  <p className="text-2xl font-bold">₹{stats.balance}</p>
-                </div>
-                <Wallet className="h-8 w-8 text-green-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-[#2962FF] to-blue-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-blue-100 text-sm">Total Earned</p>
-                  <p className="text-2xl font-bold">₹{stats.totalEarned}</p>
-                </div>
-                <TrendingUp className="h-8 w-8 text-blue-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-purple-500 to-purple-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-purple-100 text-sm">Courses Owned</p>
-                  <p className="text-2xl font-bold">{stats.coursesOwned}</p>
-                </div>
-                <BookOpen className="h-8 w-8 text-purple-200" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-r from-orange-500 to-orange-600 text-white">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-orange-100 text-sm">Referrals</p>
-                  <p className="text-2xl font-bold">{stats.totalReferrals}</p>
-                </div>
-                <Users className="h-8 w-8 text-orange-200" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-          <Button 
-            onClick={() => navigate('/wallet')} 
-            className="bg-[#00C853] hover:bg-green-700 h-12"
-          >
-            View Wallet
-          </Button>
-          <Button 
-            onClick={() => navigate('/referrals')} 
-            variant="outline" 
-            className="h-12"
-          >
-            Manage Referrals
-          </Button>
-          <Button 
-            onClick={() => navigate('/my-courses')} 
-            variant="outline" 
-            className="h-12"
-          >
-            My Courses
-          </Button>
-        </div>
-
-        {/* Available Courses */}
+        {/* Available Courses Section */}
         <section>
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-2xl font-bold text-gray-900">Available Courses</h2>
-            {courses.length > 6 && (
-              <Button variant="outline" onClick={() => navigate('/courses')}>
-                View All
-              </Button>
-            )}
-          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6">Available Courses</h2>
           
           {courses.length > 0 ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {courses.slice(0, 6).map((course) => (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {courses.map((course) => (
                 <CourseCard
                   key={course.id}
                   title={course.title}
                   description={course.description || 'No description available'}
                   price={course.price}
-                  type="Web Course"
+                  type="PDF Course"
                   onClick={() => handleCourseClick(course.id, course.isPurchased)}
                   isPurchased={course.isPurchased}
                   thumbnail={course.thumbnail_url || undefined}

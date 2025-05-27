@@ -52,13 +52,14 @@ const Payment: React.FC = () => {
           description: "Failed to load course details",
           variant: "destructive"
         });
+        navigate('/dashboard');
       } finally {
         setIsLoading(false);
       }
     };
     
     fetchCourse();
-  }, [courseId, toast]);
+  }, [courseId, toast, navigate]);
 
   const handleRazorpayPayment = async () => {
     if (!user || !course) return;
@@ -74,12 +75,12 @@ const Payment: React.FC = () => {
         referralCode.trim() || undefined
       );
       
-      if (!orderResult.success) {
-        throw new Error(orderResult.error);
+      if (!orderResult.success || !orderResult.data) {
+        throw new Error(orderResult.error || 'Failed to create order');
       }
       
       // Initialize Razorpay payment
-      initializeRazorpayPayment(
+      await initializeRazorpayPayment(
         {
           orderId: orderResult.data.id,
           amount: orderResult.data.amount,
@@ -104,7 +105,13 @@ const Payment: React.FC = () => {
                 title: "Payment Successful!",
                 description: "You now have access to the course.",
               });
-              navigate(`/course/${courseId}`);
+              navigate('/payment-success', { 
+                state: { 
+                  courseId: course.id, 
+                  courseName: course.title,
+                  amount: course.price 
+                } 
+              });
             } else {
               throw new Error(processResult.error);
             }
@@ -195,16 +202,18 @@ const Payment: React.FC = () => {
 
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <p className="text-gray-500">Loading course details...</p>
+            <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
           </div>
         ) : course ? (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             <div className="md:order-2">
-              <img 
-                src={course.thumbnail_url} 
-                alt={course.title} 
-                className="rounded-lg shadow-md w-full" 
-              />
+              {course.thumbnail_url && (
+                <img 
+                  src={course.thumbnail_url} 
+                  alt={course.title} 
+                  className="rounded-lg shadow-md w-full" 
+                />
+              )}
             </div>
             
             <div>

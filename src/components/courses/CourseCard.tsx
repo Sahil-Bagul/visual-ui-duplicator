@@ -1,8 +1,9 @@
 
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { BookOpen, CheckCircle } from 'lucide-react';
+import { BookOpen, Lock } from 'lucide-react';
 
 interface CourseCardProps {
   title: string;
@@ -24,63 +25,43 @@ const CourseCard: React.FC<CourseCardProps> = ({
   thumbnail
 }) => {
   return (
-    <Card 
-      className="cursor-pointer hover:shadow-lg transition-all duration-200 hover:scale-[1.02] bg-white border border-gray-200"
-      onClick={onClick}
-    >
-      <CardContent className="p-0">
-        {/* Thumbnail */}
-        <div className="relative">
-          {thumbnail ? (
-            <img 
-              src={thumbnail} 
-              alt={title}
-              className="w-full h-48 object-cover rounded-t-lg"
-            />
-          ) : (
-            <div className="w-full h-48 bg-gradient-to-br from-[#00C853] to-[#2962FF] rounded-t-lg flex items-center justify-center">
-              <BookOpen className="h-16 w-16 text-white opacity-80" />
-            </div>
-          )}
-          
-          {/* Course Type Badge */}
-          <Badge className="absolute top-3 left-3 bg-white text-gray-700 border border-gray-200">
+    <Card className="w-full bg-white border border-gray-200 rounded-lg shadow-sm hover:shadow-md transition-shadow">
+      <CardContent className="p-6">
+        <div className="flex justify-between items-start mb-3">
+          <Badge variant="outline" className="bg-blue-50 text-blue-600 border-blue-200">
             {type}
           </Badge>
-          
-          {/* Purchase Status */}
           {isPurchased && (
-            <div className="absolute top-3 right-3 bg-green-500 text-white rounded-full p-1">
-              <CheckCircle className="h-4 w-4" />
-            </div>
+            <Badge className="bg-green-100 text-green-800 border-green-200">
+              Purchased
+            </Badge>
           )}
         </div>
         
-        {/* Content */}
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 mb-2 line-clamp-2">
-            {title}
-          </h3>
-          
-          <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-            {description}
-          </p>
-          
-          {/* Price and Action */}
-          <div className="flex items-center justify-between">
-            <div className="text-2xl font-bold text-[#00C853]">
-              ₹{price}
-            </div>
-            
-            <div className="text-sm text-gray-500">
-              {isPurchased ? (
-                <span className="text-green-600 font-medium">Purchased</span>
-              ) : (
-                <span>Click to view</span>
-              )}
-            </div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-2">{title}</h3>
+        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{description}</p>
+        
+        <div className="flex items-center justify-between">
+          <div className="text-xl font-bold text-gray-900">₹{price}</div>
+          <div className="flex items-center text-gray-500 text-sm">
+            <Lock className="h-4 w-4 mr-1" />
+            <span>Unlock referrals after purchase</span>
           </div>
         </div>
+        
+        <Button 
+          onClick={onClick}
+          className="w-full mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+        >
+          {isPurchased ? (
+            <>
+              <BookOpen className="h-4 w-4 mr-2" />
+              View Course
+            </>
+          ) : (
+            'Buy Now'
+          )}
+        </Button>
       </CardContent>
     </Card>
   );

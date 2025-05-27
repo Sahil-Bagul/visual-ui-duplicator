@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Menu, Shield } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 // Import the logo
 import logoImage from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png';
@@ -11,9 +12,23 @@ import logoImage from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png
 const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const { user, isAdmin } = useAuth();
+  const navigate = useNavigate();
+  const { toast } = useToast();
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleAdminClick = () => {
+    if (!isAdmin) {
+      toast({
+        title: "Access Denied",
+        description: "You don't have admin privileges",
+        variant: "destructive"
+      });
+      return;
+    }
+    navigate('/admin');
   };
 
   return (
@@ -56,7 +71,7 @@ const Header: React.FC = () => {
               isActive ? "text-blue-600 font-medium" : "text-gray-600 hover:text-gray-900"
             }
           >
-            Dashboard
+            Home
           </NavLink>
           <NavLink 
             to="/my-courses" 
@@ -93,16 +108,15 @@ const Header: React.FC = () => {
           
           {/* Admin Panel Button - Only show for admins */}
           {isAdmin && (
-            <NavLink to="/admin">
-              <Button 
-                variant="outline" 
-                size="sm"
-                className="border-purple-200 text-purple-700 hover:bg-purple-50"
-              >
-                <Shield className="h-4 w-4 mr-1" />
-                Admin Panel
-              </Button>
-            </NavLink>
+            <Button 
+              onClick={handleAdminClick}
+              variant="outline" 
+              size="sm"
+              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+            >
+              <Shield className="h-4 w-4 mr-1" />
+              Admin
+            </Button>
           )}
         </nav>
         
@@ -126,7 +140,7 @@ const Header: React.FC = () => {
                 }
                 onClick={() => setIsMenuOpen(false)}
               >
-                Dashboard
+                Home
               </NavLink>
               <NavLink 
                 to="/my-courses" 
@@ -167,14 +181,17 @@ const Header: React.FC = () => {
               
               {/* Admin Panel Button for Mobile */}
               {isAdmin && (
-                <NavLink 
-                  to="/admin"
+                <Button 
+                  onClick={() => {
+                    handleAdminClick();
+                    setIsMenuOpen(false);
+                  }}
+                  variant="outline"
                   className="p-2 text-purple-700 border border-purple-200 rounded-md bg-purple-50 flex items-center"
-                  onClick={() => setIsMenuOpen(false)}
                 >
                   <Shield className="h-4 w-4 mr-1" />
                   Admin Panel
-                </NavLink>
+                </Button>
               )}
               
               <NavLink 

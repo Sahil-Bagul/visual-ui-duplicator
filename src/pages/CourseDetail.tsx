@@ -150,7 +150,7 @@ const CourseDetail: React.FC = () => {
             {/* Course Header */}
             <div className="mb-6">
               <div className="flex items-center gap-2 mb-4">
-                <Badge variant="outline">Web Course</Badge>
+                <Badge variant="outline">PDF Course</Badge>
                 <Badge className="bg-green-100 text-green-800">Active</Badge>
               </div>
               <h1 className="text-3xl font-bold text-gray-900 mb-4">{course.title}</h1>
