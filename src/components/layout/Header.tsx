@@ -20,14 +20,6 @@ const Header: React.FC = () => {
   };
 
   const handleAdminClick = () => {
-    if (!isAdmin) {
-      toast({
-        title: "Access Denied",
-        description: "You don't have admin privileges",
-        variant: "destructive"
-      });
-      return;
-    }
     navigate('/admin');
   };
 
@@ -112,10 +104,10 @@ const Header: React.FC = () => {
               onClick={handleAdminClick}
               variant="outline" 
               size="sm"
-              className="border-purple-200 text-purple-700 hover:bg-purple-50"
+              className="border-purple-200 text-purple-700 hover:bg-purple-50 flex items-center space-x-1"
             >
-              <Shield className="h-4 w-4 mr-1" />
-              Admin
+              <Shield className="h-4 w-4" />
+              <span>Admin Panel</span>
             </Button>
           )}
         </nav>
@@ -179,7 +171,7 @@ const Header: React.FC = () => {
                 Profile
               </NavLink>
               
-              {/* Admin Panel Button for Mobile */}
+              {/* Admin Panel Button for Mobile - Only show for admins */}
               {isAdmin && (
                 <Button 
                   onClick={() => {
@@ -187,10 +179,10 @@ const Header: React.FC = () => {
                     setIsMenuOpen(false);
                   }}
                   variant="outline"
-                  className="p-2 text-purple-700 border border-purple-200 rounded-md bg-purple-50 flex items-center"
+                  className="p-2 text-purple-700 border border-purple-200 rounded-md bg-purple-50 flex items-center justify-center space-x-1"
                 >
-                  <Shield className="h-4 w-4 mr-1" />
-                  Admin Panel
+                  <Shield className="h-4 w-4" />
+                  <span>Admin Panel</span>
                 </Button>
               )}
               
