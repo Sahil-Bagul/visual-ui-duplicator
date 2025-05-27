@@ -289,7 +289,7 @@ const HeaderWithNotifications: React.FC = () => {
                         handleAdminPanel();
                         setIsOpen(false);
                       }}
-                      className="px-2 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium flex items-center space-x-2 justify-start"
+                      className="px-2 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium flex items-center justify-start space-x-2"
                     >
                       <Shield className="h-4 w-4" />
                       <span>Admin Panel</span>
