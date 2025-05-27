@@ -29,6 +29,7 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      staleTime: 5 * 60 * 1000, // 5 minutes cache
       meta: {
         errorHandler: (error: Error) => {
           console.error("Query error:", error);
@@ -44,6 +45,9 @@ const AppInitializer = () => {
   const [initialized, setInitialized] = useState(false);
 
   useEffect(() => {
+    // Only initialize once per session
+    if (initialized) return;
+    
     const initialize = async () => {
       try {
         await initializeAppData();
@@ -54,8 +58,11 @@ const AppInitializer = () => {
       }
     };
     
-    initialize();
-  }, [user]);
+    // Delay initialization to avoid blocking the UI
+    const timeoutId = setTimeout(initialize, 1000);
+    
+    return () => clearTimeout(timeoutId);
+  }, [initialized]);
 
   return null;
 };

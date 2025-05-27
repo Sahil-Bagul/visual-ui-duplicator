@@ -1,16 +1,15 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
 import Footer from '@/components/layout/Footer';
 import CourseCard from '@/components/courses/CourseCard';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
-import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent } from '@/components/ui/card';
-import { Wallet, TrendingUp, BookOpen, Users } from 'lucide-react';
+import { BookOpen } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -42,10 +41,14 @@ const Dashboard: React.FC = () => {
     totalReferrals: 0
   });
   const [isLoading, setIsLoading] = useState(true);
-  const [userName, setUserName] = useState('User');
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // Memoize user name to avoid recalculation
+  const userName = useMemo(() => {
+    return user?.user_metadata?.name || user?.email?.split('@')[0] || 'User';
+  }, [user]);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
@@ -54,60 +57,55 @@ const Dashboard: React.FC = () => {
       try {
         setIsLoading(true);
         
-        // Set user name
-        setUserName(user.user_metadata?.name || user.email?.split('@')[0] || 'User');
-        
-        // Fetch wallet data
-        const { data: walletData, error: walletError } = await supabase
-          .from('wallet')
-          .select('balance, total_earned')
-          .eq('user_id', user.id)
-          .maybeSingle();
+        // Optimize by making parallel requests instead of sequential ones
+        const [walletResult, coursesResult, purchasesResult, referralsResult] = await Promise.allSettled([
+          supabase
+            .from('wallet')
+            .select('balance, total_earned')
+            .eq('user_id', user.id)
+            .maybeSingle(),
           
-        if (walletError && walletError.code !== 'PGRST116') {
-          console.error("Error fetching wallet:", walletError);
-        }
-        
-        // Fetch courses
-        const { data: coursesData, error: coursesError } = await supabase
-          .from('courses')
-          .select('*')
-          .eq('is_active', true);
+          supabase
+            .from('courses')
+            .select('*')
+            .eq('is_active', true),
           
-        if (coursesError) {
-          console.error("Error fetching courses:", coursesError);
-          toast({
-            title: "Error",
-            description: "Failed to load courses",
-            variant: "destructive"
-          });
-        }
-        
-        // Fetch user's purchases
-        const { data: purchasesData, error: purchasesError } = await supabase
-          .from('purchases')
-          .select('course_id')
-          .eq('user_id', user.id)
-          .eq('payment_status', 'completed');
+          supabase
+            .from('purchases')
+            .select('course_id')
+            .eq('user_id', user.id)
+            .eq('payment_status', 'completed'),
           
-        if (purchasesError) {
-          console.error("Error fetching purchases:", purchasesError);
-        }
+          supabase
+            .from('referrals')
+            .select('*', { count: 'exact', head: true })
+            .eq('user_id', user.id)
+            .eq('status', 'completed')
+        ]);
         
-        // Fetch referrals count
-        const { count: referralsCount, error: referralsError } = await supabase
-          .from('referrals')
-          .select('*', { count: 'exact', head: true })
-          .eq('user_id', user.id)
-          .eq('status', 'completed');
-          
-        if (referralsError) {
-          console.error("Error fetching referrals:", referralsError);
-        }
+        // Process wallet data
+        const walletData = walletResult.status === 'fulfilled' && !walletResult.value.error 
+          ? walletResult.value.data 
+          : null;
+        
+        // Process courses data
+        const coursesData = coursesResult.status === 'fulfilled' && !coursesResult.value.error 
+          ? coursesResult.value.data 
+          : [];
+        
+        // Process purchases data
+        const purchasesData = purchasesResult.status === 'fulfilled' && !purchasesResult.value.error 
+          ? purchasesResult.value.data 
+          : [];
+        
+        // Process referrals data
+        const referralsCount = referralsResult.status === 'fulfilled' && !referralsResult.value.error 
+          ? referralsResult.value.count 
+          : 0;
         
         const purchasedCourseIds = purchasesData?.map(p => p.course_id) || [];
         
-        // Combine data
+        // Combine data efficiently
         const coursesWithProgress: CourseWithProgress[] = coursesData?.map(course => ({
           ...course,
           isPurchased: purchasedCourseIds.includes(course.id)

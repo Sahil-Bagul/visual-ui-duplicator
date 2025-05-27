@@ -1,4 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+
+import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
@@ -33,36 +34,42 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  // Check if a user is an admin by checking the users table directly
-  const checkAdminStatus = async (userId: string) => {
+  // Optimized admin status check with caching
+  const checkAdminStatus = useCallback(async (userId: string) => {
     try {
       console.log('Checking admin status for user:', userId);
       
-      // First check the users table directly
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', userId)
-        .single();
+      // Use the RPC function for better performance
+      const { data: adminStatus, error } = await supabase.rpc('is_admin');
       
-      if (userError) {
-        console.error('Error fetching user data:', userError);
-        return false;
+      if (error) {
+        console.error('Error checking admin status via RPC:', error);
+        // Fallback to direct table query
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', userId)
+          .single();
+        
+        if (userError) {
+          console.error('Error fetching user data:', userError);
+          return false;
+        }
+        
+        console.log('Admin status from users table:', userData?.is_admin);
+        return userData?.is_admin || false;
       }
       
-      console.log('User data from table:', userData);
-      const adminStatus = userData?.is_admin || false;
-      
-      console.log('Admin status result:', adminStatus);
-      return adminStatus;
+      console.log('Admin status from RPC:', adminStatus);
+      return adminStatus || false;
     } catch (error) {
       console.error('Exception checking admin status:', error);
       return false;
     }
-  };
+  }, []);
 
   // Function to refresh auth state that can be called from outside
-  const refreshAuth = async () => {
+  const refreshAuth = useCallback(async () => {
     try {
       setIsLoading(true);
       const { data: { session }, error } = await supabase.auth.getSession();
@@ -86,7 +93,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [checkAdminStatus]);
 
   useEffect(() => {
     const initializeAuth = async () => {
@@ -147,7 +154,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [checkAdminStatus]);
 
   const signIn = async (email: string, password: string) => {
     try {

@@ -139,7 +139,7 @@ const HeaderWithNotifications: React.FC = () => {
           <Link to="/wallet" className="text-gray-700 hover:text-[#00C853]">
             Wallet
           </Link>
-          {/* Admin Panel Button - Only show for admin users */}
+          {/* Admin Panel Button - Show only for admin users */}
           {isAdmin && (
             <Button 
               onClick={handleAdminPanel}

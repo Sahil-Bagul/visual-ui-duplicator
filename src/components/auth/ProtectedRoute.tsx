@@ -13,11 +13,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requireAdmin = false })
   const { user, isLoading, isAdmin } = useAuth();
   const location = useLocation();
   
-  console.log('ProtectedRoute - User:', user?.email);
-  console.log('ProtectedRoute - isAdmin:', isAdmin);
-  console.log('ProtectedRoute - requireAdmin:', requireAdmin);
-  console.log('ProtectedRoute - isLoading:', isLoading);
-  
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gray-50">
@@ -36,7 +31,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requireAdmin = false })
   
   // If admin access is required but user is not admin
   if (requireAdmin && !isAdmin) {
-    console.log('Access denied - Admin required but user is not admin');
     return (
       <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
         <div className="max-w-md w-full">
@@ -45,8 +39,6 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requireAdmin = false })
             <AlertTitle>Access Denied</AlertTitle>
             <AlertDescription>
               You do not have admin permissions to access this page.
-              Current user: {user.email}
-              Admin status: {isAdmin ? 'Yes' : 'No'}
               Please contact an administrator if you believe this is a mistake.
             </AlertDescription>
           </Alert>
