@@ -1,7 +1,8 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
+import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import Footer from '@/components/layout/Footer';
 import CourseCard from '@/components/courses/CourseCard';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
 import { Button } from '@/components/ui/button';
@@ -146,21 +147,22 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <Header />
+        <HeaderWithNotifications />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-gray-600">Loading dashboard...</p>
           </div>
         </main>
+        <Footer />
       </div>
     );
   }
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      <main className="max-w-[1200px] mx-auto w-full px-6 py-8">
+      <HeaderWithNotifications />
+      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         {/* Welcome Card */}
         <WelcomeCard userName={userName} walletBalance={stats.balance} />
 
@@ -194,6 +196,7 @@ const Dashboard: React.FC = () => {
           )}
         </section>
       </main>
+      <Footer />
     </div>
   );
 };

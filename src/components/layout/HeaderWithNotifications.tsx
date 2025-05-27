@@ -90,6 +90,11 @@ const HeaderWithNotifications: React.FC = () => {
     setIsNotificationsOpen(!isNotificationsOpen);
   };
 
+  // Handle admin panel navigation
+  const handleAdminPanel = () => {
+    navigate('/admin');
+  };
+
   return (
     <header className="bg-white shadow-sm sticky top-0 z-10">
       <div className="max-w-[993px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
@@ -134,15 +139,15 @@ const HeaderWithNotifications: React.FC = () => {
           <Link to="/wallet" className="text-gray-700 hover:text-[#00C853]">
             Wallet
           </Link>
-          {/* Admin Panel Button - Prominently displayed */}
+          {/* Admin Panel Button - Only show for admin users */}
           {isAdmin && (
-            <Link 
-              to="/admin" 
+            <Button 
+              onClick={handleAdminPanel}
               className="flex items-center space-x-1 px-3 py-2 bg-purple-100 text-purple-700 rounded-lg hover:bg-purple-200 transition-colors font-medium"
             >
               <Shield className="h-4 w-4" />
               <span>Admin Panel</span>
-            </Link>
+            </Button>
           )}
         </nav>
 
@@ -277,16 +282,18 @@ const HeaderWithNotifications: React.FC = () => {
                   >
                     Feedback
                   </Link>
-                  {/* Admin Panel for Mobile */}
+                  {/* Admin Panel for Mobile - Only show for admin users */}
                   {isAdmin && (
-                    <Link 
-                      to="/admin" 
-                      className="px-2 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium flex items-center space-x-2"
-                      onClick={() => setIsOpen(false)}
+                    <Button 
+                      onClick={() => {
+                        handleAdminPanel();
+                        setIsOpen(false);
+                      }}
+                      className="px-2 py-2 rounded-lg bg-purple-100 text-purple-700 hover:bg-purple-200 font-medium flex items-center space-x-2 justify-start"
                     >
                       <Shield className="h-4 w-4" />
                       <span>Admin Panel</span>
-                    </Link>
+                    </Button>
                   )}
                 </nav>
                 

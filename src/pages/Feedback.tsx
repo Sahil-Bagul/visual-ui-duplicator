@@ -1,6 +1,6 @@
 
 import React from 'react';
-import Header from '@/components/layout/Header';
+import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
 import Footer from '@/components/layout/Footer';
 import FeedbackForm from '@/components/feedback/FeedbackForm';
 import { MessageSquare } from 'lucide-react';
@@ -16,7 +16,7 @@ const Feedback: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
+      <HeaderWithNotifications />
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <div className="mb-6 flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-[#00C853]" />

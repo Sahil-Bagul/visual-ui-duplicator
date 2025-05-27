@@ -1,7 +1,8 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
+import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import Footer from '@/components/layout/Footer';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 
@@ -11,8 +12,8 @@ const Policies: React.FC = () => {
   
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      <main className="max-w-[993px] mx-auto px-6 py-8 w-full">
+      <HeaderWithNotifications />
+      <main className="max-w-[993px] mx-auto px-6 py-8 w-full flex-grow">
         <div className="flex justify-between items-center mb-8">
           <h1 className="text-2xl font-bold text-gray-900">Policies</h1>
           <Button 
@@ -109,6 +110,7 @@ const Policies: React.FC = () => {
           </Tabs>
         </div>
       </main>
+      <Footer />
     </div>
   );
 };
