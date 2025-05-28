@@ -100,7 +100,7 @@ export async function generateReferralCode(): Promise<string | null> {
     
     const { error: updateError } = await supabase
       .from('users')
-      .update({ referral_code })
+      .update({ referral_code: referralCode })
       .eq('id', user.id);
 
     if (updateError) {

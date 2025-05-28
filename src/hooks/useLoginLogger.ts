@@ -1,15 +1,15 @@
 
-import { useEffect } from 'react';
+import { useCallback } from 'react';
 import { logUserLogin } from '@/services/analyticsService';
 
-export function useLoginLogger(userId: string | undefined, isAuthenticated: boolean) {
-  useEffect(() => {
-    // Only log if authenticated and has a userId
-    if (isAuthenticated && userId) {
-      // Log the login event
-      logUserLogin(userId).catch((error) => {
-        console.error('Failed to log user login:', error);
-      });
+export function useLoginLogger() {
+  const logLogin = useCallback(async (userId: string) => {
+    try {
+      await logUserLogin(userId);
+    } catch (error) {
+      console.error('Failed to log user login:', error);
     }
-  }, [userId, isAuthenticated]);
+  }, []);
+
+  return { logLogin };
 }
