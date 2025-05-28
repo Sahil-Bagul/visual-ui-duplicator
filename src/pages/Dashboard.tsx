@@ -136,9 +136,9 @@ const Dashboard: React.FC = () => {
 
   const handleCourseClick = (courseId: string, isPurchased: boolean) => {
     if (isPurchased) {
-      navigate(`/course/${courseId}/content`);
-    } else {
       navigate(`/course/${courseId}`);
+    } else {
+      navigate(`/payment/${courseId}`);
     }
   };
 

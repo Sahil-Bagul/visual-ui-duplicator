@@ -20,24 +20,33 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const fetchUserProfile = async (userId: string) => {
+  const checkAdminStatus = async (userId: string) => {
     try {
-      console.log('Fetching user profile for admin status:', userId);
-      const { data: profile, error } = await supabase
+      console.log('Checking admin status for user:', userId);
+      
+      // First try to get user data from users table
+      const { data: userData, error: userError } = await supabase
         .from('users')
         .select('is_admin')
         .eq('id', userId)
         .single();
 
-      if (error) {
-        console.error('Error fetching user profile:', error);
-        return false;
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        // Fallback to RPC function
+        const { data: rpcResult, error: rpcError } = await supabase.rpc('is_admin');
+        if (rpcError) {
+          console.error('Error calling is_admin RPC:', rpcError);
+          return false;
+        }
+        console.log('Admin status from RPC:', rpcResult);
+        return rpcResult || false;
       }
 
-      console.log('User profile fetched:', profile);
-      return profile?.is_admin || false;
+      console.log('User data from database:', userData);
+      return userData?.is_admin || false;
     } catch (error) {
-      console.error('Exception fetching user profile:', error);
+      console.error('Exception checking admin status:', error);
       return false;
     }
   };
@@ -87,7 +96,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(user);
       
       if (user) {
-        const adminStatus = await fetchUserProfile(user.id);
+        const adminStatus = await checkAdminStatus(user.id);
         setIsAdmin(adminStatus);
       } else {
         setIsAdmin(false);
@@ -104,7 +113,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           setUser(session.user);
-          const adminStatus = await fetchUserProfile(session.user.id);
+          const adminStatus = await checkAdminStatus(session.user.id);
           setIsAdmin(adminStatus);
         }
       } catch (error) {
@@ -122,7 +131,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
         if (session?.user) {
           setUser(session.user);
-          const adminStatus = await fetchUserProfile(session.user.id);
+          const adminStatus = await checkAdminStatus(session.user.id);
           setIsAdmin(adminStatus);
         } else {
           setUser(null);

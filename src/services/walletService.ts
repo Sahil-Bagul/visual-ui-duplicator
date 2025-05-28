@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface WalletData {
@@ -29,7 +28,7 @@ export async function getUserWallet(): Promise<WalletData | null> {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
       console.error('No authenticated user found');
-      return null;
+      throw new Error('Authentication required');
     }
 
     console.log('Fetching wallet for user:', user.id);
@@ -42,31 +41,7 @@ export async function getUserWallet(): Promise<WalletData | null> {
 
     if (error) {
       console.error('Error fetching wallet:', error);
-      
-      // If wallet doesn't exist, create one
-      if (error.code === 'PGRST116' || !data) {
-        console.log('Creating new wallet for user...');
-        const { data: newWallet, error: createError } = await supabase
-          .from('wallet')
-          .insert({
-            user_id: user.id,
-            total_earned: 0,
-            balance: 0,
-            total_withdrawn: 0
-          })
-          .select()
-          .single();
-          
-        if (createError) {
-          console.error('Error creating wallet:', createError);
-          return null;
-        }
-        
-        console.log('Successfully created new wallet:', newWallet);
-        return newWallet as WalletData;
-      }
-      
-      return null;
+      throw error;
     }
 
     if (!data) {
@@ -85,7 +60,7 @@ export async function getUserWallet(): Promise<WalletData | null> {
         
       if (createError) {
         console.error('Error creating wallet:', createError);
-        return null;
+        throw createError;
       }
       
       console.log('Successfully created new wallet:', newWallet);
@@ -96,7 +71,7 @@ export async function getUserWallet(): Promise<WalletData | null> {
     return data as WalletData;
   } catch (error) {
     console.error('Exception fetching wallet:', error);
-    return null;
+    throw error;
   }
 }
 

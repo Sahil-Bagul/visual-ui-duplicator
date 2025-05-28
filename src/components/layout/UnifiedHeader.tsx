@@ -4,7 +4,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Bell, Menu, X, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
-import { supabase } from '@/integrations/supabase/client';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -49,10 +48,10 @@ const UnifiedHeader: React.FC = () => {
     navigate('/admin');
   };
 
-  console.log('Header - isAdmin:', isAdmin, 'user:', user?.email);
+  console.log('UnifiedHeader - isAdmin:', isAdmin, 'user:', user?.email);
 
   return (
-    <header className="bg-white shadow-sm sticky top-0 z-10">
+    <header className="bg-white shadow-sm sticky top-0 z-50">
       <div className="max-w-[993px] mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link to="/dashboard" className="flex items-center">

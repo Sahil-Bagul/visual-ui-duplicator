@@ -34,21 +34,7 @@ const Wallet: React.FC = () => {
           getWalletTransactions()
         ]);
         
-        if (!wallet) {
-          console.log('No wallet data returned, but this might be expected for new users');
-          // Don't set error for new users, just create empty wallet data
-          setWalletData({
-            id: '',
-            user_id: user.id,
-            total_earned: 0,
-            balance: 0,
-            total_withdrawn: 0,
-            updated_at: new Date().toISOString()
-          });
-        } else {
-          setWalletData(wallet);
-        }
-        
+        setWalletData(wallet);
         setTransactions(walletTransactions);
         console.log('Wallet data loaded successfully');
       } catch (error) {

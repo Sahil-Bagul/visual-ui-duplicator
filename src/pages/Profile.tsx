@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import Header from '@/components/layout/Header';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +49,7 @@ const Profile: React.FC = () => {
     walletBalance: 0
   });
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadProfile = async () => {
@@ -56,6 +57,9 @@ const Profile: React.FC = () => {
       
       try {
         setIsLoading(true);
+        setError(null);
+        
+        console.log('Loading profile for user:', user.id);
         
         // Get user profile
         const { data: profileData, error: profileError } = await supabase
@@ -66,14 +70,14 @@ const Profile: React.FC = () => {
 
         if (profileError) {
           console.error('Error fetching profile:', profileError);
-          toast.error('Failed to load profile data');
+          setError('Failed to load profile data');
           return;
         }
 
         setProfile(profileData);
 
         // Get user stats in parallel
-        const [referralsResult, walletResult, purchasesResult] = await Promise.all([
+        const [referralsResult, walletResult, purchasesResult] = await Promise.allSettled([
           supabase
             .from('referrals')
             .select('*', { count: 'exact', head: true })
@@ -91,10 +95,10 @@ const Profile: React.FC = () => {
             .eq('payment_status', 'completed')
         ]);
 
-        const totalEarned = walletResult.data?.total_earned || 0;
-        const walletBalance = walletResult.data?.balance || 0;
-        const totalReferrals = referralsResult.count || 0;
-        const coursesPurchased = purchasesResult.count || 0;
+        const totalEarned = walletResult.status === 'fulfilled' && walletResult.value.data?.total_earned || 0;
+        const walletBalance = walletResult.status === 'fulfilled' && walletResult.value.data?.balance || 0;
+        const totalReferrals = referralsResult.status === 'fulfilled' && referralsResult.value.count || 0;
+        const coursesPurchased = purchasesResult.status === 'fulfilled' && purchasesResult.value.count || 0;
 
         setStats({
           totalReferrals,
@@ -105,6 +109,7 @@ const Profile: React.FC = () => {
 
       } catch (error) {
         console.error('Error loading profile:', error);
+        setError('Failed to load profile data');
         toast.error('Failed to load profile data');
       } finally {
         setIsLoading(false);
@@ -128,8 +133,8 @@ const Profile: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <Header />
-        <main className="max-w-[1200px] mx-auto w-full px-6 py-8 flex-grow">
+        <UnifiedHeader />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
               <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
@@ -142,10 +147,34 @@ const Profile: React.FC = () => {
     );
   }
 
+  if (error) {
+    return (
+      <div className="flex flex-col min-h-screen bg-gray-50">
+        <UnifiedHeader />
+        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+          <div className="text-center py-12">
+            <div className="text-red-500 mb-4">
+              <User className="h-16 w-16 mx-auto mb-4" />
+              <h2 className="text-xl font-semibold mb-2">Profile Error</h2>
+              <p>{error}</p>
+            </div>
+            <button 
+              onClick={() => window.location.reload()} 
+              className="mt-4 px-4 py-2 bg-[#00C853] text-white rounded-lg hover:bg-[#00B248]"
+            >
+              Retry
+            </button>
+          </div>
+        </main>
+        <Footer />
+      </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <Header />
-      <main className="max-w-[1200px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
+      <UnifiedHeader />
+      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         <div className="flex items-center justify-between mb-6">
           <div className="flex items-center">
             <User className="h-8 w-8 text-[#00C853] mr-3" />

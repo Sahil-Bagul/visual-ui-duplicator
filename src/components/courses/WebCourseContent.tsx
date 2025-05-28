@@ -2,15 +2,19 @@
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { CheckCircle, Circle, BookOpen, ArrowRight, ArrowLeft } from 'lucide-react';
+import { Progress } from '@/components/ui/progress';
+import { CheckCircle, Clock, PlayCircle, BookOpen, Award } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/context/AuthContext';
+import { toast } from 'sonner';
 
 interface Module {
   id: string;
   title: string;
-  description: string;
-  content: string;
+  description: string | null;
+  content: string | null;
   module_order: number;
+  is_active: boolean;
   lessons: Lesson[];
 }
 
@@ -19,7 +23,7 @@ interface Lesson {
   title: string;
   content: string;
   lesson_order: number;
-  module_id: string;
+  completed?: boolean;
 }
 
 interface WebCourseContentProps {
@@ -28,17 +32,20 @@ interface WebCourseContentProps {
 }
 
 const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTitle }) => {
+  const { user } = useAuth();
   const [modules, setModules] = useState<Module[]>([]);
-  const [currentModuleIndex, setCurrentModuleIndex] = useState(0);
-  const [currentLessonIndex, setCurrentLessonIndex] = useState(0);
-  const [completedLessons, setCompletedLessons] = useState<Set<string>>(new Set());
+  const [activeModule, setActiveModule] = useState<string | null>(null);
+  const [activeLesson, setActiveLesson] = useState<string | null>(null);
+  const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const loadCourseContent = async () => {
+      if (!user || !courseId) return;
+
       try {
         setIsLoading(true);
-        
+
         // Load modules for this course
         const { data: modulesData, error: modulesError } = await supabase
           .from('course_modules')
@@ -49,14 +56,14 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
 
         if (modulesError) {
           console.error('Error loading modules:', modulesError);
-          // Create default modules if none exist
-          setModules(createDefaultModules());
+          // Create demo modules if none exist
+          await createDemoModules();
           return;
         }
 
         if (!modulesData || modulesData.length === 0) {
-          // Create default modules if none exist
-          setModules(createDefaultModules());
+          // Create demo modules if none exist
+          await createDemoModules();
           return;
         }
 
@@ -69,129 +76,213 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
               .eq('module_id', module.id)
               .order('lesson_order');
 
-            return {
-              ...module,
-              lessons: lessonsError ? [] : lessonsData || []
-            };
+            if (lessonsError) {
+              console.error('Error loading lessons:', lessonsError);
+              return { ...module, lessons: [] };
+            }
+
+            // Check completion status for each lesson
+            const lessonsWithProgress = await Promise.all(
+              (lessonsData || []).map(async (lesson) => {
+                const { data: progressData } = await supabase
+                  .from('user_progress')
+                  .select('completed')
+                  .eq('user_id', user.id)
+                  .eq('lesson_id', lesson.id)
+                  .single();
+
+                return {
+                  ...lesson,
+                  completed: progressData?.completed || false
+                };
+              })
+            );
+
+            return { ...module, lessons: lessonsWithProgress };
           })
         );
 
         setModules(modulesWithLessons);
+        
+        // Set first module as active if none selected
+        if (modulesWithLessons.length > 0 && !activeModule) {
+          setActiveModule(modulesWithLessons[0].id);
+          if (modulesWithLessons[0].lessons.length > 0) {
+            setActiveLesson(modulesWithLessons[0].lessons[0].id);
+          }
+        }
+
+        // Calculate overall progress
+        calculateProgress(modulesWithLessons);
       } catch (error) {
         console.error('Error loading course content:', error);
-        setModules(createDefaultModules());
+        toast.error('Failed to load course content');
       } finally {
         setIsLoading(false);
       }
     };
 
     loadCourseContent();
-  }, [courseId]);
+  }, [user, courseId, activeModule]);
 
-  const createDefaultModules = (): Module[] => {
-    return [
-      {
-        id: 'default-1',
-        title: 'Getting Started',
-        description: 'Introduction to the course',
-        content: 'Welcome to this comprehensive course! This module will introduce you to the key concepts and objectives.',
-        module_order: 1,
-        lessons: [
+  const createDemoModules = async () => {
+    try {
+      // Create demo modules for the course
+      const demoModules = [
+        {
+          course_id: courseId,
+          title: 'Introduction & Getting Started',
+          description: 'Welcome to the course! Learn the basics and set up your environment.',
+          content: 'This module covers the fundamentals and helps you get started.',
+          module_order: 1,
+          is_active: true
+        },
+        {
+          course_id: courseId,
+          title: 'Core Concepts',
+          description: 'Dive deep into the main concepts and principles.',
+          content: 'Understanding the core concepts is essential for mastery.',
+          module_order: 2,
+          is_active: true
+        },
+        {
+          course_id: courseId,
+          title: 'Practical Applications',
+          description: 'Apply what you\'ve learned through hands-on exercises.',
+          content: 'Put theory into practice with real-world examples.',
+          module_order: 3,
+          is_active: true
+        }
+      ];
+
+      for (const moduleData of demoModules) {
+        const { data: moduleResult, error: moduleError } = await supabase
+          .from('course_modules')
+          .insert(moduleData)
+          .select()
+          .single();
+
+        if (moduleError) {
+          console.error('Error creating module:', moduleError);
+          continue;
+        }
+
+        // Create demo lessons for each module
+        const demoLessons = [
           {
-            id: 'lesson-1',
-            title: 'Course Overview',
-            content: 'In this lesson, you\'ll learn about the course structure, objectives, and what you can expect to achieve by the end.',
-            lesson_order: 1,
-            module_id: 'default-1'
+            module_id: moduleResult.id,
+            title: `${moduleData.title} - Lesson 1`,
+            content: `Welcome to ${moduleData.title}! This lesson introduces the key concepts you'll learn in this module.`,
+            lesson_order: 1
           },
           {
-            id: 'lesson-2',
-            title: 'Prerequisites',
-            content: 'Before we dive deep, let\'s review the prerequisites and ensure you have everything needed to succeed.',
-            lesson_order: 2,
-            module_id: 'default-1'
+            module_id: moduleResult.id,
+            title: `${moduleData.title} - Lesson 2`,
+            content: `In this lesson, we'll dive deeper into the practical aspects of ${moduleData.title.toLowerCase()}.`,
+            lesson_order: 2
           }
-        ]
-      },
-      {
-        id: 'default-2',
-        title: 'Core Concepts',
-        description: 'Essential knowledge and fundamentals',
-        content: 'This module covers the fundamental concepts that form the foundation of everything you\'ll learn in this course.',
-        module_order: 2,
-        lessons: [
-          {
-            id: 'lesson-3',
-            title: 'Fundamental Principles',
-            content: 'Understanding the core principles is crucial for your success. We\'ll explore each principle with practical examples.',
-            lesson_order: 1,
-            module_id: 'default-2'
-          },
-          {
-            id: 'lesson-4',
-            title: 'Key Terminology',
-            content: 'Let\'s familiarize ourselves with the important terms and concepts you\'ll encounter throughout the course.',
-            lesson_order: 2,
-            module_id: 'default-2'
+        ];
+
+        for (const lessonData of demoLessons) {
+          const { error: lessonError } = await supabase
+            .from('lessons')
+            .insert(lessonData);
+
+          if (lessonError) {
+            console.error('Error creating lesson:', lessonError);
           }
-        ]
-      },
-      {
-        id: 'default-3',
-        title: 'Practical Application',
-        description: 'Hands-on practice and real-world examples',
-        content: 'Now that you understand the theory, it\'s time to apply your knowledge with practical exercises and real-world scenarios.',
-        module_order: 3,
-        lessons: [
-          {
-            id: 'lesson-5',
-            title: 'Practice Exercise 1',
-            content: 'Complete this hands-on exercise to reinforce your understanding of the concepts covered in previous modules.',
-            lesson_order: 1,
-            module_id: 'default-3'
-          },
-          {
-            id: 'lesson-6',
-            title: 'Case Study Analysis',
-            content: 'Analyze this real-world case study to see how the concepts apply in practical situations.',
-            lesson_order: 2,
-            module_id: 'default-3'
-          }
-        ]
+        }
       }
-    ];
-  };
 
-  const currentModule = modules[currentModuleIndex];
-  const currentLesson = currentModule?.lessons[currentLessonIndex];
-
-  const markLessonComplete = (lessonId: string) => {
-    setCompletedLessons(prev => new Set([...prev, lessonId]));
-  };
-
-  const navigateToNext = () => {
-    if (!currentModule) return;
-
-    if (currentLessonIndex < currentModule.lessons.length - 1) {
-      setCurrentLessonIndex(prev => prev + 1);
-    } else if (currentModuleIndex < modules.length - 1) {
-      setCurrentModuleIndex(prev => prev + 1);
-      setCurrentLessonIndex(0);
+      // Reload the content
+      window.location.reload();
+    } catch (error) {
+      console.error('Error creating demo modules:', error);
     }
   };
 
-  const navigateToPrevious = () => {
-    if (currentLessonIndex > 0) {
-      setCurrentLessonIndex(prev => prev - 1);
-    } else if (currentModuleIndex > 0) {
-      setCurrentModuleIndex(prev => prev - 1);
-      setCurrentLessonIndex(modules[currentModuleIndex - 1]?.lessons.length - 1 || 0);
+  const calculateProgress = (modulesData: Module[]) => {
+    const totalLessons = modulesData.reduce((total, module) => total + module.lessons.length, 0);
+    const completedLessons = modulesData.reduce(
+      (total, module) => total + module.lessons.filter(lesson => lesson.completed).length,
+      0
+    );
+    
+    const progressPercentage = totalLessons > 0 ? (completedLessons / totalLessons) * 100 : 0;
+    setProgress(progressPercentage);
+  };
+
+  const markLessonComplete = async (lessonId: string) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('user_progress')
+        .upsert({
+          user_id: user.id,
+          lesson_id: lessonId,
+          completed: true,
+          completed_at: new Date().toISOString()
+        });
+
+      if (error) {
+        console.error('Error marking lesson complete:', error);
+        return;
+      }
+
+      // Update local state
+      setModules(prev => 
+        prev.map(module => ({
+          ...module,
+          lessons: module.lessons.map(lesson => 
+            lesson.id === lessonId ? { ...lesson, completed: true } : lesson
+          )
+        }))
+      );
+
+      toast.success('Lesson completed!');
+      
+      // Recalculate progress
+      calculateProgress(modules);
+    } catch (error) {
+      console.error('Error marking lesson complete:', error);
+      toast.error('Failed to mark lesson as complete');
     }
   };
 
-  const isFirstLesson = currentModuleIndex === 0 && currentLessonIndex === 0;
-  const isLastLesson = currentModuleIndex === modules.length - 1 && 
-                      currentLessonIndex === (currentModule?.lessons.length - 1 || 0);
+  const getCurrentLesson = () => {
+    if (!activeLesson) return null;
+    
+    for (const module of modules) {
+      const lesson = module.lessons.find(l => l.id === activeLesson);
+      if (lesson) return lesson;
+    }
+    return null;
+  };
+
+  const getNextLesson = () => {
+    if (!activeLesson) return null;
+    
+    for (let i = 0; i < modules.length; i++) {
+      const module = modules[i];
+      const lessonIndex = module.lessons.findIndex(l => l.id === activeLesson);
+      
+      if (lessonIndex !== -1) {
+        // Next lesson in same module
+        if (lessonIndex < module.lessons.length - 1) {
+          return module.lessons[lessonIndex + 1];
+        }
+        // First lesson in next module
+        if (i < modules.length - 1 && modules[i + 1].lessons.length > 0) {
+          return modules[i + 1].lessons[0];
+        }
+      }
+    }
+    return null;
+  };
+
+  const currentLesson = getCurrentLesson();
+  const nextLesson = getNextLesson();
 
   if (isLoading) {
     return (
@@ -205,113 +296,124 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 mb-2">{courseTitle}</h1>
-        <div className="flex items-center text-sm text-gray-600">
-          <BookOpen className="h-4 w-4 mr-1" />
-          <span>Module {currentModuleIndex + 1} of {modules.length}</span>
-          <span className="mx-2">•</span>
-          <span>Lesson {currentLessonIndex + 1} of {currentModule?.lessons.length || 0}</span>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-        {/* Course Outline Sidebar */}
-        <div className="lg:col-span-1">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Course Outline</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {modules.map((module, moduleIdx) => (
-                <div key={module.id}>
-                  <h4 className={`font-medium text-sm mb-2 ${
-                    moduleIdx === currentModuleIndex ? 'text-[#00C853]' : 'text-gray-700'
-                  }`}>
-                    {module.title}
-                  </h4>
-                  <div className="space-y-1 ml-2">
-                    {module.lessons.map((lesson, lessonIdx) => (
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* Course Navigation Sidebar */}
+      <div className="lg:col-span-1">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Course Progress</CardTitle>
+            <div className="space-y-2">
+              <Progress value={progress} className="w-full" />
+              <p className="text-sm text-gray-600">{Math.round(progress)}% Complete</p>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {modules.map((module) => (
+              <div key={module.id} className="border rounded-lg p-3">
+                <button
+                  onClick={() => setActiveModule(module.id)}
+                  className={`w-full text-left font-medium ${
+                    activeModule === module.id ? 'text-[#00C853]' : 'text-gray-700'
+                  }`}
+                >
+                  {module.title}
+                </button>
+                
+                {activeModule === module.id && (
+                  <div className="mt-2 space-y-1">
+                    {module.lessons.map((lesson) => (
                       <button
                         key={lesson.id}
-                        onClick={() => {
-                          setCurrentModuleIndex(moduleIdx);
-                          setCurrentLessonIndex(lessonIdx);
-                        }}
-                        className={`flex items-center text-xs p-2 rounded w-full text-left transition-colors ${
-                          moduleIdx === currentModuleIndex && lessonIdx === currentLessonIndex
-                            ? 'bg-[#00C853] text-white'
-                            : 'hover:bg-gray-100'
+                        onClick={() => setActiveLesson(lesson.id)}
+                        className={`w-full text-left text-sm p-2 rounded flex items-center justify-between ${
+                          activeLesson === lesson.id
+                            ? 'bg-green-50 text-[#00C853]'
+                            : 'hover:bg-gray-50'
                         }`}
                       >
-                        {completedLessons.has(lesson.id) ? (
-                          <CheckCircle className="h-3 w-3 mr-2 text-green-500" />
-                        ) : (
-                          <Circle className="h-3 w-3 mr-2" />
-                        )}
-                        {lesson.title}
+                        <span className="flex items-center">
+                          {lesson.completed ? (
+                            <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
+                          ) : (
+                            <Clock className="h-4 w-4 mr-2 text-gray-400" />
+                          )}
+                          {lesson.title}
+                        </span>
                       </button>
                     ))}
                   </div>
-                </div>
-              ))}
-            </CardContent>
-          </Card>
-        </div>
+                )}
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      </div>
 
-        {/* Main Content */}
-        <div className="lg:col-span-3">
+      {/* Main Content Area */}
+      <div className="lg:col-span-3">
+        {currentLesson ? (
           <Card>
             <CardHeader>
-              <CardTitle className="text-xl">{currentLesson?.title}</CardTitle>
-              <p className="text-gray-600">{currentModule?.title}</p>
+              <CardTitle className="flex items-center">
+                <PlayCircle className="h-6 w-6 mr-2 text-[#00C853]" />
+                {currentLesson.title}
+              </CardTitle>
             </CardHeader>
-            <CardContent>
-              <div className="prose max-w-none mb-6">
-                <p className="text-gray-700 leading-relaxed">
-                  {currentLesson?.content}
-                </p>
+            <CardContent className="space-y-6">
+              <div className="prose max-w-none">
+                <div className="whitespace-pre-wrap">{currentLesson.content}</div>
               </div>
-
-              <div className="flex items-center justify-between">
-                <Button
-                  onClick={navigateToPrevious}
-                  disabled={isFirstLesson}
-                  variant="outline"
-                  className="flex items-center"
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Previous
-                </Button>
-
-                <Button
-                  onClick={() => currentLesson && markLessonComplete(currentLesson.id)}
-                  disabled={completedLessons.has(currentLesson?.id || '')}
-                  className="bg-[#00C853] hover:bg-[#00B248]"
-                >
-                  {completedLessons.has(currentLesson?.id || '') ? (
-                    <>
+              
+              <div className="border-t pt-4">
+                <div className="flex justify-between items-center">
+                  {!currentLesson.completed && (
+                    <Button
+                      onClick={() => markLessonComplete(currentLesson.id)}
+                      className="bg-[#00C853] hover:bg-[#00B248] text-white"
+                    >
+                      <CheckCircle className="h-4 w-4 mr-2" />
+                      Mark as Complete
+                    </Button>
+                  )}
+                  
+                  {currentLesson.completed && (
+                    <div className="flex items-center text-green-600">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Completed
-                    </>
-                  ) : (
-                    'Mark Complete'
+                    </div>
                   )}
-                </Button>
 
-                <Button
-                  onClick={navigateToNext}
-                  disabled={isLastLesson}
-                  className="flex items-center bg-[#00C853] hover:bg-[#00B248]"
-                >
-                  Next
-                  <ArrowRight className="h-4 w-4 ml-2" />
-                </Button>
+                  {nextLesson && (
+                    <Button
+                      onClick={() => setActiveLesson(nextLesson.id)}
+                      variant="outline"
+                    >
+                      Next Lesson
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
-        </div>
+        ) : (
+          <Card>
+            <CardContent className="text-center py-12">
+              <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Lesson</h3>
+              <p className="text-gray-600">Choose a module and lesson from the sidebar to start learning.</p>
+            </CardContent>
+          </Card>
+        )}
+        
+        {progress === 100 && (
+          <Card className="mt-6 bg-green-50 border-green-200">
+            <CardContent className="text-center py-6">
+              <Award className="h-12 w-12 text-green-600 mx-auto mb-3" />
+              <h3 className="text-lg font-semibold text-green-800 mb-2">Congratulations!</h3>
+              <p className="text-green-600">You have completed the entire course. Well done!</p>
+            </CardContent>
+          </Card>
+        )}
       </div>
     </div>
   );
