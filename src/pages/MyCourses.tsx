@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate, useNavigate } from 'react-router-dom';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -53,7 +53,7 @@ const MyCourses: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -70,7 +70,7 @@ const MyCourses: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <div className="text-center py-12">
             <div className="text-red-500 mb-4">
@@ -93,7 +93,7 @@ const MyCourses: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
+      <UnifiedHeader />
       <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         <div className="flex items-center mb-6">
           <BookOpen className="h-8 w-8 text-[#00C853] mr-3" />

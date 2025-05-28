@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Wallet as WalletIcon, TrendingUp, Download } from 'lucide-react';
@@ -35,11 +35,20 @@ const Wallet: React.FC = () => {
         ]);
         
         if (!wallet) {
-          setError('Unable to load wallet data. Please try again.');
-          return;
+          console.log('No wallet data returned, but this might be expected for new users');
+          // Don't set error for new users, just create empty wallet data
+          setWalletData({
+            id: '',
+            user_id: user.id,
+            total_earned: 0,
+            balance: 0,
+            total_withdrawn: 0,
+            updated_at: new Date().toISOString()
+          });
+        } else {
+          setWalletData(wallet);
         }
         
-        setWalletData(wallet);
         setTransactions(walletTransactions);
         console.log('Wallet data loaded successfully');
       } catch (error) {
@@ -72,7 +81,7 @@ const Wallet: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <div className="flex items-center justify-center h-64">
             <div className="text-center">
@@ -89,7 +98,7 @@ const Wallet: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <div className="text-center py-12">
             <div className="text-red-500 mb-4">
@@ -116,7 +125,7 @@ const Wallet: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
+      <UnifiedHeader />
       <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         <div className="flex items-center mb-6">
           <WalletIcon className="h-8 w-8 text-[#00C853] mr-3" />

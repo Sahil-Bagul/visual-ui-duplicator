@@ -32,17 +32,19 @@ export async function getUserWallet(): Promise<WalletData | null> {
       return null;
     }
 
+    console.log('Fetching wallet for user:', user.id);
+
     const { data, error } = await supabase
       .from('wallet')
       .select('*')
       .eq('user_id', user.id)
-      .single();
+      .maybeSingle();
 
     if (error) {
       console.error('Error fetching wallet:', error);
       
       // If wallet doesn't exist, create one
-      if (error.code === 'PGRST116') {
+      if (error.code === 'PGRST116' || !data) {
         console.log('Creating new wallet for user...');
         const { data: newWallet, error: createError } = await supabase
           .from('wallet')
@@ -60,10 +62,34 @@ export async function getUserWallet(): Promise<WalletData | null> {
           return null;
         }
         
+        console.log('Successfully created new wallet:', newWallet);
         return newWallet as WalletData;
       }
       
       return null;
+    }
+
+    if (!data) {
+      // Create wallet if it doesn't exist
+      console.log('No wallet found, creating new one...');
+      const { data: newWallet, error: createError } = await supabase
+        .from('wallet')
+        .insert({
+          user_id: user.id,
+          total_earned: 0,
+          balance: 0,
+          total_withdrawn: 0
+        })
+        .select()
+        .single();
+        
+      if (createError) {
+        console.error('Error creating wallet:', createError);
+        return null;
+      }
+      
+      console.log('Successfully created new wallet:', newWallet);
+      return newWallet as WalletData;
     }
 
     console.log('Successfully fetched wallet data:', data);

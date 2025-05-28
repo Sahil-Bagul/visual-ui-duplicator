@@ -2,7 +2,7 @@
 import React from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import GrantAccessForm from '@/components/admin/GrantAccessForm';
 import GrantCourseAccess from '@/components/admin/GrantCourseAccess';
@@ -79,7 +79,7 @@ const AdminPanel: React.FC = () => {
   if (error) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <Alert variant="destructive">
             <ShieldAlert className="h-5 w-5" />
@@ -102,7 +102,7 @@ const AdminPanel: React.FC = () => {
   if (!finalIsAdmin) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
           <Alert variant="destructive">
             <ShieldAlert className="h-5 w-5" />
@@ -120,7 +120,7 @@ const AdminPanel: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
+      <UnifiedHeader />
       <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         <div className="flex justify-between items-center mb-6">
           <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>

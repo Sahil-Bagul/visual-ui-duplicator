@@ -2,7 +2,6 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useLoginLogger } from '@/hooks/useLoginLogger';
 
 interface AuthContextType {
   user: User | null;
@@ -20,10 +19,10 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-  const { logLogin } = useLoginLogger();
 
   const fetchUserProfile = async (userId: string) => {
     try {
+      console.log('Fetching user profile for admin status:', userId);
       const { data: profile, error } = await supabase
         .from('users')
         .select('is_admin')
@@ -35,6 +34,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         return false;
       }
 
+      console.log('User profile fetched:', profile);
       return profile?.is_admin || false;
     } catch (error) {
       console.error('Exception fetching user profile:', error);
@@ -68,6 +68,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return { error };
     } catch (error) {
       return { error };
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      await supabase.auth.signOut();
+      setUser(null);
+      setIsAdmin(false);
+    } catch (error) {
+      console.error('Error signing out:', error);
     }
   };
 
@@ -114,10 +124,6 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setUser(session.user);
           const adminStatus = await fetchUserProfile(session.user.id);
           setIsAdmin(adminStatus);
-          
-          if (event === 'SIGNED_IN') {
-            await logLogin(session.user.id);
-          }
         } else {
           setUser(null);
           setIsAdmin(false);
@@ -128,17 +134,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     );
 
     return () => subscription.unsubscribe();
-  }, [logLogin]);
-
-  const signOut = async () => {
-    try {
-      await supabase.auth.signOut();
-      setUser(null);
-      setIsAdmin(false);
-    } catch (error) {
-      console.error('Error signing out:', error);
-    }
-  };
+  }, []);
 
   return (
     <AuthContext.Provider value={{

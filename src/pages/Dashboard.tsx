@@ -1,7 +1,7 @@
 
 import React, { useEffect, useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import CourseCard from '@/components/courses/CourseCard';
 import WelcomeCard from '@/components/dashboard/WelcomeCard';
@@ -145,7 +145,7 @@ const Dashboard: React.FC = () => {
   if (isLoading) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
-        <HeaderWithNotifications />
+        <UnifiedHeader />
         <main className="flex-grow flex items-center justify-center">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
@@ -159,7 +159,7 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
+      <UnifiedHeader />
       <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
         {/* Welcome Card */}
         <WelcomeCard userName={userName} walletBalance={stats.balance} />
@@ -176,7 +176,7 @@ const Dashboard: React.FC = () => {
                   title={course.title}
                   description={course.description || 'No description available'}
                   price={course.price}
-                  type="PDF Course"
+                  type="Web Course"
                   onClick={() => handleCourseClick(course.id, course.isPurchased)}
                   isPurchased={course.isPurchased}
                   thumbnail={course.thumbnail_url || undefined}
