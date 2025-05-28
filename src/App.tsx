@@ -70,8 +70,14 @@ const AppInitializer = () => {
 // Main App component wrapped with AuthProvider
 const AppWithAuth = () => {
   const { user, isLoading: authLoading } = useAuth();
-  
-  useLoginLogger(user?.id, !!user);
+  const { logLogin } = useLoginLogger();
+
+  useEffect(() => {
+    // Log login when user becomes authenticated
+    if (user?.id) {
+      logLogin(user.id);
+    }
+  }, [user?.id, logLogin]);
 
   if (authLoading) {
     return (
