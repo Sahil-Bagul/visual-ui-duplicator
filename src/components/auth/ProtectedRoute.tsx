@@ -29,30 +29,9 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ requireAdmin = false })
     return <Navigate to="/" replace state={{ from: location }} />;
   }
   
-  // If admin access is required but user is not admin
+  // If admin access is required but user is not admin, show nothing (no error message for regular users)
   if (requireAdmin && !isAdmin) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-screen bg-gray-50 p-4">
-        <div className="max-w-md w-full">
-          <Alert variant="destructive">
-            <ShieldAlert className="h-5 w-5" />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>
-              You do not have admin permissions to access this page.
-              Please contact an administrator if you believe this is a mistake.
-            </AlertDescription>
-          </Alert>
-          <div className="mt-4 text-center">
-            <button 
-              onClick={() => window.history.back()} 
-              className="px-4 py-2 bg-gray-100 rounded-md text-gray-700 hover:bg-gray-200 transition-colors"
-            >
-              Go Back
-            </button>
-          </div>
-        </div>
-      </div>
-    );
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

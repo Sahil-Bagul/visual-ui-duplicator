@@ -26,14 +26,43 @@ export async function getUserWallet(): Promise<WalletData | null> {
   try {
     console.log('Fetching wallet data...');
     
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return null;
+    }
+
     const { data, error } = await supabase
       .from('wallet')
       .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+      .eq('user_id', user.id)
       .single();
 
     if (error) {
       console.error('Error fetching wallet:', error);
+      
+      // If wallet doesn't exist, create one
+      if (error.code === 'PGRST116') {
+        console.log('Creating new wallet for user...');
+        const { data: newWallet, error: createError } = await supabase
+          .from('wallet')
+          .insert({
+            user_id: user.id,
+            total_earned: 0,
+            balance: 0,
+            total_withdrawn: 0
+          })
+          .select()
+          .single();
+          
+        if (createError) {
+          console.error('Error creating wallet:', createError);
+          return null;
+        }
+        
+        return newWallet as WalletData;
+      }
+      
       return null;
     }
 
@@ -50,10 +79,16 @@ export async function getWalletTransactions(): Promise<WalletTransaction[]> {
   try {
     console.log('Fetching wallet transactions...');
     
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
+      return [];
+    }
+    
     const { data, error } = await supabase
       .from('wallet_transactions')
       .select('*')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
+      .eq('user_id', user.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -69,7 +104,7 @@ export async function getWalletTransactions(): Promise<WalletTransaction[]> {
   }
 }
 
-// Update wallet balance - simplified version without RPC call
+// Update wallet balance
 export async function updateWalletBalance(
   userId: string,
   amount: number,
