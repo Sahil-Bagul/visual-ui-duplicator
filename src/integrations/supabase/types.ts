@@ -660,6 +660,7 @@ export type Database = {
           referral_code: string | null
           referred_by: string | null
           updated_at: string | null
+          user_id: string | null
         }
         Insert: {
           created_at?: string | null
@@ -674,6 +675,7 @@ export type Database = {
           referral_code?: string | null
           referred_by?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Update: {
           created_at?: string | null
@@ -688,6 +690,7 @@ export type Database = {
           referral_code?: string | null
           referred_by?: string | null
           updated_at?: string | null
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -789,7 +792,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_user: {
-        Args: Record<PropertyKey, never>
+        Args: Record<PropertyKey, never> | { input_user_id: string }
         Returns: boolean
       }
       revoke_admin_privileges: {

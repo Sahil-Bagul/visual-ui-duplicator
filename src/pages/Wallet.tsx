@@ -28,11 +28,9 @@ const Wallet: React.FC = () => {
         
         console.log('Loading wallet data for user:', user.id);
         
-        // Load wallet data and transactions in parallel
-        const [wallet, walletTransactions] = await Promise.all([
-          getUserWallet(),
-          getWalletTransactions()
-        ]);
+        // Load wallet data and transactions
+        const wallet = await getUserWallet();
+        const walletTransactions = await getWalletTransactions();
         
         setWalletData(wallet);
         setTransactions(walletTransactions);
@@ -49,15 +47,19 @@ const Wallet: React.FC = () => {
     loadWalletData();
   }, [user]);
 
-  const handleWithdrawSuccess = () => {
+  const handleWithdrawSuccess = async () => {
     // Refresh wallet data after successful withdrawal
-    if (user) {
-      getUserWallet().then(wallet => {
-        if (wallet) setWalletData(wallet);
-      });
-      getWalletTransactions().then(setTransactions);
+    try {
+      const wallet = await getUserWallet();
+      const walletTransactions = await getWalletTransactions();
+      
+      if (wallet) setWalletData(wallet);
+      setTransactions(walletTransactions);
+      
+      toast.success('Withdrawal request submitted successfully');
+    } catch (error) {
+      console.error('Error refreshing wallet data:', error);
     }
-    toast.success('Withdrawal request submitted successfully');
   };
 
   if (!user) {

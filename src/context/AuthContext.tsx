@@ -24,27 +24,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       console.log('Checking admin status for user:', userId);
       
-      // First try to get user data from users table
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', userId)
-        .single();
-
-      if (userError) {
-        console.error('Error fetching user data:', userError);
-        // Fallback to RPC function
-        const { data: rpcResult, error: rpcError } = await supabase.rpc('is_admin');
-        if (rpcError) {
-          console.error('Error calling is_admin RPC:', rpcError);
-          return false;
-        }
-        console.log('Admin status from RPC:', rpcResult);
-        return rpcResult || false;
+      // Use the is_admin_user function to check admin status
+      const { data: isAdminResult, error } = await supabase.rpc('is_admin_user');
+      
+      if (error) {
+        console.error('Error calling is_admin_user RPC:', error);
+        return false;
       }
 
-      console.log('User data from database:', userData);
-      return userData?.is_admin || false;
+      console.log('Admin status result:', isAdminResult);
+      return isAdminResult || false;
     } catch (error) {
       console.error('Exception checking admin status:', error);
       return false;

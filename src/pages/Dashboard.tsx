@@ -57,8 +57,10 @@ const Dashboard: React.FC = () => {
       try {
         setIsLoading(true);
         
-        // Optimize by making parallel requests instead of sequential ones
-        const [walletResult, coursesResult, purchasesResult, referralsResult] = await Promise.allSettled([
+        console.log('Fetching dashboard data for user:', user.id);
+        
+        // Fetch all data in parallel for better performance
+        const [walletResponse, coursesResponse, purchasesResponse, referralsResponse] = await Promise.allSettled([
           supabase
             .from('wallet')
             .select('balance, total_earned')
@@ -68,7 +70,8 @@ const Dashboard: React.FC = () => {
           supabase
             .from('courses')
             .select('*')
-            .eq('is_active', true),
+            .eq('is_active', true)
+            .order('title'),
           
           supabase
             .from('purchases')
@@ -84,23 +87,23 @@ const Dashboard: React.FC = () => {
         ]);
         
         // Process wallet data
-        const walletData = walletResult.status === 'fulfilled' && !walletResult.value.error 
-          ? walletResult.value.data 
+        const walletData = walletResponse.status === 'fulfilled' && !walletResponse.value.error 
+          ? walletResponse.value.data 
           : null;
         
         // Process courses data
-        const coursesData = coursesResult.status === 'fulfilled' && !coursesResult.value.error 
-          ? coursesResult.value.data 
+        const coursesData = coursesResponse.status === 'fulfilled' && !coursesResponse.value.error 
+          ? coursesResponse.value.data 
           : [];
         
         // Process purchases data
-        const purchasesData = purchasesResult.status === 'fulfilled' && !purchasesResult.value.error 
-          ? purchasesResult.value.data 
+        const purchasesData = purchasesResponse.status === 'fulfilled' && !purchasesResponse.value.error 
+          ? purchasesResponse.value.data 
           : [];
         
         // Process referrals data
-        const referralsCount = referralsResult.status === 'fulfilled' && !referralsResult.value.error 
-          ? referralsResult.value.count 
+        const referralsCount = referralsResponse.status === 'fulfilled' && !referralsResponse.value.error 
+          ? referralsResponse.value.count 
           : 0;
         
         const purchasedCourseIds = purchasesData?.map(p => p.course_id) || [];
@@ -118,6 +121,8 @@ const Dashboard: React.FC = () => {
           coursesOwned: purchasedCourseIds.length,
           totalReferrals: referralsCount || 0
         });
+
+        console.log('Dashboard data loaded successfully');
         
       } catch (error) {
         console.error("Error fetching dashboard data:", error);

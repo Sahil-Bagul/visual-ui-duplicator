@@ -1,36 +1,27 @@
 
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 
 const Index: React.FC = () => {
-  const { user } = useAuth();
+  const { user, isAdmin, isLoading } = useAuth();
   const navigate = useNavigate();
-  const [isLoading, setIsLoading] = useState(true);
+  const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
     const checkAuthentication = async () => {
       try {
+        // Wait for auth to load
+        if (isLoading) return;
+
         if (!user) {
           // Not authenticated, redirect to auth page
           navigate('/auth');
           return;
         }
 
-        // Check if user is admin using the correct function name
-        const { data: isAdminData, error: adminError } = await supabase
-          .rpc('is_admin_user');
-
-        if (adminError) {
-          console.error('Error checking admin status:', adminError);
-          // Continue as regular user if admin check fails
-          navigate('/dashboard');
-          return;
-        }
-
-        // Redirect based on user type
-        if (isAdminData) {
+        // User is authenticated, redirect based on admin status
+        if (isAdmin) {
           navigate('/admin');
         } else {
           navigate('/dashboard');
@@ -39,17 +30,20 @@ const Index: React.FC = () => {
         console.error('Error in authentication check:', error);
         navigate('/auth');
       } finally {
-        setIsLoading(false);
+        setIsChecking(false);
       }
     };
 
     checkAuthentication();
-  }, [user, navigate]);
+  }, [user, isAdmin, isLoading, navigate]);
 
-  if (isLoading) {
+  if (isLoading || isChecking) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-gray-900"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
       </div>
     );
   }

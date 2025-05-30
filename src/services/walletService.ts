@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface WalletData {
@@ -33,42 +34,43 @@ export async function getUserWallet(): Promise<WalletData | null> {
 
     console.log('Fetching wallet for user:', user.id);
 
-    const { data, error } = await supabase
+    // First try to get existing wallet
+    const { data: existingWallet, error: fetchError } = await supabase
       .from('wallet')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (error) {
-      console.error('Error fetching wallet:', error);
-      throw error;
+    if (fetchError) {
+      console.error('Error fetching wallet:', fetchError);
+      throw fetchError;
     }
 
-    if (!data) {
-      // Create wallet if it doesn't exist
-      console.log('No wallet found, creating new one...');
-      const { data: newWallet, error: createError } = await supabase
-        .from('wallet')
-        .insert({
-          user_id: user.id,
-          total_earned: 0,
-          balance: 0,
-          total_withdrawn: 0
-        })
-        .select()
-        .single();
-        
-      if (createError) {
-        console.error('Error creating wallet:', createError);
-        throw createError;
-      }
+    if (existingWallet) {
+      console.log('Found existing wallet:', existingWallet);
+      return existingWallet as WalletData;
+    }
+
+    // Create wallet if it doesn't exist
+    console.log('No wallet found, creating new one...');
+    const { data: newWallet, error: createError } = await supabase
+      .from('wallet')
+      .insert({
+        user_id: user.id,
+        total_earned: 0,
+        balance: 0,
+        total_withdrawn: 0
+      })
+      .select()
+      .single();
       
-      console.log('Successfully created new wallet:', newWallet);
-      return newWallet as WalletData;
+    if (createError) {
+      console.error('Error creating wallet:', createError);
+      throw createError;
     }
-
-    console.log('Successfully fetched wallet data:', data);
-    return data as WalletData;
+    
+    console.log('Successfully created new wallet:', newWallet);
+    return newWallet as WalletData;
   } catch (error) {
     console.error('Exception fetching wallet:', error);
     throw error;
@@ -94,14 +96,14 @@ export async function getWalletTransactions(): Promise<WalletTransaction[]> {
 
     if (error) {
       console.error('Error fetching transactions:', error);
-      return [];
+      throw error;
     }
 
     console.log('Successfully fetched wallet transactions:', data?.length || 0);
     return data as WalletTransaction[];
   } catch (error) {
     console.error('Exception fetching transactions:', error);
-    return [];
+    throw error;
   }
 }
 
