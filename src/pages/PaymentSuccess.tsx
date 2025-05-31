@@ -1,11 +1,11 @@
 
 import React from 'react';
-import { useLocation, useNavigate, Link } from 'react-router-dom';
-import HeaderWithNotifications from '@/components/layout/HeaderWithNotifications';
+import { useLocation, useNavigate } from 'react-router-dom';
+import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import { Button } from '@/components/ui/button';
 
-const PaymentSuccess: React.FC = () => {
+const PaymentSuccess: React.FC = React.memo(() => {
   const { state } = useLocation();
   const navigate = useNavigate();
   
@@ -14,7 +14,7 @@ const PaymentSuccess: React.FC = () => {
   
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
-      <HeaderWithNotifications />
+      <UnifiedHeader />
       <main className="max-w-[993px] mx-auto my-0 px-6 py-8 max-sm:p-4 w-full flex-grow">
         <div className="bg-white rounded-lg shadow-sm border border-gray-100 p-8 text-center">
           <div className="bg-green-50 h-24 w-24 rounded-full mx-auto mb-6 flex items-center justify-center">
@@ -57,6 +57,8 @@ const PaymentSuccess: React.FC = () => {
       <Footer />
     </div>
   );
-};
+});
+
+PaymentSuccess.displayName = 'PaymentSuccess';
 
 export default PaymentSuccess;

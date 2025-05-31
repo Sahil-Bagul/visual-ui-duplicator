@@ -1,7 +1,6 @@
-
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Bell, Menu, X, Shield } from 'lucide-react';
+import { Bell, Menu, Shield } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/context/AuthContext';
 import {
@@ -15,17 +14,27 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import NotificationCenter from '@/components/notifications/NotificationCenter';
+import OptimizedNotificationCenter from '@/components/notifications/OptimizedNotificationCenter';
 
 // Import the logo
 import logoImage from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png';
 
-const UnifiedHeader: React.FC = () => {
+const UnifiedHeader: React.FC = React.memo(() => {
   const { user, signOut, isAdmin } = useAuth();
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
-  const [unreadCount, setUnreadCount] = useState(0);
+  const [unreadCount] = useState(0);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+
+  const userDisplayName = useMemo(() => 
+    user?.user_metadata?.name || user?.email?.split('@')[0] || 'User', 
+    [user?.user_metadata?.name, user?.email]
+  );
+
+  const userInitial = useMemo(() => 
+    user?.email?.charAt(0).toUpperCase() || 'U', 
+    [user?.email]
+  );
 
   // Handle mobile menu toggle
   const toggleMenu = () => {
@@ -64,19 +73,8 @@ const UnifiedHeader: React.FC = () => {
                 filter: "brightness(1.2) contrast(1.2)",
                 maxWidth: "150px",
               }}
-              onError={(e) => {
-                const target = e.currentTarget as HTMLImageElement;
-                target.style.display = 'none';
-                const fallback = e.currentTarget.nextElementSibling as HTMLElement;
-                if (fallback) fallback.style.display = 'block';
-              }}
+              loading="eager"
             />
-            <span 
-              className="text-lg font-bold text-gray-900 hidden" 
-              style={{ display: 'none' }}
-            >
-              Learn & Earn
-            </span>
           </div>
         </Link>
 
@@ -127,7 +125,7 @@ const UnifiedHeader: React.FC = () => {
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-80">
-              <NotificationCenter 
+              <OptimizedNotificationCenter 
                 onClose={() => setIsNotificationsOpen(false)}
               />
             </DropdownMenuContent>
@@ -139,11 +137,11 @@ const UnifiedHeader: React.FC = () => {
               <Button variant="ghost" size="sm" className="gap-2">
                 <Avatar className="h-8 w-8">
                   <AvatarFallback className="bg-[#00C853] text-white">
-                    {user?.email?.charAt(0).toUpperCase() || 'U'}
+                    {userInitial}
                   </AvatarFallback>
                 </Avatar>
                 <span className="text-sm font-normal">
-                  {user?.user_metadata?.name || user?.email?.split('@')[0] || 'User'}
+                  {userDisplayName}
                 </span>
               </Button>
             </DropdownMenuTrigger>
@@ -270,6 +268,8 @@ const UnifiedHeader: React.FC = () => {
       </div>
     </header>
   );
-};
+});
+
+UnifiedHeader.displayName = 'UnifiedHeader';
 
 export default UnifiedHeader;
