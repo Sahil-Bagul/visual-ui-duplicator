@@ -15,7 +15,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { NotificationCenter } from '@/components/notifications/NotificationCenter';
+import NotificationCenter from '@/components/notifications/NotificationCenter';
 
 // Import the logo
 import logoImage from '/lovable-uploads/629a36a7-2859-4c33-9657-12a1dfea41ed.png';
