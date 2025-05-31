@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { Module, Lesson, CourseWithProgress } from '@/types/course';
 
 // Cache for course data
-const courseCache = new Map<string, CourseWithProgress>();
+const courseCache = new Map<string, CacheEntry>();
 const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
 
 interface CacheEntry {
@@ -19,7 +19,7 @@ export async function getOptimizedCourseWithContent(courseId: string): Promise<C
   try {
     // Check cache first
     const cacheKey = `course_${courseId}`;
-    const cached = courseCache.get(cacheKey) as CacheEntry | undefined;
+    const cached = courseCache.get(cacheKey);
     
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
       return cached.data;
@@ -81,7 +81,7 @@ export async function getOptimizedCourseWithContent(courseId: string): Promise<C
       progress
     };
 
-    // Cache the result
+    // Cache the result with proper CacheEntry structure
     courseCache.set(cacheKey, { data: result, timestamp: Date.now() });
 
     console.log('Successfully fetched optimized course with content:', result);
