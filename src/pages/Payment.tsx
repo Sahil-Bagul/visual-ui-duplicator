@@ -6,7 +6,8 @@ import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, ShoppingCart, Shield, CheckCircle } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { ArrowLeft, ShoppingCart, Shield, CheckCircle, Clock } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -24,7 +25,7 @@ const Payment: React.FC = () => {
   const navigate = useNavigate();
   const [course, setCourse] = useState<Course | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [referralCode, setReferralCode] = useState('');
 
   useEffect(() => {
     const loadCourse = async () => {
@@ -61,40 +62,8 @@ const Payment: React.FC = () => {
     loadCourse();
   }, [courseId, navigate]);
 
-  const handlePayment = async () => {
-    if (!course || !user) return;
-
-    setIsProcessing(true);
-    
-    try {
-      // For now, simulate a successful payment
-      // In production, this would integrate with Razorpay
-      
-      // Create a purchase record
-      const { error: purchaseError } = await supabase
-        .from('purchases')
-        .insert({
-          user_id: user.id,
-          course_id: course.id,
-          amount: course.price,
-          payment_status: 'completed',
-          payment_id: `demo_${Date.now()}`
-        });
-
-      if (purchaseError) {
-        console.error('Error creating purchase:', purchaseError);
-        toast.error('Failed to process payment');
-        return;
-      }
-
-      toast.success('Payment successful! Course access granted.');
-      navigate(`/course/${course.id}`);
-    } catch (error) {
-      console.error('Payment error:', error);
-      toast.error('Payment failed. Please try again.');
-    } finally {
-      setIsProcessing(false);
-    }
+  const handlePaymentPlaceholder = () => {
+    toast.info('Payment system is being set up. Please check back soon!');
   };
 
   if (!user) {
@@ -184,16 +153,44 @@ const Payment: React.FC = () => {
             </CardContent>
           </Card>
 
-          {/* Payment Summary */}
+          {/* Payment Summary - Placeholder */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center">
-                <Shield className="h-5 w-5 mr-2" />
-                Payment Summary
+                <Clock className="h-5 w-5 mr-2" />
+                Payment System
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
+                <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4">
+                  <div className="flex items-center mb-2">
+                    <Clock className="h-5 w-5 text-yellow-600 mr-2" />
+                    <span className="font-semibold text-yellow-800">Payment System Coming Soon</span>
+                  </div>
+                  <p className="text-yellow-700 text-sm">
+                    We're setting up Razorpay integration. Course purchases will be available soon!
+                  </p>
+                </div>
+
+                <div className="space-y-3">
+                  <div>
+                    <label htmlFor="referralCode" className="block text-sm font-medium text-gray-700 mb-2">
+                      Referral Code (Optional)
+                    </label>
+                    <Input
+                      id="referralCode"
+                      value={referralCode}
+                      onChange={(e) => setReferralCode(e.target.value)}
+                      placeholder="Enter referral code"
+                      className="w-full"
+                    />
+                    <p className="text-xs text-gray-500 mt-1">
+                      Have a referral code? Enter it here to get rewards for your referrer!
+                    </p>
+                  </div>
+                </div>
+
                 <div className="bg-gray-50 rounded-lg p-4">
                   <div className="flex justify-between items-center mb-2">
                     <span>Course Fee:</span>
@@ -222,21 +219,20 @@ const Payment: React.FC = () => {
                   </div>
                   <div className="flex items-center text-sm text-gray-600">
                     <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                    Progress tracking and completion certificates
+                    Earn 50% commission on referrals
                   </div>
                 </div>
 
                 <Button 
-                  onClick={handlePayment}
-                  disabled={isProcessing}
-                  className="w-full bg-[#00C853] hover:bg-[#00B248] text-white py-3 text-lg"
+                  onClick={handlePaymentPlaceholder}
+                  disabled
+                  className="w-full bg-gray-400 text-white py-3 text-lg cursor-not-allowed"
                 >
-                  {isProcessing ? 'Processing...' : `Pay ₹${course.price}`}
+                  Payment Coming Soon - ₹{course.price}
                 </Button>
 
                 <p className="text-xs text-gray-500 text-center">
-                  By clicking "Pay", you agree to our Terms of Service and Privacy Policy.
-                  This is a demo payment system.
+                  Payment system is being integrated. Please check back soon!
                 </p>
               </div>
             </CardContent>

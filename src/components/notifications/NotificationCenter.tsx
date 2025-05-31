@@ -1,224 +1,258 @@
 
-import React, { useState, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { 
-  Bell, 
-  Check, 
-  Info, 
-  AlertTriangle, 
-  AlertCircle,
-  CreditCard,
-  Users
-} from "lucide-react";
-import { Button } from "@/components/ui/button";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Badge } from "@/components/ui/badge";
-import { 
-  getUserNotifications, 
-  markAllNotificationsAsRead,
-  markNotificationAsRead,
-  getUnreadNotificationCount,
-  Notification
-} from "@/services/notificationService";
-import { cn } from "@/lib/utils";
+import React, { useState, useEffect } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Bell, Check, Trash2 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { toast } from 'sonner';
 
-const NotificationCenter: React.FC<{onClose?: () => void}> = ({ onClose }) => {
-  const [open, setOpen] = useState(false);
-  
-  const { 
-    data: notifications = [],
-    refetch: refetchNotifications,
-    isLoading,
-    isError,
-    error 
-  } = useQuery({
-    queryKey: ['notifications'],
-    queryFn: getUserNotifications,
-    retry: 2,
-    refetchOnWindowFocus: false
-  });
-  
-  const { 
-    data: unreadCount = 0,
-    refetch: refetchCount,
-    isError: isCountError
-  } = useQuery({
-    queryKey: ['notificationsCount'],
-    queryFn: getUnreadNotificationCount,
-    retry: 2,
-    refetchOnWindowFocus: false
-  });
-  
-  useEffect(() => {
-    // Refetch unread count when popover opens/closes
-    if (!open) {
-      refetchCount();
-    }
-  }, [open, refetchCount]);
+interface Notification {
+  id: string;
+  title: string;
+  message: string;
+  type: string;
+  is_read: boolean;
+  created_at: string;
+  is_global: boolean;
+}
+
+const NotificationCenter: React.FC = () => {
+  const { user } = useAuth();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Log any errors for debugging
-    if (isError) {
-      console.error("Error fetching notifications:", error);
+    if (user) {
+      loadNotifications();
     }
-    if (isCountError) {
-      console.error("Error fetching notification count");
-    }
-  }, [isError, isCountError, error]);
-  
-  const handleMarkAllAsRead = async () => {
+  }, [user]);
+
+  const loadNotifications = async () => {
     try {
-      const markedCount = await markAllNotificationsAsRead();
-      if (markedCount > 0) {
-        refetchNotifications();
-        refetchCount();
+      setIsLoading(true);
+      
+      const { data, error } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.${user?.id},is_global.eq.true`)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error loading notifications:', error);
+        return;
       }
-    } catch (err) {
-      console.error("Failed to mark notifications as read:", err);
+
+      setNotifications(data || []);
+    } catch (error) {
+      console.error('Error loading notifications:', error);
+    } finally {
+      setIsLoading(false);
     }
   };
-  
-  const handleMarkAsRead = async (notificationId: string) => {
+
+  const markAsRead = async (notificationId: string) => {
     try {
-      const success = await markNotificationAsRead(notificationId);
-      if (success) {
-        refetchNotifications();
-        refetchCount();
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error marking notification as read:', error);
+        return;
       }
-    } catch (err) {
-      console.error("Failed to mark notification as read:", err);
+
+      setNotifications(prev => 
+        prev.map(notif => 
+          notif.id === notificationId 
+            ? { ...notif, is_read: true }
+            : notif
+        )
+      );
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
     }
   };
-  
-  const getNotificationIcon = (type: Notification['type']) => {
+
+  const deleteNotification = async (notificationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', notificationId);
+
+      if (error) {
+        console.error('Error deleting notification:', error);
+        toast.error('Failed to delete notification');
+        return;
+      }
+
+      setNotifications(prev => prev.filter(notif => notif.id !== notificationId));
+      toast.success('Notification deleted');
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      const unreadIds = notifications.filter(n => !n.is_read).map(n => n.id);
+      
+      if (unreadIds.length === 0) {
+        toast.info('No unread notifications');
+        return;
+      }
+
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .in('id', unreadIds);
+
+      if (error) {
+        console.error('Error marking all as read:', error);
+        toast.error('Failed to mark all as read');
+        return;
+      }
+
+      setNotifications(prev => prev.map(notif => ({ ...notif, is_read: true })));
+      toast.success('All notifications marked as read');
+    } catch (error) {
+      console.error('Error marking all as read:', error);
+      toast.error('Failed to mark all as read');
+    }
+  };
+
+  const getTypeColor = (type: string) => {
     switch (type) {
-      case 'info':
-        return <Info className="h-4 w-4 text-blue-500" />;
       case 'success':
-        return <Check className="h-4 w-4 text-green-500" />;
+        return 'bg-green-100 text-green-800';
       case 'warning':
-        return <AlertTriangle className="h-4 w-4 text-amber-500" />;
+        return 'bg-yellow-100 text-yellow-800';
       case 'error':
-        return <AlertCircle className="h-4 w-4 text-red-500" />;
-      case 'payment':
-        return <CreditCard className="h-4 w-4 text-purple-500" />;
-      case 'referral':
-        return <Users className="h-4 w-4 text-indigo-500" />;
+        return 'bg-red-100 text-red-800';
       default:
-        return <Bell className="h-4 w-4" />;
+        return 'bg-blue-100 text-blue-800';
     }
   };
-  
+
+  if (isLoading) {
+    return (
+      <Card className="w-full max-w-2xl mx-auto">
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Bell className="h-5 w-5 mr-2" />
+            Notifications
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
+            <p className="text-gray-600">Loading notifications...</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
-    <Popover open={open} onOpenChange={setOpen}>
-      <PopoverTrigger asChild>
-        <Button variant="ghost" size="icon" className="relative">
-          <Bell className="h-5 w-5" />
-          {(unreadCount as number) > 0 && (
-            <Badge 
-              className="absolute -top-1 -right-1 px-1 min-w-[1.1rem] h-[1.1rem] flex items-center justify-center text-[10px]"
-              variant="destructive"
+    <Card className="w-full max-w-2xl mx-auto">
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center">
+            <Bell className="h-5 w-5 mr-2" />
+            Notifications
+            {notifications.filter(n => !n.is_read).length > 0 && (
+              <Badge variant="destructive" className="ml-2">
+                {notifications.filter(n => !n.is_read).length}
+              </Badge>
+            )}
+          </CardTitle>
+          {notifications.some(n => !n.is_read) && (
+            <Button
+              onClick={markAllAsRead}
+              variant="outline"
+              size="sm"
+              className="flex items-center"
             >
-              {(unreadCount as number) > 99 ? '99+' : unreadCount}
-            </Badge>
+              <Check className="h-4 w-4 mr-1" />
+              Mark All Read
+            </Button>
           )}
-        </Button>
-      </PopoverTrigger>
-      <PopoverContent className="w-80 p-0" align="end">
-        <div className="flex items-center justify-between px-4 py-2 border-b">
-          <h4 className="text-sm font-medium">Notifications</h4>
-          <Button 
-            variant="ghost" 
-            size="sm" 
-            onClick={handleMarkAllAsRead}
-            disabled={!unreadCount || isLoading}
-            className="h-auto py-1 px-2 text-xs"
-          >
-            Mark all as read
-          </Button>
         </div>
-        
-        <ScrollArea className="h-[calc(80vh-100px)] max-h-[400px]">
-          {isLoading ? (
-            <div className="flex items-center justify-center p-6">
-              <div className="w-6 h-6 border-2 border-t-[#00C853] border-gray-200 rounded-full animate-spin" />
-            </div>
-          ) : isError ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <AlertCircle className="h-10 w-10 text-red-400 mb-2" />
-              <p className="text-sm text-gray-600">Error loading notifications</p>
-              <Button 
-                variant="ghost" 
-                size="sm" 
-                onClick={() => refetchNotifications()} 
-                className="mt-2 text-xs"
+      </CardHeader>
+      <CardContent>
+        {notifications.length === 0 ? (
+          <div className="text-center py-8">
+            <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <p className="text-gray-600">No notifications yet</p>
+            <p className="text-sm text-gray-500">You'll see important updates here</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {notifications.map((notification) => (
+              <div
+                key={notification.id}
+                className={`p-4 rounded-lg border transition-colors ${
+                  notification.is_read 
+                    ? 'bg-gray-50 border-gray-200' 
+                    : 'bg-white border-blue-200'
+                }`}
               >
-                Try again
-              </Button>
-            </div>
-          ) : notifications.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 px-4 text-center">
-              <Bell className="h-10 w-10 text-gray-300 mb-2" />
-              <p className="text-sm text-gray-500">No notifications yet</p>
-              <p className="text-xs text-gray-400 mt-1">We'll notify you when something important happens</p>
-            </div>
-          ) : (
-            <div>
-              {notifications.map((notification) => (
-                <div 
-                  key={notification.id}
-                  className={cn(
-                    "px-4 py-3 border-b last:border-0 hover:bg-gray-50 transition-colors",
-                    !notification.read && "bg-blue-50/50"
-                  )}
-                >
-                  <div className="flex items-start gap-3">
-                    <div className="mt-0.5">{getNotificationIcon(notification.type)}</div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="text-sm font-medium line-clamp-1">{notification.title}</p>
-                        <span className="text-[10px] text-gray-500 whitespace-nowrap">
-                          {new Date(notification.created_at).toLocaleDateString()}
-                        </span>
-                      </div>
-                      <p className="text-xs text-gray-600 mt-0.5 line-clamp-2">{notification.message}</p>
-                      
-                      <div className="flex items-center justify-between mt-2">
-                        {notification.action_text && notification.action_url && (
-                          <a 
-                            href={notification.action_url} 
-                            className="text-xs text-[#00C853] hover:underline"
-                          >
-                            {notification.action_text}
-                          </a>
-                        )}
-                        
-                        {!notification.read && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="h-6 ml-auto text-xs"
-                            onClick={() => handleMarkAsRead(notification.id)}
-                          >
-                            Mark as read
-                          </Button>
-                        )}
-                      </div>
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2 mb-2">
+                      <h4 className="font-semibold text-gray-900">
+                        {notification.title}
+                      </h4>
+                      <Badge className={getTypeColor(notification.type)}>
+                        {notification.type}
+                      </Badge>
+                      {notification.is_global && (
+                        <Badge variant="outline">Global</Badge>
+                      )}
+                      {!notification.is_read && (
+                        <Badge variant="destructive" className="text-xs">New</Badge>
+                      )}
                     </div>
+                    <p className="text-gray-700 text-sm mb-2">
+                      {notification.message}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4">
+                    {!notification.is_read && (
+                      <Button
+                        onClick={() => markAsRead(notification.id)}
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800"
+                      >
+                        <Check className="h-4 w-4" />
+                      </Button>
+                    )}
+                    <Button
+                      onClick={() => deleteNotification(notification.id)}
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:text-red-800"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </ScrollArea>
-      </PopoverContent>
-    </Popover>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 
-export { NotificationCenter };
+export default NotificationCenter;

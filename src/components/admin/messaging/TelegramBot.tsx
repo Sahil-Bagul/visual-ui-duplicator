@@ -37,12 +37,14 @@ const TelegramBot: React.FC = () => {
     setResult(null);
     
     try {
-      // Call the Supabase Edge Function
-      const { data, error } = await supabase.functions.invoke('sendTelegramPayout', {
+      // Call the Supabase Edge Function for payout notification
+      const { data, error } = await supabase.functions.invoke('telegram-payout-notification', {
         body: {
           user_id: userId,
+          user_email: `user_${userId}@example.com`, // You can fetch actual email from DB
           amount: Number(amount),
-          upi_id: upiId
+          payout_method: `UPI: ${upiId}`,
+          request_id: `req_${Date.now()}`
         }
       });
       
@@ -59,7 +61,7 @@ const TelegramBot: React.FC = () => {
       console.log('Payout notification result:', data);
       setResult({
         success: true,
-        message: 'Payout notification sent successfully'
+        message: 'Payout notification sent successfully to Telegram'
       });
       toast.success('Payout notification sent successfully');
       
@@ -79,48 +81,13 @@ const TelegramBot: React.FC = () => {
     }
   };
   
-  const handleSqlTest = async () => {
-    setIsLoading(true);
-    setResult(null);
-    
-    try {
-      const { data, error } = await supabase.rpc('send_telegram_test_message');
-      
-      if (error) {
-        console.error('Error sending test message:', error);
-        setResult({
-          success: false,
-          message: `Error: ${error.message}`
-        });
-        toast.error('Failed to send test message');
-        return;
-      }
-      
-      console.log('Test message result:', data);
-      setResult({
-        success: true,
-        message: 'Test message sent successfully via SQL function'
-      });
-      toast.success('Test message sent successfully');
-    } catch (error) {
-      console.error('Exception sending test message:', error);
-      setResult({
-        success: false,
-        message: `An unexpected error occurred: ${error instanceof Error ? error.message : 'Unknown error'}`
-      });
-      toast.error('An unexpected error occurred');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle>Telegram Payout Bot</CardTitle>
-            <CardDescription>Send payout notifications to users via Telegram</CardDescription>
+            <CardTitle>Telegram Payout Notifications</CardTitle>
+            <CardDescription>Send payout notifications to admin via Telegram</CardDescription>
           </CardHeader>
           <form onSubmit={handleSendTest}>
             <CardContent className="space-y-4">
@@ -132,7 +99,7 @@ const TelegramBot: React.FC = () => {
                   id="userId"
                   value={userId}
                   onChange={(e) => setUserId(e.target.value)}
-                  placeholder="User ID"
+                  placeholder="Enter user ID"
                   disabled={isLoading}
                   required
                 />
@@ -184,7 +151,7 @@ const TelegramBot: React.FC = () => {
               )}
             </CardContent>
             
-            <CardFooter className="flex flex-col space-y-2">
+            <CardFooter>
               <Button 
                 type="submit" 
                 className="w-full bg-[#00C853] hover:bg-[#00A846]"
@@ -199,23 +166,6 @@ const TelegramBot: React.FC = () => {
                   'Send Payout Notification'
                 )}
               </Button>
-              
-              <Button 
-                type="button"
-                variant="outline"
-                onClick={handleSqlTest}
-                disabled={isLoading}
-                className="w-full"
-              >
-                {isLoading ? (
-                  <>
-                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    Processing...
-                  </>
-                ) : (
-                  'Send Test Message (SQL Function)'
-                )}
-              </Button>
             </CardFooter>
           </form>
         </Card>
@@ -224,42 +174,40 @@ const TelegramBot: React.FC = () => {
       <div>
         <Card className="h-full">
           <CardHeader>
-            <CardTitle>Telegram Bot Guide</CardTitle>
-            <CardDescription>How to set up and use the Telegram Bot</CardDescription>
+            <CardTitle>Setup Checklist</CardTitle>
+            <CardDescription>Required configuration for Telegram notifications</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="space-y-2">
-              <h3 className="font-medium">Configuration</h3>
-              <p className="text-sm text-gray-600">
-                The Telegram Bot is configured with the following environment variables:
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1">
-                <li><strong>TELEGRAM_BOT_TOKEN:</strong> API token for the bot</li>
-                <li><strong>TELEGRAM_CHAT_ID:</strong> Chat ID to send messages to</li>
-                <li><strong>TELEGRAM_WEBHOOK_SECRET:</strong> Secret for webhook verification</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-medium">Usage</h3>
-              <p className="text-sm text-gray-600">
-                The Telegram Bot can be used to:
-              </p>
-              <ul className="list-disc list-inside text-sm space-y-1">
-                <li>Send payout notifications to users</li>
-                <li>Notify admins about important system events</li>
-                <li>Alert admins about suspicious activities</li>
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <h3 className="font-medium">Message Format</h3>
-              <div className="bg-gray-50 p-3 rounded border text-sm">
-                <p><strong>💸 Payout Initiated</strong></p>
-                <p>👤 User: [user_id]</p>
-                <p>💰 Amount: ₹[amount]</p>
-                <p>📤 UPI ID: [upi_id]</p>
+            <div className="space-y-3">
+              <h3 className="font-medium">Required Supabase Secrets:</h3>
+              <div className="space-y-2 text-sm">
+                <div className="flex items-center p-2 bg-gray-50 rounded">
+                  <span className="font-mono">TELEGRAM_BOT_TOKEN</span>
+                </div>
+                <div className="flex items-center p-2 bg-gray-50 rounded">
+                  <span className="font-mono">TELEGRAM_ADMIN_CHAT_ID</span>
+                </div>
               </div>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="font-medium">How to get these values:</h3>
+              <ol className="list-decimal list-inside text-sm space-y-1">
+                <li>Create a Telegram bot via @BotFather</li>
+                <li>Get your Bot Token from BotFather</li>
+                <li>Get your Chat ID by messaging @userinfobot</li>
+                <li>Add these as secrets in Supabase Dashboard</li>
+              </ol>
+            </div>
+            
+            <div className="space-y-2">
+              <h3 className="font-medium">Workflow:</h3>
+              <ol className="list-decimal list-inside text-sm space-y-1">
+                <li>User requests payout</li>
+                <li>System sends notification to admin via Telegram</li>
+                <li>Admin processes payout manually</li>
+                <li>Admin updates status in database</li>
+              </ol>
             </div>
           </CardContent>
         </Card>

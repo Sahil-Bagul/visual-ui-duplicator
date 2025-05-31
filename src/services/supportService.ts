@@ -107,7 +107,7 @@ export async function getUserSupportTickets(): Promise<SupportTicket[]> {
   }
 }
 
-// Get all support tickets (admin only)
+// Get all support tickets (admin only) - Fixed to properly join with users table
 export async function getAllSupportTickets(): Promise<SupportTicket[]> {
   try {
     console.log('Fetching all support tickets (admin)');
@@ -124,7 +124,7 @@ export async function getAllSupportTickets(): Promise<SupportTicket[]> {
       .from('support_tickets')
       .select(`
         *,
-        user:users(email, name)
+        users!inner(email, name)
       `)
       .order('created_at', { ascending: false });
     
@@ -137,7 +137,11 @@ export async function getAllSupportTickets(): Promise<SupportTicket[]> {
     
     return (data || []).map(ticket => ({
       ...ticket,
-      submitted_at: ticket.created_at
+      submitted_at: ticket.created_at,
+      user: {
+        email: ticket.users?.email || 'No email',
+        name: ticket.users?.name || 'Unknown User'
+      }
     })) as SupportTicket[];
   } catch (error) {
     console.error('Exception fetching all support tickets:', error);
