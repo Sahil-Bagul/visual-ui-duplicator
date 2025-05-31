@@ -10,7 +10,7 @@ export interface SupportTicket {
   admin_response?: string;
   submitted_at: string;
   responded_at?: string;
-  created_at?: string; // Added for compatibility with DB response
+  created_at?: string;
   user?: {
     email: string;
     name: string;
@@ -27,41 +27,45 @@ export async function createSupportTicket(
   error?: string;
 }> {
   try {
-    console.log(`Creating support ticket: ${subject}`);
+    console.log('Creating support ticket:', subject);
     
     const { data: authData, error: authError } = await supabase.auth.getUser();
     if (authError || !authData.user) {
+      console.error('Authentication error:', authError);
       return { 
         success: false, 
         error: "Authentication error: " + (authError?.message || "Not authenticated") 
       };
     }
+
+    console.log('Authenticated user ID:', authData.user.id);
     
     const { data, error } = await supabase
       .from('support_tickets')
       .insert({
         user_id: authData.user.id,
-        subject: subject,
-        message: message,
+        subject: subject.trim(),
+        message: message.trim(),
         status: 'open'
       })
       .select('id')
       .single();
     
     if (error) {
-      console.error('Error submitting support ticket:', error);
+      console.error('Error creating support ticket:', error);
       return { 
         success: false, 
         error: error.message 
       };
     }
     
+    console.log('Support ticket created successfully:', data.id);
     return { 
       success: true, 
       ticketId: data.id 
     };
   } catch (error) {
-    console.error('Exception submitting support ticket:', error);
+    console.error('Exception creating support ticket:', error);
     return { 
       success: false, 
       error: error instanceof Error ? error.message : 'Unknown error occurred' 
@@ -69,33 +73,36 @@ export async function createSupportTicket(
   }
 }
 
-// Submit a new support ticket (alias for createSupportTicket)
-export const submitSupportTicket = createSupportTicket;
-
 // Get support tickets for the current user
 export async function getUserSupportTickets(): Promise<SupportTicket[]> {
   try {
     console.log('Fetching user support tickets');
     
-    const { data, error } = await supabase
-      .from('support_tickets')
-      .select('*')
-      .order('created_at', { ascending: false });
-    
-    if (error) {
-      console.error('Error fetching support tickets:', error);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      console.error('No authenticated user found');
       return [];
     }
     
-    console.log(`Retrieved ${data.length} support tickets`);
+    const { data, error } = await supabase
+      .from('support_tickets')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
     
-    // Map database response to SupportTicket interface
-    return data.map(ticket => ({
+    if (error) {
+      console.error('Error fetching user support tickets:', error);
+      return [];
+    }
+    
+    console.log(`Retrieved ${data?.length || 0} user support tickets`);
+    
+    return (data || []).map(ticket => ({
       ...ticket,
       submitted_at: ticket.created_at
     })) as SupportTicket[];
   } catch (error) {
-    console.error('Exception fetching support tickets:', error);
+    console.error('Exception fetching user support tickets:', error);
     return [];
   }
 }
@@ -103,11 +110,22 @@ export async function getUserSupportTickets(): Promise<SupportTicket[]> {
 // Get all support tickets (admin only)
 export async function getAllSupportTickets(): Promise<SupportTicket[]> {
   try {
-    console.log('Fetching all support tickets');
+    console.log('Fetching all support tickets (admin)');
+    
+    // Check if current user is admin
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+    
+    if (adminError || !isAdmin) {
+      console.error('Admin check failed:', adminError);
+      return [];
+    }
     
     const { data, error } = await supabase
       .from('support_tickets')
-      .select('*, user:users(email, name)')
+      .select(`
+        *,
+        user:users(email, name)
+      `)
       .order('created_at', { ascending: false });
     
     if (error) {
@@ -115,10 +133,9 @@ export async function getAllSupportTickets(): Promise<SupportTicket[]> {
       return [];
     }
     
-    console.log(`Retrieved ${data.length} support tickets`);
+    console.log(`Retrieved ${data?.length || 0} support tickets for admin`);
     
-    // Map database response to SupportTicket interface
-    return data.map(ticket => ({
+    return (data || []).map(ticket => ({
       ...ticket,
       submitted_at: ticket.created_at
     })) as SupportTicket[];
@@ -131,8 +148,8 @@ export async function getAllSupportTickets(): Promise<SupportTicket[]> {
 // Respond to a support ticket (admin only)
 export async function respondToSupportTicket(
   ticketId: string,
-  status: string,
-  adminResponse: string
+  adminResponse: string,
+  status: string
 ): Promise<{
   success: boolean;
   error?: string;
@@ -140,11 +157,22 @@ export async function respondToSupportTicket(
   try {
     console.log(`Responding to ticket ${ticketId} with status: ${status}`);
     
+    // Check if current user is admin
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+    
+    if (adminError || !isAdmin) {
+      console.error('Admin check failed:', adminError);
+      return { 
+        success: false, 
+        error: 'Admin privileges required' 
+      };
+    }
+    
     const { error } = await supabase
       .from('support_tickets')
       .update({ 
         status: status,
-        admin_response: adminResponse,
+        admin_response: adminResponse.trim(),
         updated_at: new Date().toISOString()
       })
       .eq('id', ticketId);
@@ -157,6 +185,7 @@ export async function respondToSupportTicket(
       };
     }
     
+    console.log('Support ticket response saved successfully');
     return { success: true };
   } catch (error) {
     console.error('Exception responding to support ticket:', error);
@@ -166,3 +195,6 @@ export async function respondToSupportTicket(
     };
   }
 }
+
+// Alias for backward compatibility
+export const submitSupportTicket = createSupportTicket;

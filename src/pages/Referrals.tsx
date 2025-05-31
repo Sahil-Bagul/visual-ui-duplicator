@@ -13,10 +13,9 @@ import { getReferralStats, getReferralHistory, type ReferralStats } from '@/serv
 const Referrals: React.FC = () => {
   const { user } = useAuth();
   const [stats, setStats] = useState<ReferralStats>({
-    referralCode: '',
-    totalEarned: 0,
-    totalReferrals: 0,
-    canRefer: false
+    courseReferrals: [],
+    canRefer: false,
+    overallStats: { totalEarned: 0, totalReferrals: 0 }
   });
   const [referralHistory, setReferralHistory] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -53,17 +52,25 @@ const Referrals: React.FC = () => {
     loadReferralData();
   }, [user]);
 
-  const copyReferralCode = () => {
-    if (stats.referralCode) {
-      navigator.clipboard.writeText(stats.referralCode);
-      toast.success('Referral code copied to clipboard!');
-    }
+  const copyReferralCode = (code: string, courseTitle: string) => {
+    navigator.clipboard.writeText(code);
+    toast.success(`Referral code for ${courseTitle} copied!`);
   };
 
-  const shareReferralLink = () => {
-    const referralLink = `${window.location.origin}?ref=${stats.referralCode}`;
-    navigator.clipboard.writeText(referralLink);
-    toast.success('Referral link copied to clipboard!');
+  const shareReferralLink = (code: string, courseTitle: string) => {
+    const referralLink = `${window.location.origin}?ref=${code}`;
+    const message = `Check out "${courseTitle}" on Learn & Earn! Use my referral code ${code} to get started. ${referralLink}`;
+    
+    if (navigator.share) {
+      navigator.share({
+        title: `Learn & Earn - ${courseTitle}`,
+        text: message,
+        url: referralLink
+      });
+    } else {
+      navigator.clipboard.writeText(message);
+      toast.success('Referral message copied to clipboard!');
+    }
   };
 
   if (!user) {
@@ -151,7 +158,7 @@ const Referrals: React.FC = () => {
           <h1 className="text-2xl font-bold text-gray-900">Refer & Earn</h1>
         </div>
 
-        {/* Stats Cards */}
+        {/* Overall Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -159,8 +166,8 @@ const Referrals: React.FC = () => {
               <Wallet className="h-4 w-4 text-[#00C853]" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-[#00C853]">₹{stats.totalEarned.toFixed(2)}</div>
-              <p className="text-xs text-gray-500 mt-1">From referrals</p>
+              <div className="text-2xl font-bold text-[#00C853]">₹{stats.overallStats.totalEarned.toFixed(2)}</div>
+              <p className="text-xs text-gray-500 mt-1">From all referrals</p>
             </CardContent>
           </Card>
 
@@ -170,7 +177,7 @@ const Referrals: React.FC = () => {
               <Users className="h-4 w-4 text-blue-500" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600">{stats.totalReferrals}</div>
+              <div className="text-2xl font-bold text-blue-600">{stats.overallStats.totalReferrals}</div>
               <p className="text-xs text-gray-500 mt-1">Successful referrals</p>
             </CardContent>
           </Card>
@@ -187,33 +194,65 @@ const Referrals: React.FC = () => {
           </Card>
         </div>
 
-        {/* Referral Code Section */}
+        {/* Course-Specific Referral Codes */}
+        <div className="space-y-6 mb-8">
+          <h2 className="text-xl font-semibold text-gray-900">Your Course Referral Codes</h2>
+          
+          {stats.courseReferrals.map((course) => (
+            <Card key={course.courseId}>
+              <CardHeader>
+                <div className="flex justify-between items-start">
+                  <div>
+                    <CardTitle className="text-lg">{course.courseTitle}</CardTitle>
+                    <p className="text-sm text-gray-500 mt-1">
+                      Earn 50% commission for each successful referral
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm text-gray-500">Earned</div>
+                    <div className="text-lg font-bold text-[#00C853]">₹{course.totalEarned.toFixed(2)}</div>
+                    <div className="text-xs text-gray-500">{course.totalReferrals} referrals</div>
+                  </div>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center space-x-2">
+                  <div className="flex-1 p-3 bg-gray-100 rounded-lg font-mono text-center font-semibold">
+                    {course.referralCode}
+                  </div>
+                  <Button 
+                    onClick={() => copyReferralCode(course.referralCode, course.courseTitle)} 
+                    variant="outline" 
+                    size="sm"
+                  >
+                    <Copy className="h-4 w-4" />
+                  </Button>
+                </div>
+                
+                <Button 
+                  onClick={() => shareReferralLink(course.referralCode, course.courseTitle)}
+                  className="w-full bg-[#00C853] hover:bg-[#00B248]"
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share {course.courseTitle}
+                </Button>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        {/* How it Works */}
         <Card className="mb-8">
           <CardHeader>
-            <CardTitle>Your Referral Code</CardTitle>
+            <CardTitle>How Referrals Work</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center space-x-2">
-              <div className="flex-1 p-3 bg-gray-100 rounded-lg font-mono text-lg font-semibold text-center">
-                {stats.referralCode}
-              </div>
-              <Button onClick={copyReferralCode} variant="outline" size="sm">
-                <Copy className="h-4 w-4" />
-              </Button>
-            </div>
-            
-            <div className="flex space-x-2">
-              <Button onClick={shareReferralLink} className="flex-1 bg-[#00C853] hover:bg-[#00B248]">
-                <Share2 className="h-4 w-4 mr-2" />
-                Share Referral Link
-              </Button>
-            </div>
-
+          <CardContent>
             <div className="text-sm text-gray-600 space-y-2">
               <p><strong>How it works:</strong></p>
               <ul className="list-disc list-inside space-y-1">
-                <li>Share your referral code with friends</li>
-                <li>They use your code when purchasing a course</li>
+                <li>Each course you purchase gets its own unique referral code</li>
+                <li>Share your course-specific referral code with friends</li>
+                <li>They use your code when purchasing that course</li>
                 <li>You earn 50% commission on their purchase</li>
                 <li>Commission is added to your wallet instantly</li>
               </ul>

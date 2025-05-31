@@ -91,6 +91,30 @@ export type Database = {
           },
         ]
       }
+      course_referral_codes: {
+        Row: {
+          course_id: string
+          created_at: string | null
+          id: string
+          referral_code: string
+          user_id: string
+        }
+        Insert: {
+          course_id: string
+          created_at?: string | null
+          id?: string
+          referral_code: string
+          user_id: string
+        }
+        Update: {
+          course_id?: string
+          created_at?: string | null
+          id?: string
+          referral_code?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       courses: {
         Row: {
           created_at: string | null
@@ -445,6 +469,7 @@ export type Database = {
         Row: {
           commission_amount: number | null
           course_id: string | null
+          course_referral_code_id: string | null
           created_at: string | null
           id: string
           purchase_id: string | null
@@ -458,6 +483,7 @@ export type Database = {
         Insert: {
           commission_amount?: number | null
           course_id?: string | null
+          course_referral_code_id?: string | null
           created_at?: string | null
           id?: string
           purchase_id?: string | null
@@ -471,6 +497,7 @@ export type Database = {
         Update: {
           commission_amount?: number | null
           course_id?: string | null
+          course_referral_code_id?: string | null
           created_at?: string | null
           id?: string
           purchase_id?: string | null
@@ -487,6 +514,13 @@ export type Database = {
             columns: ["course_id"]
             isOneToOne: false
             referencedRelation: "courses"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "referrals_course_referral_code_id_fkey"
+            columns: ["course_referral_code_id"]
+            isOneToOne: false
+            referencedRelation: "course_referral_codes"
             referencedColumns: ["id"]
           },
           {
@@ -775,6 +809,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_or_create_course_referral_code: {
+        Args: { p_user_id: string; p_course_id: string }
+        Returns: string
+      }
       get_user_id_by_email: {
         Args: { user_email: string }
         Returns: string

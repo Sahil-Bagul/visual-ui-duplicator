@@ -2,20 +2,27 @@
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
-export interface ReferralData {
+export interface CourseReferralCode {
   id: string;
-  referral_code: string;
-  total_earned: number;
-  successful_referrals: number;
   user_id: string;
+  course_id: string;
+  referral_code: string;
   created_at: string;
 }
 
 export interface ReferralStats {
-  referralCode: string;
-  totalEarned: number;
-  totalReferrals: number;
+  courseReferrals: Array<{
+    courseId: string;
+    courseTitle: string;
+    referralCode: string;
+    totalEarned: number;
+    totalReferrals: number;
+  }>;
   canRefer: boolean;
+  overallStats: {
+    totalEarned: number;
+    totalReferrals: number;
+  };
 }
 
 // Check if user has purchased any course and can refer
@@ -53,108 +60,161 @@ export async function checkReferralEligibility(): Promise<{ canRefer: boolean; c
   }
 }
 
-// Get or create referral code for user
-export async function getUserReferralCode(): Promise<string | null> {
+// Get or create referral code for a specific course
+export async function getCourseReferralCode(courseId: string): Promise<string | null> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return null;
 
-    console.log('Getting referral code for user:', user.id);
+    console.log('Getting referral code for user:', user.id, 'course:', courseId);
 
-    // First check if user already has a referral code in users table
-    const { data: userData, error: userError } = await supabase
-      .from('users')
-      .select('referral_code')
-      .eq('id', user.id)
-      .single();
+    // Use the database function to get or create the referral code
+    const { data, error } = await supabase.rpc('get_or_create_course_referral_code', {
+      p_user_id: user.id,
+      p_course_id: courseId
+    });
 
-    if (userError) {
-      console.error('Error fetching user data:', userError);
-    }
-
-    if (userData?.referral_code) {
-      console.log('Found existing referral code:', userData.referral_code);
-      return userData.referral_code;
-    }
-
-    // Generate new referral code
-    const referralCode = `REF${user.id.substring(0, 8).toUpperCase()}`;
-    console.log('Generated new referral code:', referralCode);
-
-    // Update user with referral code
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({ referral_code: referralCode })
-      .eq('id', user.id);
-
-    if (updateError) {
-      console.error('Error updating user with referral code:', updateError);
+    if (error) {
+      console.error('Error getting course referral code:', error);
       return null;
     }
 
-    return referralCode;
+    console.log('Course referral code:', data);
+    return data;
   } catch (error) {
-    console.error('Exception getting referral code:', error);
+    console.error('Exception getting course referral code:', error);
     return null;
   }
 }
 
-// Get referral statistics for user
+// Get all course referral codes for user
+export async function getAllCourseReferralCodes(): Promise<CourseReferralCode[]> {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('course_referral_codes')
+      .select('*')
+      .eq('user_id', user.id);
+
+    if (error) {
+      console.error('Error fetching course referral codes:', error);
+      return [];
+    }
+
+    return data || [];
+  } catch (error) {
+    console.error('Exception fetching course referral codes:', error);
+    return [];
+  }
+}
+
+// Get comprehensive referral statistics with per-course breakdown
 export async function getReferralStats(): Promise<ReferralStats> {
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) {
-      return { referralCode: '', totalEarned: 0, totalReferrals: 0, canRefer: false };
-    }
-
-    console.log('Getting referral stats for user:', user.id);
-
-    // Get eligibility and referral code
-    const [eligibility, referralCode] = await Promise.all([
-      checkReferralEligibility(),
-      getUserReferralCode()
-    ]);
-
-    if (!eligibility.canRefer || !referralCode) {
       return { 
-        referralCode: referralCode || '', 
-        totalEarned: 0, 
-        totalReferrals: 0, 
-        canRefer: false 
+        courseReferrals: [], 
+        canRefer: false, 
+        overallStats: { totalEarned: 0, totalReferrals: 0 }
       };
     }
 
-    // Get referral statistics
-    const { data: referrals, error } = await supabase
-      .from('referrals')
-      .select('commission_amount, status')
-      .eq('user_id', user.id);
+    console.log('Getting comprehensive referral stats for user:', user.id);
 
-    if (error) {
-      console.error('Error fetching referral stats:', error);
+    // Check eligibility
+    const eligibility = await checkReferralEligibility();
+    if (!eligibility.canRefer) {
       return { 
-        referralCode, 
-        totalEarned: 0, 
-        totalReferrals: 0, 
-        canRefer: true 
+        courseReferrals: [], 
+        canRefer: false, 
+        overallStats: { totalEarned: 0, totalReferrals: 0 }
       };
     }
 
-    const completedReferrals = referrals?.filter(r => r.status === 'completed') || [];
-    const totalEarned = completedReferrals.reduce((sum, ref) => sum + (ref.commission_amount || 0), 0);
-    const totalReferrals = completedReferrals.length;
+    // Get purchased courses with referral codes
+    const { data: purchasedCourses, error: coursesError } = await supabase
+      .from('purchases')
+      .select(`
+        course_id,
+        courses(id, title)
+      `)
+      .eq('user_id', user.id)
+      .eq('payment_status', 'completed');
 
-    console.log('Referral stats:', { totalEarned, totalReferrals });
+    if (coursesError) {
+      console.error('Error fetching purchased courses:', coursesError);
+      return { 
+        courseReferrals: [], 
+        canRefer: true, 
+        overallStats: { totalEarned: 0, totalReferrals: 0 }
+      };
+    }
+
+    // Get referral statistics for each course
+    const courseReferrals = await Promise.all(
+      (purchasedCourses || []).map(async (purchase) => {
+        const courseId = purchase.course_id;
+        const courseTitle = purchase.courses?.title || 'Unknown Course';
+
+        // Get or create referral code for this course
+        const referralCode = await getCourseReferralCode(courseId);
+
+        // Get referral stats for this course
+        const { data: referrals, error: referralsError } = await supabase
+          .from('referrals')
+          .select('commission_amount, status')
+          .eq('user_id', user.id)
+          .eq('course_id', courseId);
+
+        if (referralsError) {
+          console.error('Error fetching referrals for course:', courseId, referralsError);
+          return {
+            courseId,
+            courseTitle,
+            referralCode: referralCode || '',
+            totalEarned: 0,
+            totalReferrals: 0
+          };
+        }
+
+        const completedReferrals = referrals?.filter(r => r.status === 'completed') || [];
+        const totalEarned = completedReferrals.reduce((sum, ref) => sum + (ref.commission_amount || 0), 0);
+        const totalReferrals = completedReferrals.length;
+
+        return {
+          courseId,
+          courseTitle,
+          referralCode: referralCode || '',
+          totalEarned,
+          totalReferrals
+        };
+      })
+    );
+
+    // Calculate overall stats
+    const overallStats = courseReferrals.reduce(
+      (acc, course) => ({
+        totalEarned: acc.totalEarned + course.totalEarned,
+        totalReferrals: acc.totalReferrals + course.totalReferrals
+      }),
+      { totalEarned: 0, totalReferrals: 0 }
+    );
 
     return {
-      referralCode,
-      totalEarned,
-      totalReferrals,
-      canRefer: true
+      courseReferrals: courseReferrals.filter(c => c.referralCode), // Only include courses with referral codes
+      canRefer: true,
+      overallStats
     };
   } catch (error) {
     console.error('Exception getting referral stats:', error);
-    return { referralCode: '', totalEarned: 0, totalReferrals: 0, canRefer: false };
+    return { 
+      courseReferrals: [], 
+      canRefer: false, 
+      overallStats: { totalEarned: 0, totalReferrals: 0 }
+    };
   }
 }
 
