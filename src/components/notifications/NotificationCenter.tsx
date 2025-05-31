@@ -19,7 +19,11 @@ interface Notification {
   is_global: boolean;
 }
 
-const NotificationCenter: React.FC = () => {
+interface NotificationCenterProps {
+  onClose?: () => void;
+}
+
+const NotificationCenter: React.FC<NotificationCenterProps> = ({ onClose }) => {
   const { user } = useAuth();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -141,28 +145,21 @@ const NotificationCenter: React.FC = () => {
 
   if (isLoading) {
     return (
-      <Card className="w-full max-w-2xl mx-auto">
-        <CardHeader>
-          <CardTitle className="flex items-center">
-            <Bell className="h-5 w-5 mr-2" />
-            Notifications
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-8">
-            <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-4"></div>
-            <p className="text-gray-600">Loading notifications...</p>
+      <div className="w-full">
+        <div className="p-4">
+          <div className="flex items-center justify-center py-8">
+            <div className="w-8 h-8 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin"></div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     );
   }
 
   return (
-    <Card className="w-full max-w-2xl mx-auto">
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
+    <div className="w-full">
+      <div className="p-2">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-semibold text-lg flex items-center">
             <Bell className="h-5 w-5 mr-2" />
             Notifications
             {notifications.filter(n => !n.is_read).length > 0 && (
@@ -170,7 +167,7 @@ const NotificationCenter: React.FC = () => {
                 {notifications.filter(n => !n.is_read).length}
               </Badge>
             )}
-          </CardTitle>
+          </h3>
           {notifications.some(n => !n.is_read) && (
             <Button
               onClick={markAllAsRead}
@@ -183,8 +180,7 @@ const NotificationCenter: React.FC = () => {
             </Button>
           )}
         </div>
-      </CardHeader>
-      <CardContent>
+        
         {notifications.length === 0 ? (
           <div className="text-center py-8">
             <Bell className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -192,11 +188,11 @@ const NotificationCenter: React.FC = () => {
             <p className="text-sm text-gray-500">You'll see important updates here</p>
           </div>
         ) : (
-          <div className="space-y-4">
+          <div className="space-y-3 max-h-96 overflow-y-auto">
             {notifications.map((notification) => (
               <div
                 key={notification.id}
-                className={`p-4 rounded-lg border transition-colors ${
+                className={`p-3 rounded-lg border transition-colors ${
                   notification.is_read 
                     ? 'bg-gray-50 border-gray-200' 
                     : 'bg-white border-blue-200'
@@ -205,14 +201,14 @@ const NotificationCenter: React.FC = () => {
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2 mb-2">
-                      <h4 className="font-semibold text-gray-900">
+                      <h4 className="font-semibold text-gray-900 text-sm">
                         {notification.title}
                       </h4>
-                      <Badge className={getTypeColor(notification.type)}>
+                      <Badge className={`${getTypeColor(notification.type)} text-xs`}>
                         {notification.type}
                       </Badge>
                       {notification.is_global && (
-                        <Badge variant="outline">Global</Badge>
+                        <Badge variant="outline" className="text-xs">Global</Badge>
                       )}
                       {!notification.is_read && (
                         <Badge variant="destructive" className="text-xs">New</Badge>
@@ -225,13 +221,13 @@ const NotificationCenter: React.FC = () => {
                       {formatDistanceToNow(new Date(notification.created_at), { addSuffix: true })}
                     </p>
                   </div>
-                  <div className="flex items-center gap-2 ml-4">
+                  <div className="flex items-center gap-1 ml-2">
                     {!notification.is_read && (
                       <Button
                         onClick={() => markAsRead(notification.id)}
                         variant="ghost"
                         size="sm"
-                        className="text-blue-600 hover:text-blue-800"
+                        className="text-blue-600 hover:text-blue-800 h-8 w-8 p-0"
                       >
                         <Check className="h-4 w-4" />
                       </Button>
@@ -240,7 +236,7 @@ const NotificationCenter: React.FC = () => {
                       onClick={() => deleteNotification(notification.id)}
                       variant="ghost"
                       size="sm"
-                      className="text-red-600 hover:text-red-800"
+                      className="text-red-600 hover:text-red-800 h-8 w-8 p-0"
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>
@@ -250,8 +246,8 @@ const NotificationCenter: React.FC = () => {
             ))}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 };
 
