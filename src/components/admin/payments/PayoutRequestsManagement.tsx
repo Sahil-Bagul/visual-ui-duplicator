@@ -83,12 +83,21 @@ const PayoutRequestsManagement: React.FC = () => {
 
       if (payoutError) throw payoutError;
 
+      // Get current wallet data
+      const { data: walletData, error: walletFetchError } = await supabase
+        .from('wallet')
+        .select('balance, total_withdrawn')
+        .eq('user_id', payout.user_id)
+        .single();
+
+      if (walletFetchError) throw walletFetchError;
+
       // Update user wallet
       const { error: walletError } = await supabase
         .from('wallet')
         .update({ 
-          balance: supabase.sql`balance - ${payout.amount}`,
-          total_withdrawn: supabase.sql`total_withdrawn + ${payout.amount}`,
+          balance: (walletData.balance || 0) - payout.amount,
+          total_withdrawn: (walletData.total_withdrawn || 0) + payout.amount,
           updated_at: new Date().toISOString()
         })
         .eq('user_id', payout.user_id);

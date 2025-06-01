@@ -12,11 +12,13 @@ import PayoutMethodsList from './PayoutMethodsList';
 interface PayoutMethodDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onMethodAdded?: () => void;
 }
 
 const PayoutMethodDialog: React.FC<PayoutMethodDialogProps> = ({ 
   open, 
-  onOpenChange 
+  onOpenChange,
+  onMethodAdded 
 }) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -27,7 +29,7 @@ const PayoutMethodDialog: React.FC<PayoutMethodDialogProps> = ({
             You need to add a payout method before you can withdraw funds.
           </DialogDescription>
         </DialogHeader>
-        <PayoutMethodsList />
+        <PayoutMethodsList onMethodAdded={onMethodAdded} />
       </DialogContent>
     </Dialog>
   );
