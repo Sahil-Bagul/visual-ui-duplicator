@@ -16,7 +16,11 @@ interface PayoutMethod {
   added_at: string;
 }
 
-const PayoutMethodsList: React.FC = () => {
+interface PayoutMethodsListProps {
+  onMethodAdded?: () => void;
+}
+
+const PayoutMethodsList: React.FC<PayoutMethodsListProps> = ({ onMethodAdded }) => {
   const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
@@ -87,6 +91,12 @@ const PayoutMethodsList: React.FC = () => {
     }
   };
 
+  const handleMethodAdded = () => {
+    setOpenDialog(false);
+    fetchPayoutMethods();
+    onMethodAdded?.();
+  };
+
   if (isLoading) {
     return <div className="text-center py-4">Loading payout methods...</div>;
   }
@@ -103,10 +113,7 @@ const PayoutMethodsList: React.FC = () => {
             <DialogHeader>
               <DialogTitle>Add Payout Method</DialogTitle>
             </DialogHeader>
-            <PayoutMethodForm onSuccess={() => {
-              setOpenDialog(false);
-              fetchPayoutMethods();
-            }} />
+            <PayoutMethodForm onSuccess={handleMethodAdded} />
           </DialogContent>
         </Dialog>
       </div>
@@ -122,10 +129,7 @@ const PayoutMethodsList: React.FC = () => {
               <DialogHeader>
                 <DialogTitle>Add Payout Method</DialogTitle>
               </DialogHeader>
-              <PayoutMethodForm onSuccess={() => {
-                setOpenDialog(false);
-                fetchPayoutMethods();
-              }} />
+              <PayoutMethodForm onSuccess={handleMethodAdded} />
             </DialogContent>
           </Dialog>
         </div>
