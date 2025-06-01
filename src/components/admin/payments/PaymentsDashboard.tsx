@@ -23,6 +23,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import PayoutRequestsManagement from './PayoutRequestsManagement';
 
 interface Purchase {
   id: string;
@@ -206,6 +207,7 @@ const PaymentsDashboard: React.FC = () => {
           <TabsList className="mb-4">
             <TabsTrigger value="purchases">Purchases</TabsTrigger>
             <TabsTrigger value="payouts">Payouts</TabsTrigger>
+            <TabsTrigger value="payout-requests">Payout Requests</TabsTrigger>
           </TabsList>
           
           <TabsContent value="purchases" className="space-y-4">
@@ -355,6 +357,10 @@ const PaymentsDashboard: React.FC = () => {
                 </Table>
               </div>
             )}
+          </TabsContent>
+          
+          <TabsContent value="payout-requests" className="space-y-4">
+            <PayoutRequestsManagement />
           </TabsContent>
         </Tabs>
         
