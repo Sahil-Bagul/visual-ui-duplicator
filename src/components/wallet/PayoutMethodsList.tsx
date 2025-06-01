@@ -1,99 +1,69 @@
 
 import React, { useEffect, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { useOptimizedWallet } from '@/hooks/useOptimizedWallet';
 import PayoutMethodForm from './PayoutMethodForm';
-
-interface PayoutMethod {
-  id: string;
-  method_type: string;
-  upi_id: string | null;
-  account_number: string | null;
-  ifsc_code: string | null;
-  is_default: boolean;
-  added_at: string;
-}
+import { toast } from 'sonner';
 
 interface PayoutMethodsListProps {
   onMethodAdded?: () => void;
 }
 
 const PayoutMethodsList: React.FC<PayoutMethodsListProps> = ({ onMethodAdded }) => {
-  const [payoutMethods, setPayoutMethods] = useState<PayoutMethod[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const [openDialog, setOpenDialog] = useState(false);
+  const queryClient = useQueryClient();
+  
+  const { data: walletData, isLoading } = useOptimizedWallet();
+  const payoutMethods = walletData?.payoutMethods || [];
 
-  const fetchPayoutMethods = async () => {
-    if (!user) return;
-    
-    setIsLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from('payout_methods')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('is_default', { ascending: false })
-        .order('added_at', { ascending: false });
-        
-      if (error) throw error;
-      
-      // Type assertion to ensure the data matches our PayoutMethod interface
-      setPayoutMethods(data as unknown as PayoutMethod[]);
-    } catch (error) {
-      console.error('Error fetching payout methods:', error);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPayoutMethods();
-  }, [user]);
-
-  const handleSetDefault = async (id: string) => {
-    if (!user) return;
-    
-    try {
+  const setDefaultMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('payout_methods')
         .update({ is_default: true })
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user!.id);
         
       if (error) throw error;
-      
-      // Re-fetch the data to get updated list with the new default
-      fetchPayoutMethods();
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      toast.success('Default payout method updated');
+    },
+    onError: (error) => {
       console.error('Error setting default payout method:', error);
+      toast.error('Failed to update default method');
     }
-  };
+  });
 
-  const handleDelete = async (id: string) => {
-    if (!user) return;
-    
-    try {
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('payout_methods')
         .delete()
         .eq('id', id)
-        .eq('user_id', user.id);
+        .eq('user_id', user!.id);
         
       if (error) throw error;
-      
-      // Update local state
-      setPayoutMethods(payoutMethods.filter(method => method.id !== id));
-    } catch (error) {
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
+      toast.success('Payout method deleted');
+    },
+    onError: (error) => {
       console.error('Error deleting payout method:', error);
+      toast.error('Failed to delete payout method');
     }
-  };
+  });
 
   const handleMethodAdded = () => {
     setOpenDialog(false);
-    fetchPayoutMethods();
+    queryClient.invalidateQueries({ queryKey: ['wallet'] });
     onMethodAdded?.();
   };
 
@@ -148,8 +118,7 @@ const PayoutMethodsList: React.FC<PayoutMethodsListProps> = ({ onMethodAdded }) 
                   <p className="text-sm text-gray-600 mt-1">{method.upi_id}</p>
                 ) : (
                   <p className="text-sm text-gray-600 mt-1">
-                    Acc: {method.account_number?.slice(-4).padStart(method.account_number?.length || 0, '*')} • 
-                    IFSC: {method.ifsc_code}
+                    Acc: {method.account_number?.slice(-4).padStart(method.account_number?.length || 0, '*')}
                   </p>
                 )}
               </div>
@@ -158,7 +127,8 @@ const PayoutMethodsList: React.FC<PayoutMethodsListProps> = ({ onMethodAdded }) 
                   <Button 
                     variant="outline" 
                     size="sm"
-                    onClick={() => handleSetDefault(method.id)}
+                    onClick={() => setDefaultMutation.mutate(method.id)}
+                    disabled={setDefaultMutation.isPending}
                   >
                     Set Default
                   </Button>
@@ -167,7 +137,8 @@ const PayoutMethodsList: React.FC<PayoutMethodsListProps> = ({ onMethodAdded }) 
                   variant="outline" 
                   size="sm"
                   className="text-red-500 hover:text-red-700"
-                  onClick={() => handleDelete(method.id)}
+                  onClick={() => deleteMutation.mutate(method.id)}
+                  disabled={deleteMutation.isPending}
                 >
                   Delete
                 </Button>

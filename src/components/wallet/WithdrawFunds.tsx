@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { useQuery, useMutation } from '@tanstack/react-query';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
+import { useOptimizedWallet } from '@/hooks/useOptimizedWallet';
 import PayoutMethodDialog from './PayoutMethodDialog';
 import { sendPayoutNotification } from '@/services/telegramService';
 
@@ -17,36 +18,14 @@ interface WithdrawFundsProps {
   onWithdrawSuccess?: () => void;
 }
 
-interface PayoutMethod {
-  id: string;
-  method_type: string;
-  upi_id?: string;
-  bank_name?: string;
-  account_holder_name?: string;
-  is_default: boolean;
-}
-
 const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSuccess }) => {
   const [amount, setAmount] = useState('');
   const [showMethodDialog, setShowMethodDialog] = useState(false);
   const [selectedMethodId, setSelectedMethodId] = useState<string>('');
+  const queryClient = useQueryClient();
 
-  const { data: payoutMethods = [], isLoading: methodsLoading } = useQuery({
-    queryKey: ['payout-methods'],
-    queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
-
-      const { data, error } = await supabase
-        .from('payout_methods')
-        .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      return data as PayoutMethod[];
-    },
-  });
+  const { data: walletData } = useOptimizedWallet();
+  const payoutMethods = walletData?.payoutMethods || [];
 
   const withdrawMutation = useMutation({
     mutationFn: async (withdrawAmount: number) => {
@@ -57,7 +36,6 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
         throw new Error('Please select a payout method');
       }
 
-      // Create payout request
       const { data: payoutRequest, error } = await supabase
         .from('payout_requests')
         .insert({
@@ -75,7 +53,6 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
 
       if (error) throw error;
 
-      // Send Telegram notification
       try {
         await sendPayoutNotification({
           user_id: user.id,
@@ -86,7 +63,6 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
         });
       } catch (notificationError) {
         console.error('Failed to send Telegram notification:', notificationError);
-        // Don't fail the whole operation if notification fails
       }
 
       return payoutRequest;
@@ -94,6 +70,7 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
     onSuccess: () => {
       setAmount('');
       setSelectedMethodId('');
+      queryClient.invalidateQueries({ queryKey: ['wallet'] });
       toast.success('Withdrawal request submitted successfully! You will be notified once processed.');
       onWithdrawSuccess?.();
     },
@@ -126,16 +103,6 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
     withdrawMutation.mutate(withdrawAmount);
   };
 
-  const defaultMethod = payoutMethods.find(method => method.is_default);
-
-  if (methodsLoading) {
-    return (
-      <div className="flex items-center justify-center py-8">
-        <Loader2 className="h-6 w-6 animate-spin" />
-      </div>
-    );
-  }
-
   if (payoutMethods.length === 0) {
     return (
       <Card>
@@ -157,7 +124,7 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
             onOpenChange={setShowMethodDialog}
             onMethodAdded={() => {
               setShowMethodDialog(false);
-              // Refresh methods will happen automatically via React Query
+              queryClient.invalidateQueries({ queryKey: ['wallet'] });
             }}
           />
         </CardContent>
@@ -198,8 +165,8 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
             <option value="">Select payout method</option>
             {payoutMethods.map((method) => (
               <option key={method.id} value={method.id}>
-                {method.method_type === 'upi' ? `UPI: ${method.upi_id}` : 
-                 method.method_type === 'bank' ? `Bank: ${method.account_holder_name}` : 
+                {method.method_type === 'UPI' ? `UPI: ${method.upi_id}` : 
+                 method.method_type === 'BANK' ? `Bank: ${method.account_number?.slice(-4)}` : 
                  method.method_type}
                 {method.is_default && ' (Default)'}
               </option>
@@ -244,7 +211,10 @@ const WithdrawFunds: React.FC<WithdrawFundsProps> = ({ balance, onWithdrawSucces
       <PayoutMethodDialog 
         open={showMethodDialog} 
         onOpenChange={setShowMethodDialog}
-        onMethodAdded={() => setShowMethodDialog(false)}
+        onMethodAdded={() => {
+          setShowMethodDialog(false);
+          queryClient.invalidateQueries({ queryKey: ['wallet'] });
+        }}
       />
     </div>
   );
