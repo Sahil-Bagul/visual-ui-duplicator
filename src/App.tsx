@@ -23,6 +23,7 @@ import Feedback from "./pages/Feedback";
 import AdminPanel from "./pages/AdminPanel";
 import { initializeAppData } from "./utils/autoSetupCourses";
 import { useLoginLogger } from "./hooks/useLoginLogger";
+import { useSessionManager } from "./hooks/useSessionManager";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -43,6 +44,9 @@ const queryClient = new QueryClient({
 const AppInitializer = () => {
   const { user } = useAuth();
   const [initialized, setInitialized] = useState(false);
+  
+  // Use session manager to prevent auto-reload issues
+  useSessionManager();
 
   useEffect(() => {
     // Only initialize once per session

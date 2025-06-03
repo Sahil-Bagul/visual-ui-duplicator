@@ -1,7 +1,10 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
+import { Share2 } from 'lucide-react';
+import ShareOptionsMenu from './ShareOptionsMenu';
 
 interface ReferralCardProps {
   title: string;
@@ -38,21 +41,12 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
     
     setTimeout(() => setIsCopied(false), 2000);
   };
-  
-  const handleShareWhatsApp = () => {
-    if (!referralCode) return;
-    
-    const message = `Check out this course on Learn & Earn! Use my referral code ${referralCode} for ${title}. learnandearn.in`;
-    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(message)}`;
-    window.open(whatsappUrl, '_blank');
-  };
-  
-  const handleShareTelegram = () => {
-    if (!referralCode) return;
-    
-    const message = `Check out this course on Learn & Earn! Use my referral code ${referralCode} for ${title}. learnandearn.in`;
-    const telegramUrl = `https://t.me/share/url?url=learnandearn.in&text=${encodeURIComponent(message)}`;
-    window.open(telegramUrl, '_blank');
+
+  const handleShare = (platform: string) => {
+    toast({
+      title: "Shared!",
+      description: `Referral link shared via ${platform}`,
+    });
   };
 
   return (
@@ -125,20 +119,21 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
           
           <div>
             <label className="text-sm font-medium text-gray-700 block mb-2">Share with Friends</label>
-            <div className="flex gap-2">
-              <Button
-                className="flex-1 bg-green-500 hover:bg-green-600"
-                onClick={handleShareWhatsApp}
-              >
-                WhatsApp
-              </Button>
-              <Button
-                className="flex-1 bg-blue-500 hover:bg-blue-600"
-                onClick={handleShareTelegram}
-              >
-                Telegram
-              </Button>
-            </div>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button className="w-full bg-[#00C853] hover:bg-[#00B248]">
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share Course
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-80">
+                <ShareOptionsMenu
+                  referralCode={referralCode || ''}
+                  courseTitle={title}
+                  onShare={handleShare}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
         </div>
       )}
