@@ -89,7 +89,7 @@ const CourseContent: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <UnifiedHeader />
-        <main className="flex-grow flex items-center justify-center">
+        <main className="flex-grow flex items-center justify-center px-4">
           <div className="text-center">
             <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
             <p className="text-gray-600">Loading course content...</p>
@@ -104,7 +104,7 @@ const CourseContent: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <UnifiedHeader />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+        <main className="max-w-[993px] mx-auto w-full px-4 lg:px-6 py-6 lg:py-8 flex-grow">
           <div className="mb-6">
             <Button
               onClick={() => navigate('/dashboard')}
@@ -132,7 +132,7 @@ const CourseContent: React.FC = () => {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <UnifiedHeader />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
+        <main className="max-w-[993px] mx-auto w-full px-4 lg:px-6 py-6 lg:py-8 flex-grow">
           <div className="text-center py-12">
             <AlertCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
             <h2 className="text-xl font-semibold mb-2">Course Not Found</h2>
@@ -150,8 +150,8 @@ const CourseContent: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <UnifiedHeader />
-      <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
-        <div className="mb-6">
+      <main className="max-w-[993px] mx-auto w-full px-4 lg:px-6 py-4 lg:py-8 flex-grow">
+        <div className="mb-4 lg:mb-6">
           <Button
             onClick={() => navigate('/my-courses')}
             variant="outline"

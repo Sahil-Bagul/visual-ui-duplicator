@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { CheckCircle, Clock, PlayCircle, BookOpen, Award } from 'lucide-react';
+import { CheckCircle, Clock, PlayCircle, BookOpen, Award, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/context/AuthContext';
 import { toast } from 'sonner';
@@ -38,6 +37,7 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
   const [activeLesson, setActiveLesson] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [isLoading, setIsLoading] = useState(true);
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const loadCourseContent = async () => {
@@ -67,7 +67,7 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
           return;
         }
 
-        // Load lessons for each module
+        // Load ALL lessons for each module (no limits)
         const modulesWithLessons = await Promise.all(
           modulesData.map(async (module) => {
             const { data: lessonsData, error: lessonsError } = await supabase
@@ -104,11 +104,13 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
 
         setModules(modulesWithLessons);
         
-        // Set first module as active if none selected
+        // Set first module as active and expanded if none selected
         if (modulesWithLessons.length > 0 && !activeModule) {
-          setActiveModule(modulesWithLessons[0].id);
-          if (modulesWithLessons[0].lessons.length > 0) {
-            setActiveLesson(modulesWithLessons[0].lessons[0].id);
+          const firstModule = modulesWithLessons[0];
+          setActiveModule(firstModule.id);
+          setExpandedModules(new Set([firstModule.id]));
+          if (firstModule.lessons.length > 0) {
+            setActiveLesson(firstModule.lessons[0].id);
           }
         }
 
@@ -250,6 +252,16 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
     }
   };
 
+  const toggleModuleExpanded = (moduleId: string) => {
+    const newExpanded = new Set(expandedModules);
+    if (newExpanded.has(moduleId)) {
+      newExpanded.delete(moduleId);
+    } else {
+      newExpanded.add(moduleId);
+    }
+    setExpandedModules(newExpanded);
+  };
+
   const getCurrentLesson = () => {
     if (!activeLesson) return null;
     
@@ -296,49 +308,55 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
   }
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-      {/* Course Navigation Sidebar */}
-      <div className="lg:col-span-1">
-        <Card>
-          <CardHeader>
+    <div className="flex flex-col lg:grid lg:grid-cols-4 gap-4 lg:gap-6">
+      {/* Mobile-First Course Navigation */}
+      <div className="lg:col-span-1 order-2 lg:order-1">
+        <Card className="sticky top-4">
+          <CardHeader className="pb-3">
             <CardTitle className="text-lg">Course Progress</CardTitle>
             <div className="space-y-2">
-              <Progress value={progress} className="w-full" />
+              <Progress value={progress} className="w-full h-2" />
               <p className="text-sm text-gray-600">{Math.round(progress)}% Complete</p>
             </div>
           </CardHeader>
-          <CardContent className="space-y-4">
+          <CardContent className="space-y-3 max-h-[60vh] overflow-y-auto">
             {modules.map((module) => (
-              <div key={module.id} className="border rounded-lg p-3">
+              <div key={module.id} className="border rounded-lg overflow-hidden">
                 <button
-                  onClick={() => setActiveModule(module.id)}
-                  className={`w-full text-left font-medium ${
-                    activeModule === module.id ? 'text-[#00C853]' : 'text-gray-700'
+                  onClick={() => {
+                    setActiveModule(module.id);
+                    toggleModuleExpanded(module.id);
+                  }}
+                  className={`w-full text-left p-3 font-medium flex items-center justify-between transition-colors ${
+                    activeModule === module.id ? 'bg-green-50 text-[#00C853]' : 'hover:bg-gray-50'
                   }`}
                 >
-                  {module.title}
+                  <span className="text-sm font-medium truncate pr-2">{module.title}</span>
+                  {expandedModules.has(module.id) ? (
+                    <ChevronUp className="h-4 w-4 flex-shrink-0" />
+                  ) : (
+                    <ChevronDown className="h-4 w-4 flex-shrink-0" />
+                  )}
                 </button>
                 
-                {activeModule === module.id && (
-                  <div className="mt-2 space-y-1">
+                {expandedModules.has(module.id) && (
+                  <div className="bg-gray-50 border-t">
                     {module.lessons.map((lesson) => (
                       <button
                         key={lesson.id}
                         onClick={() => setActiveLesson(lesson.id)}
-                        className={`w-full text-left text-sm p-2 rounded flex items-center justify-between ${
+                        className={`w-full text-left text-sm p-3 border-b last:border-b-0 flex items-center transition-colors ${
                           activeLesson === lesson.id
-                            ? 'bg-green-50 text-[#00C853]'
-                            : 'hover:bg-gray-50'
+                            ? 'bg-green-100 text-[#00C853]'
+                            : 'hover:bg-gray-100'
                         }`}
                       >
-                        <span className="flex items-center">
-                          {lesson.completed ? (
-                            <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                          ) : (
-                            <Clock className="h-4 w-4 mr-2 text-gray-400" />
-                          )}
-                          {lesson.title}
-                        </span>
+                        {lesson.completed ? (
+                          <CheckCircle className="h-4 w-4 mr-2 text-green-500 flex-shrink-0" />
+                        ) : (
+                          <Clock className="h-4 w-4 mr-2 text-gray-400 flex-shrink-0" />
+                        )}
+                        <span className="truncate">{lesson.title}</span>
                       </button>
                     ))}
                   </div>
@@ -349,34 +367,34 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
         </Card>
       </div>
 
-      {/* Main Content Area */}
-      <div className="lg:col-span-3">
+      {/* Main Content Area - Mobile Optimized */}
+      <div className="lg:col-span-3 order-1 lg:order-2">
         {currentLesson ? (
           <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <PlayCircle className="h-6 w-6 mr-2 text-[#00C853]" />
-                {currentLesson.title}
+            <CardHeader className="pb-4">
+              <CardTitle className="flex items-start gap-3 text-lg lg:text-xl">
+                <PlayCircle className="h-6 w-6 mt-0.5 text-[#00C853] flex-shrink-0" />
+                <span className="leading-tight">{currentLesson.title}</span>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-6">
-              <div className="prose max-w-none">
-                <div className="whitespace-pre-wrap">{currentLesson.content}</div>
+              <div className="prose prose-sm lg:prose max-w-none">
+                <div className="whitespace-pre-wrap leading-relaxed text-gray-700">
+                  {currentLesson.content}
+                </div>
               </div>
               
               <div className="border-t pt-4">
-                <div className="flex justify-between items-center">
-                  {!currentLesson.completed && (
+                <div className="flex flex-col sm:flex-row gap-3 sm:justify-between sm:items-center">
+                  {!currentLesson.completed ? (
                     <Button
                       onClick={() => markLessonComplete(currentLesson.id)}
-                      className="bg-[#00C853] hover:bg-[#00B248] text-white"
+                      className="bg-[#00C853] hover:bg-[#00B248] text-white w-full sm:w-auto"
                     >
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Mark as Complete
                     </Button>
-                  )}
-                  
-                  {currentLesson.completed && (
+                  ) : (
                     <div className="flex items-center text-green-600">
                       <CheckCircle className="h-4 w-4 mr-2" />
                       Completed
@@ -387,6 +405,7 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
                     <Button
                       onClick={() => setActiveLesson(nextLesson.id)}
                       variant="outline"
+                      className="w-full sm:w-auto"
                     >
                       Next Lesson
                     </Button>
@@ -400,7 +419,7 @@ const WebCourseContent: React.FC<WebCourseContentProps> = ({ courseId, courseTit
             <CardContent className="text-center py-12">
               <BookOpen className="h-16 w-16 text-gray-400 mx-auto mb-4" />
               <h3 className="text-lg font-semibold text-gray-900 mb-2">Select a Lesson</h3>
-              <p className="text-gray-600">Choose a module and lesson from the sidebar to start learning.</p>
+              <p className="text-gray-600 text-sm lg:text-base">Choose a module and lesson from the sidebar to start learning.</p>
             </CardContent>
           </Card>
         )}
