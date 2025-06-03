@@ -3,8 +3,7 @@ import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { useToast } from '@/hooks/use-toast';
-import { Share2 } from 'lucide-react';
-import ShareOptionsMenu from './ShareOptionsMenu';
+import { Share2, MessageCircle, Phone, Send, Copy } from 'lucide-react';
 
 interface ReferralCardProps {
   title: string;
@@ -42,10 +41,32 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
     setTimeout(() => setIsCopied(false), 2000);
   };
 
-  const handleShare = (platform: string) => {
+  const baseMessage = `Check out "${title}" on Learn & Earn! Use my referral code ${referralCode} to get started. https://learn-and-earn.in?ref=${referralCode}`;
+  
+  const handleWhatsAppShare = () => {
+    const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(baseMessage)}`;
+    window.open(whatsappUrl, '_blank');
     toast({
       title: "Shared!",
-      description: `Referral link shared via ${platform}`,
+      description: "Referral link shared via WhatsApp",
+    });
+  };
+  
+  const handleSMSShare = () => {
+    const smsUrl = `sms:?body=${encodeURIComponent(baseMessage)}`;
+    window.open(smsUrl, '_blank');
+    toast({
+      title: "Shared!",
+      description: "Referral link shared via SMS",
+    });
+  };
+  
+  const handleTelegramShare = () => {
+    const telegramUrl = `https://t.me/share/url?url=https://learn-and-earn.in?ref=${referralCode}&text=${encodeURIComponent(baseMessage)}`;
+    window.open(telegramUrl, '_blank');
+    toast({
+      title: "Shared!",
+      description: "Referral link shared via Telegram",
     });
   };
 
@@ -108,10 +129,7 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
                     <path d="M16.6667 5L7.50004 14.1667L3.33337 10" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 ) : (
-                  <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M16.6667 7.5H8.33333C7.8731 7.5 7.5 7.8731 7.5 8.33333V16.6667C7.5 17.1269 7.8731 17.5 8.33333 17.5H16.6667C17.1269 17.5 17.5 17.1269 17.5 16.6667V8.33333C17.5 7.8731 17.1269 7.5 16.6667 7.5Z" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M4.16663 12.5H3.33329C3.11227 12.5 2.90051 12.4122 2.74423 12.2559C2.58795 12.0996 2.49996 11.8879 2.49996 11.6667V3.33333C2.49996 3.11232 2.58795 2.90056 2.74423 2.74428C2.90051 2.588 3.11227 2.5 3.33329 2.5H11.6666C11.8877 2.5 12.0994 2.588 12.2557 2.74428C12.412 2.90056 12.5 3.11232 12.5 3.33333V4.16667" stroke="#4F46E5" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
+                  <Copy className="h-5 w-5 text-blue-600" />
                 )}
               </button>
             </div>
@@ -126,12 +144,34 @@ const ReferralCard: React.FC<ReferralCardProps> = ({
                   Share Course
                 </Button>
               </PopoverTrigger>
-              <PopoverContent className="w-80">
-                <ShareOptionsMenu
-                  referralCode={referralCode || ''}
-                  courseTitle={title}
-                  onShare={handleShare}
-                />
+              <PopoverContent className="w-80 p-4">
+                <div className="space-y-3">
+                  <h4 className="font-medium text-gray-900 mb-3">Share via</h4>
+                  
+                  <Button
+                    onClick={handleWhatsAppShare}
+                    className="w-full flex items-center justify-start bg-green-500 hover:bg-green-600 text-white"
+                  >
+                    <MessageCircle className="h-4 w-4 mr-3" />
+                    Share on WhatsApp
+                  </Button>
+                  
+                  <Button
+                    onClick={handleSMSShare}
+                    className="w-full flex items-center justify-start bg-blue-500 hover:bg-blue-600 text-white"
+                  >
+                    <Phone className="h-4 w-4 mr-3" />
+                    Share via SMS
+                  </Button>
+                  
+                  <Button
+                    onClick={handleTelegramShare}
+                    className="w-full flex items-center justify-start bg-blue-600 hover:bg-blue-700 text-white"
+                  >
+                    <Send className="h-4 w-4 mr-3" />
+                    Share on Telegram
+                  </Button>
+                </div>
               </PopoverContent>
             </Popover>
           </div>

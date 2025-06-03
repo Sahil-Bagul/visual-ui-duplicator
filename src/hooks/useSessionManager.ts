@@ -7,8 +7,13 @@ export const useSessionManager = () => {
   const { user } = useAuth();
   const lastActivityRef = useRef(Date.now());
   const sessionCheckIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const hasInitializedRef = useRef(false);
 
   useEffect(() => {
+    // Prevent multiple initializations
+    if (hasInitializedRef.current) return;
+    hasInitializedRef.current = true;
+
     // Update last activity on user interactions
     const updateActivity = () => {
       lastActivityRef.current = Date.now();
@@ -20,28 +25,34 @@ export const useSessionManager = () => {
       document.addEventListener(event, updateActivity, { passive: true });
     });
 
-    // Session validation without auto-refresh
+    // Very minimal session validation - only check if really needed
     const validateSession = async () => {
       try {
+        // Only validate if user has been inactive for more than 30 minutes
+        const thirtyMinutesAgo = Date.now() - (30 * 60 * 1000);
+        if (lastActivityRef.current > thirtyMinutesAgo) {
+          return; // User is active, skip validation
+        }
+
         const { data: { session }, error } = await supabase.auth.getSession();
         
         if (error) {
-          console.warn('Session validation error:', error);
+          console.warn('Session validation error (non-critical):', error);
           return;
         }
 
-        // Only handle session expiry, don't force refresh
+        // Only log session issues, don't force refresh
         if (!session && user) {
-          console.log('Session expired, user will be redirected on next navigation');
+          console.log('Session may have expired, but not forcing refresh');
         }
       } catch (error) {
-        console.warn('Session check failed:', error);
+        console.warn('Session check failed (non-critical):', error);
       }
     };
 
-    // Check session every 5 minutes instead of frequent checks
+    // Check session very infrequently - every 15 minutes
     if (user) {
-      sessionCheckIntervalRef.current = setInterval(validateSession, 5 * 60 * 1000);
+      sessionCheckIntervalRef.current = setInterval(validateSession, 15 * 60 * 1000);
     }
 
     return () => {
@@ -53,6 +64,7 @@ export const useSessionManager = () => {
       // Clear interval
       if (sessionCheckIntervalRef.current) {
         clearInterval(sessionCheckIntervalRef.current);
+        sessionCheckIntervalRef.current = null;
       }
     };
   }, [user]);
