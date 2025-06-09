@@ -120,7 +120,7 @@ const AdminPanel: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="settings">
-            <AdminManagement />
+            <AdminManagement currentAdminId={user.id} />
           </TabsContent>
         </Tabs>
       </main>
