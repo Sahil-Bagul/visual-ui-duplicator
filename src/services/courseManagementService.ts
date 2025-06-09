@@ -163,20 +163,24 @@ export async function deleteCourse(courseId: string): Promise<{ success: boolean
   try {
     console.log(`Starting deletion process for course: ${courseId}`);
     
-    // Start a transaction-like process
-    // 1. Delete all related lessons first
-    const { error: lessonsError } = await supabase
-      .from('lessons')
-      .delete()
-      .in('module_id', 
-        supabase
-          .from('course_modules')
-          .select('id')
-          .eq('course_id', courseId)
-      );
+    // Get module IDs first for proper deletion
+    const { data: modules } = await supabase
+      .from('course_modules')
+      .select('id')
+      .eq('course_id', courseId);
 
-    if (lessonsError) {
-      console.error('Error deleting lessons:', lessonsError);
+    const moduleIds = modules?.map(m => m.id) || [];
+
+    // 1. Delete all related lessons first
+    if (moduleIds.length > 0) {
+      const { error: lessonsError } = await supabase
+        .from('lessons')
+        .delete()
+        .in('module_id', moduleIds);
+
+      if (lessonsError) {
+        console.error('Error deleting lessons:', lessonsError);
+      }
     }
 
     // 2. Delete all course modules

@@ -65,6 +65,24 @@ export const initializeAppData = async () => {
   }
 };
 
+// Manual trigger for admin initialization
+export const triggerInitialization = async () => {
+  try {
+    console.log('Manual initialization triggered');
+    
+    // Reset flag to allow re-initialization
+    isInitialized = false;
+    
+    // Run initialization
+    await initializeAppData();
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error in manual initialization:', error);
+    return { success: false, error };
+  }
+};
+
 // Reset initialization flag (only for development)
 export const resetInitialization = () => {
   if (process.env.NODE_ENV === 'development') {
