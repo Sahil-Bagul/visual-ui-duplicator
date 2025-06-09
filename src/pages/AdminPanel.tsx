@@ -1,117 +1,45 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '@/context/AuthContext';
 import { Navigate } from 'react-router-dom';
 import UnifiedHeader from '@/components/layout/UnifiedHeader';
 import Footer from '@/components/layout/Footer';
-import GrantAccessForm from '@/components/admin/GrantAccessForm';
-import GrantCourseAccess from '@/components/admin/GrantCourseAccess';
-import InitializationButton from '@/components/admin/InitializationButton';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Shield, Users, FileText, MessageSquare, CreditCard, BarChart3, Settings, TestTube } from 'lucide-react';
+
+// Import admin components
+import UserManagement from '@/components/admin/users/UserManagement';
 import ContentManagement from '@/components/admin/ContentManagement';
-import AdminManagement from '@/components/admin/AdminManagement';
 import AnalyticsDashboard from '@/components/admin/analytics/AnalyticsDashboard';
 import SupportDashboard from '@/components/admin/support/SupportDashboard';
 import PaymentsDashboard from '@/components/admin/payments/PaymentsDashboard';
-import UserManagement from '@/components/admin/users/UserManagement';
 import MessagingDashboard from '@/components/admin/messaging/MessagingDashboard';
-import { useQuery } from '@tanstack/react-query';
-import { supabase } from '@/integrations/supabase/client';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { 
-  Activity,
-  Settings,
-  Users,
-  FileText,
-  MessageSquare,
-  CreditCard,
-  MessageCircle,
-  ShieldAlert,
-} from 'lucide-react';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import AdminManagement from '@/components/admin/AdminManagement';
+import TestingUtilities from '@/components/admin/TestingUtilities';
 
 const AdminPanel: React.FC = () => {
-  const { user, isAdmin: contextIsAdmin, isLoading: authLoading } = useAuth();
-  
-  // Double-check admin status from database using the existing is_admin function
-  const { data: isAdmin, isLoading, error } = useQuery({
-    queryKey: ['isAdmin', user?.id],
-    queryFn: async () => {
-      if (!user?.id) return false;
-      
-      try {
-        console.log('Double-checking admin status for user:', user.id);
-        
-        // Use the existing is_admin function
-        const { data, error } = await supabase.rpc('is_admin');
-        
-        if (error) {
-          console.error('Error checking admin status:', error);
-          throw error;
-        }
-        
-        console.log('Admin status result from database:', data);
-        return data || false;
-      } catch (error) {
-        console.error('Exception checking admin status:', error);
-        throw error;
-      }
-    },
-    enabled: !!user && !authLoading,
-    staleTime: 60000, // Cache for 1 minute
-    retry: 2,
-  });
-  
+  const { user, isAdmin } = useAuth();
+  const [activeTab, setActiveTab] = useState('analytics');
+
   if (!user) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/auth" replace />;
   }
-  
-  if (authLoading || isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="text-center">
-          <div className="w-12 h-12 border-4 border-t-[#00C853] border-gray-200 rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-600">Checking admin permissions...</p>
-        </div>
-      </div>
-    );
-  }
-  
-  if (error) {
+
+  if (!isAdmin) {
     return (
       <div className="flex flex-col min-h-screen bg-gray-50">
         <UnifiedHeader />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
-          <Alert variant="destructive">
-            <ShieldAlert className="h-5 w-5" />
-            <AlertTitle>Authentication Error</AlertTitle>
-            <AlertDescription>
-              Failed to verify admin permissions. Please try refreshing the page or contact support.
-              <br />
-              <small className="text-xs opacity-75">Error: {error.message}</small>
-            </AlertDescription>
-          </Alert>
-        </main>
-        <Footer />
-      </div>
-    );
-  }
-  
-  // Use the database result, fallback to context if needed
-  const finalIsAdmin = isAdmin ?? contextIsAdmin;
-  
-  if (!finalIsAdmin) {
-    return (
-      <div className="flex flex-col min-h-screen bg-gray-50">
-        <UnifiedHeader />
-        <main className="max-w-[993px] mx-auto w-full px-6 py-8 flex-grow">
-          <Alert variant="destructive">
-            <ShieldAlert className="h-5 w-5" />
-            <AlertTitle>Access Denied</AlertTitle>
-            <AlertDescription>
-              You do not have admin permissions to access this page.
-              Please contact an administrator if you believe this is a mistake.
-            </AlertDescription>
-          </Alert>
+        <main className="flex-grow flex items-center justify-center">
+          <Card className="max-w-md w-full mx-4">
+            <CardHeader className="text-center">
+              <Shield className="h-16 w-16 text-red-500 mx-auto mb-4" />
+              <CardTitle className="text-xl text-red-600">Access Denied</CardTitle>
+              <CardDescription>
+                You don't have admin privileges to access this page.
+              </CardDescription>
+            </CardHeader>
+          </Card>
         </main>
         <Footer />
       </div>
@@ -121,88 +49,78 @@ const AdminPanel: React.FC = () => {
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
       <UnifiedHeader />
-      <main className="max-w-[993px] mx-auto w-full px-6 py-8 max-sm:p-4 flex-grow">
-        <div className="flex justify-between items-center mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Admin Dashboard</h1>
-          <div className="text-sm text-gray-500">
-            Logged in as <span className="font-medium">{user.email}</span>
-          </div>
+      <main className="max-w-[1200px] mx-auto w-full px-6 py-8 flex-grow">
+        <div className="flex items-center mb-6">
+          <Shield className="h-8 w-8 text-purple-600 mr-3" />
+          <h1 className="text-2xl font-bold text-gray-900">Admin Panel</h1>
         </div>
-        
-        <Tabs defaultValue="analytics" className="w-full">
-          <TabsList className="mb-6 grid grid-cols-4 md:grid-cols-7 gap-2">
-            <TabsTrigger value="tools" className="flex items-center gap-2">
-              <Settings className="h-4 w-4" />
-              <span className="hidden sm:inline">Tools</span>
-            </TabsTrigger>
-            <TabsTrigger value="analytics" className="flex items-center gap-2">
-              <Activity className="h-4 w-4" />
+
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          <TabsList className="grid grid-cols-4 lg:grid-cols-8 gap-2 h-auto p-1">
+            <TabsTrigger value="analytics" className="flex items-center gap-2 p-3">
+              <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">Analytics</span>
             </TabsTrigger>
-            <TabsTrigger value="content" className="flex items-center gap-2">
-              <FileText className="h-4 w-4" />
-              <span className="hidden sm:inline">Content</span>
-            </TabsTrigger>
-            <TabsTrigger value="users" className="flex items-center gap-2">
+            <TabsTrigger value="users" className="flex items-center gap-2 p-3">
               <Users className="h-4 w-4" />
               <span className="hidden sm:inline">Users</span>
             </TabsTrigger>
-            <TabsTrigger value="support" className="flex items-center gap-2">
+            <TabsTrigger value="content" className="flex items-center gap-2 p-3">
+              <FileText className="h-4 w-4" />
+              <span className="hidden sm:inline">Content</span>
+            </TabsTrigger>
+            <TabsTrigger value="support" className="flex items-center gap-2 p-3">
               <MessageSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Support</span>
             </TabsTrigger>
-            <TabsTrigger value="payments" className="flex items-center gap-2">
+            <TabsTrigger value="payments" className="flex items-center gap-2 p-3">
               <CreditCard className="h-4 w-4" />
               <span className="hidden sm:inline">Payments</span>
             </TabsTrigger>
-            <TabsTrigger value="messaging" className="flex items-center gap-2">
-              <MessageCircle className="h-4 w-4" />
+            <TabsTrigger value="messaging" className="flex items-center gap-2 p-3">
+              <MessageSquare className="h-4 w-4" />
               <span className="hidden sm:inline">Messaging</span>
             </TabsTrigger>
+            <TabsTrigger value="testing" className="flex items-center gap-2 p-3">
+              <TestTube className="h-4 w-4" />
+              <span className="hidden sm:inline">Testing</span>
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex items-center gap-2 p-3">
+              <Settings className="h-4 w-4" />
+              <span className="hidden sm:inline">Settings</span>
+            </TabsTrigger>
           </TabsList>
-          
-          <TabsContent value="tools" className="space-y-6">
-            <div className="grid md:grid-cols-2 gap-6">
-              <div>
-                <h2 className="text-xl font-semibold mb-4">Quick Access Tools</h2>
-                <div className="space-y-6">
-                  <GrantAccessForm />
-                  <GrantCourseAccess />
-                </div>
-              </div>
-              
-              <div>
-                <h2 className="text-xl font-semibold mb-4">System Maintenance</h2>
-                <div className="space-y-6">
-                  <InitializationButton />
-                  <AdminManagement currentAdminId={user.id} />
-                </div>
-              </div>
-            </div>
-          </TabsContent>
-          
+
           <TabsContent value="analytics">
             <AnalyticsDashboard />
           </TabsContent>
-          
-          <TabsContent value="content">
-            <ContentManagement />
-          </TabsContent>
-          
+
           <TabsContent value="users">
             <UserManagement />
           </TabsContent>
-          
+
+          <TabsContent value="content">
+            <ContentManagement />
+          </TabsContent>
+
           <TabsContent value="support">
             <SupportDashboard />
           </TabsContent>
-          
+
           <TabsContent value="payments">
             <PaymentsDashboard />
           </TabsContent>
-          
+
           <TabsContent value="messaging">
             <MessagingDashboard />
+          </TabsContent>
+
+          <TabsContent value="testing">
+            <TestingUtilities />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <AdminManagement />
           </TabsContent>
         </Tabs>
       </main>
