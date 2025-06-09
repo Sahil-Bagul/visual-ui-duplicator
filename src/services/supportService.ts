@@ -112,8 +112,8 @@ export async function getAllSupportTickets(): Promise<SupportTicket[]> {
   try {
     console.log('Fetching all support tickets (admin)');
     
-    // Check if current user is admin
-    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+    // Check if current user is admin using the correct function name
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
     
     if (adminError) {
       console.error('Admin check failed:', adminError);
@@ -210,8 +210,8 @@ export async function respondToSupportTicket(
   try {
     console.log(`Responding to ticket ${ticketId} with status: ${status}`);
     
-    // Check if current user is admin
-    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin_user');
+    // Check if current user is admin using the correct function name
+    const { data: isAdmin, error: adminError } = await supabase.rpc('is_admin');
     
     if (adminError || !isAdmin) {
       console.error('Admin check failed:', adminError);
