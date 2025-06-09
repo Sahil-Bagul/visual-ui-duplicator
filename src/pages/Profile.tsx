@@ -10,11 +10,14 @@ import {
   User, 
   Mail, 
   Calendar, 
+  Copy, 
   Users, 
   Award,
   Shield,
   Wallet
 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { toast } from 'sonner';
 import ContactSupportButton from '@/components/support/ContactSupportButton';
 import UserSupportTickets from '@/components/support/UserSupportTickets';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,6 +27,7 @@ interface UserProfile {
   id: string;
   name: string | null;
   email: string;
+  referral_code: string | null;
   joined_at: string;
   is_admin: boolean;
 }
@@ -106,6 +110,7 @@ const Profile: React.FC = () => {
       } catch (error) {
         console.error('Error loading profile:', error);
         setError('Failed to load profile data');
+        toast.error('Failed to load profile data');
       } finally {
         setIsLoading(false);
       }
@@ -113,6 +118,13 @@ const Profile: React.FC = () => {
 
     loadProfile();
   }, [user]);
+
+  const copyReferralCode = () => {
+    if (profile?.referral_code) {
+      navigator.clipboard.writeText(profile.referral_code);
+      toast.success('Referral code copied to clipboard!');
+    }
+  };
 
   if (!user) {
     return <Navigate to="/auth" replace />;
@@ -203,16 +215,31 @@ const Profile: React.FC = () => {
                 </div>
               </div>
               
-              <div className="border-t pt-4">
-                <div className="bg-blue-50 rounded-lg p-4">
-                  <h4 className="text-sm font-medium text-blue-800 mb-2">Referral Information</h4>
-                  <p className="text-sm text-blue-600">
-                    Your course-specific referral codes are available in the{' '}
-                    <a href="/referrals" className="underline font-medium">Referrals page</a>.
-                    Each course you purchase gets its own unique referral code for better tracking.
-                  </p>
+              {profile?.referral_code && (
+                <div className="border-t pt-4">
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <label className="text-sm font-medium text-gray-700 block mb-2">
+                      Your Referral Code
+                    </label>
+                    <div className="flex items-center space-x-2">
+                      <code className="bg-white px-3 py-2 rounded border font-mono text-sm flex-1 text-center font-bold text-[#00C853]">
+                        {profile.referral_code}
+                      </code>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={copyReferralCode}
+                        className="shrink-0"
+                      >
+                        <Copy className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <p className="text-xs text-gray-500 mt-2">
+                      Share this code with friends to earn referral rewards!
+                    </p>
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
