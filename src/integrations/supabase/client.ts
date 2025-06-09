@@ -6,13 +6,55 @@ import type { Database } from './types';
 const SUPABASE_URL = "https://tphwebrzhqhwtvuxuyqn.supabase.co";
 const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InRwaHdlYnJ6aHFod3R2dXh1eXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDgxNzQ2MzksImV4cCI6MjA2Mzc1MDYzOX0.Cl1o4kywEtPdOLdJX5mB3P0yhoROt3U5FxP9DscQwDk";
 
-// Import the supabase client like this:
-// import { supabase } from "@/integrations/supabase/client";
+// Optimized Supabase client configuration
+export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY, {
+  auth: {
+    storage: localStorage,
+    persistSession: true,
+    autoRefreshToken: true,
+    detectSessionInUrl: true,
+    flowType: 'pkce' // More secure flow
+  },
+  db: {
+    schema: 'public'
+  },
+  global: {
+    headers: {
+      'X-Client-Info': 'learn-and-earn@1.0.0'
+    }
+  },
+  realtime: {
+    params: {
+      eventsPerSecond: 5 // Limit realtime events for performance
+    }
+  }
+});
 
-export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY);
-
-// Error handling helper
+// Enhanced error handling helper
 export const handleSupabaseError = (error: any, context?: string) => {
   console.error(`Supabase error ${context ? `in ${context}` : ''}:`, error);
+  
+  // Handle specific error types
+  if (error?.code === 'PGRST116') {
+    return 'No data found or access denied';
+  } else if (error?.code === '23505') {
+    return 'This data already exists';
+  } else if (error?.code === '23503') {
+    return 'Cannot delete - this item is being used elsewhere';
+  } else if (error?.message?.includes('JWT')) {
+    return 'Session expired - please login again';
+  }
+  
   return error?.message || 'An unexpected error occurred';
+};
+
+// Connection health check
+export const checkSupabaseConnection = async (): Promise<boolean> => {
+  try {
+    const { error } = await supabase.from('courses').select('count').limit(1);
+    return !error;
+  } catch (error) {
+    console.error('Supabase connection check failed:', error);
+    return false;
+  }
 };

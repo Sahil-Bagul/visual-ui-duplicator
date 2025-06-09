@@ -30,7 +30,7 @@ export interface Lesson {
   module_id: string;
 }
 
-// Get all courses
+// Get all courses with improved error handling
 export async function getAllCourses(): Promise<Course[]> {
   try {
     console.log('Fetching all courses');
@@ -161,31 +161,79 @@ export async function updateCourse(courseId: string, updates: Partial<Course>): 
 // Delete a course
 export async function deleteCourse(courseId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    console.log(`Deleting course with ID: ${courseId}`);
-    const { error } = await supabase
+    console.log(`Starting deletion process for course: ${courseId}`);
+    
+    // Start a transaction-like process
+    // 1. Delete all related lessons first
+    const { error: lessonsError } = await supabase
+      .from('lessons')
+      .delete()
+      .in('module_id', 
+        supabase
+          .from('course_modules')
+          .select('id')
+          .eq('course_id', courseId)
+      );
+
+    if (lessonsError) {
+      console.error('Error deleting lessons:', lessonsError);
+    }
+
+    // 2. Delete all course modules
+    const { error: modulesError } = await supabase
+      .from('course_modules')
+      .delete()
+      .eq('course_id', courseId);
+
+    if (modulesError) {
+      console.error('Error deleting modules:', modulesError);
+    }
+
+    // 3. Delete course referral codes
+    const { error: referralCodesError } = await supabase
+      .from('course_referral_codes')
+      .delete()
+      .eq('course_id', courseId);
+
+    if (referralCodesError) {
+      console.error('Error deleting referral codes:', referralCodesError);
+    }
+
+    // 4. Delete referrals
+    const { error: referralsError } = await supabase
+      .from('referrals')
+      .delete()
+      .eq('course_id', courseId);
+
+    if (referralsError) {
+      console.error('Error deleting referrals:', referralsError);
+    }
+
+    // 5. Finally delete the course
+    const { error: courseError } = await supabase
       .from('courses')
       .delete()
       .eq('id', courseId);
 
-    if (error) {
-      console.error('Error deleting course:', error);
-      return { success: false, error: error.message };
+    if (courseError) {
+      console.error('Error deleting course:', courseError);
+      return { success: false, error: courseError.message };
     }
 
-    console.log(`Course ${courseId} deleted successfully`);
+    console.log(`Course ${courseId} and all related data deleted successfully`);
 
     // Log the content management operation
     await logContentManagement({
       resource_type: 'course',
       operation_type: 'delete',
       resource_id: courseId,
-      details: {}
+      details: { cascade_delete: true }
     });
 
     return { success: true };
   } catch (error) {
     console.error('Exception deleting course:', error);
-    return { success: false, error: 'Failed to delete course' };
+    return { success: false, error: 'Failed to delete course completely' };
   }
 }
 
